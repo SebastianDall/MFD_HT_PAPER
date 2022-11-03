@@ -1,0 +1,601 @@
+---
+title: "Amplicon diversity of MFD standard samples 2.0"
+author: "Thomas Bygh Nymann Jensen, Thomas Y. Michaelsen"
+date: "`r format(Sys.time(), '%d-%m-%Y')`, Aalborg, Denmark"
+output: 
+  bookdown::html_document2:
+    toc: true
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+knitr::opts_chunk$set(
+  echo    = F,
+  #fig.pos = "H", 
+  message = FALSE, 
+  warning = FALSE)
+
+# Load the needed packages.
+library(data.table)
+library(readxl)
+library(tidyverse)
+library(ampvis2)
+library(vegan)
+library(patchwork)
+
+### Load and tidy ###
+source("loaddata.R")
+colors <- c("grey", "darkgoldenrod2", "royalblue4", "seagreen", "salmon", "purple")
+```
+
+## QC - PCR controls
+
+```{r}
+dat_PCR <- amp_subset_samples(datraw,is.na(Kit))
+
+tabReads <- merge(
+  dat_PCR$metadata,
+  data.frame(NoReads = apply(dat_PCR$abund,2,sum)),
+  by = 0)
+
+ggplot(tabReads,aes(x = LibID,y = NoReads,colour = LibID)) + 
+  geom_jitter(width = .1) +
+  labs(colour = "PCR controls",x = "",y = "# of reads") +
+  theme(axis.text.x = element_text(angle=90, hjust=1))
+```
+
+## QC - blanks
+
+```{r}
+dat_blank <- amp_subset_samples(datraw,Soil_type == "Blank")
+
+tabReads <- merge(
+  dat_blank$metadata,
+  data.frame(NoReads = apply(dat_blank$abund,2,sum)),
+  by = 0)
+
+ggplot(tabReads,aes(x = LibID, y = NoReads, colour = Kit)) + 
+  geom_jitter(width = .1) +
+  theme(axis.text.x = element_text(angle = 90,vjust = -0.5)) +
+  labs(x = "",y = "# of reads") +
+  theme(legend.position = "none")
+```
+
+## QC - samples
+
+```{r}
+dat_types <- datraw %>%
+  amp_subset_samples(!Soil_type %in% c("Blank") & !is.na(Kit))
+```
+
+Very uneven sequencing depth, hence we will have to remove the beach sand samples, or work with rarefied data. 
+```{r}
+tabReads <- merge(
+  dat_types$metadata,
+  data.frame(NumReads = apply(dat_types$abund, 2, sum)),
+  by = 0)
+
+plot.reads <- tabReads %>%
+  ggplot(aes(x = Soil_type, y = NumReads, fill = Soil_type)) + 
+  facet_wrap(facets = vars(Protocol), nrow = 1) +
+  geom_boxplot(outlier.size = 0, alpha = 0.5) +
+  geom_point(position = position_jitterdodge(jitter.width = .1)) +
+  theme(legend.position = "bottom") +
+  labs(x = "",y = "# of reads") +
+  scale_fill_manual(values = colors) +
+  theme_bw(base_size = 10) +
+  theme(legend.position = "right",
+    axis.text.x = element_blank(),
+    axis.text.y = element_text(face = "bold", size = 10),
+    axis.title = element_blank(),
+    axis.ticks.x = element_blank(),
+    plot.margin = unit(c(0, 1, 0, 0), "cm"),
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 10),
+    strip.text.x = element_text(size = 7, face = "bold"),
+    strip.text.y = element_text(size = 7, face = "bold"),
+    legend.title = element_text(face = "bold"),
+    legend.text = element_text(face = "bold", size = 10))
+
+plot.reads
+
+plot.rarecurve <- amp_rarecurve(dat_types,
+              facet_by = "Protocol",
+              color_by = "Soil_type") + 
+  labs(y = "Number of observed ASVs") +
+  scale_color_manual(values = alpha(colors, 0.5)) +
+  theme_bw(base_size = 10) +
+  labs(x = "",
+       y = "",
+       title = "Number of observed ASVs as function of sequencing depth") +
+  theme(legend.position = "none",
+        plot.title = element_text(hjust = 0.5, face = "bold"),
+        axis.text.x = element_text(angle = 90, face = "bold", vjust = 0.5, size = 10),
+        axis.text.y = element_text(face = "bold", size = 10),
+        plot.margin = unit(c(0, 1, 0, 0), "cm"),
+        strip.background = element_blank(),
+        strip.text.x = element_blank())
+
+plot.rarecurve
+
+# Create subsets
+dat_types_sub4000 <- amp_subset_samples(dat_types, minreads = 4000)
+dat_types_sub4000_ra <- amp_subset_samples(dat_types_sub4000, rarefy = min(colSums(dat_types_sub4000$abund)))
+dat_types_sub8000 <- amp_subset_samples(dat_types, minreads = 8000, !Soil_type == "Beach Sand")
+dat_types_sub8000_ra <- amp_subset_samples(dat_types_sub8000, rarefy = min(colSums(dat_types_sub8000$abund)), !Soil_type == "Beach Sand")
+
+div_multicomp <- dat_types_sub4000_ra %>% 
+  amp_alphadiv(measure = c("observed", "shannon", "simpson"),
+               richness = T) %>%
+  select(SeqID,
+         Soil_type,
+         Protocol,
+         ObservedOTUs,
+         Shannon) %>%
+  pivot_longer(cols = 4:5, names_to = "index", values_to = "diversity")
+
+alpha.diversity <- div_multicomp %>%
+  filter(index == "Shannon") %>%
+  ggplot(aes(x = Soil_type,
+             y = diversity,
+             fill = Soil_type,
+             shape = Protocol)) +
+  facet_wrap(facets = "index", scales = "free_y", nrow = 2) +
+  #geom_violin(alpha = 0.5) +
+  geom_boxplot(outlier.size = 0, alpha = 0.5) +
+  geom_point(position = position_jitterdodge(jitter.width = .1)) +
+  labs(x = "",y = "", title = "Shannon diversity index across samples and protocol") +
+  scale_fill_manual(values = colors) +
+  theme_bw(base_size = 10) +
+  theme(legend.position = "none",
+      axis.text.x = element_text(angle = 90, face = "bold", vjust = 0.5, size = 10),
+      axis.text.y = element_text(face = "bold", size = 10),
+      axis.title = element_text(face = "bold", size = 10),
+      plot.margin = unit(c(0, 1, 0, 0), "cm"),
+      plot.title = element_text(hjust = 0.5, face = "bold", size = 10),
+      strip.text.x = element_text(size = 7, face = "bold"),
+      strip.text.y = element_text(size = 7, face = "bold"),
+      legend.title = element_text(face = "bold"),
+      legend.text = element_text(face = "bold", size = 10))
+
+alpha.diversity
+```
+
+And then for `Shannon`:
+```{r}
+tmp1 <- filter(div_multicomp,index %in% "Shannon")
+
+anova.shannon <- anova(lm(diversity ~ Protocol+Soil_type,data = tmp1)) %>%
+  data.frame() %>%
+  rownames_to_column("Variable") %>%
+  mutate(R2 = Sum.Sq/sum(Sum.Sq)) %>%
+  mutate(across(R2, ~round(., digits = 2))) %>%
+  mutate(pval = ifelse(Pr..F. < 0.001,"<0.001",round(Pr..F.,2))) %>%
+  select(Variable,R2,pval) %>%
+  gridExtra::tableGrob(rows = NULL) %>%
+  gridExtra::grid.arrange(.)
+
+temp <- tmp1 %>% 
+  group_by(Protocol, Soil_type) %>%
+  summarise(mean_div = mean(diversity))
+
+result <- t.test(mean_div ~ Protocol, data = temp)$p.value %>%
+  signif(., digits = 3)
+
+result
+```
+
+
+```{r}
+phyla.text <- dat_types_sub4000 %>%
+  amp_heatmap(group_by = c("Kit"),
+              tax_aggregate = "Phylum",
+              measure = "median",
+              tax_show = 7000,
+              normalise = FALSE,
+              textmap = TRUE) %>%
+  mutate(total = rowSums(.)) %>%
+  select(total) %>%
+  arrange(desc(total)) %>%
+  dplyr::slice(1:20) %>%
+  rownames(.)
+
+heatmap <- dat_types_sub4000 %>%
+  #amp_subset_samples(!Soil_type == "Activated sludge") %>%
+  amp_heatmap(facet_by = "Soil_type",
+            group_by = "Protocol",
+            tax_aggregate = "Phylum",
+            #tax_add = c("Phylum"),
+            tax_show = phyla.text,
+            plot_values = FALSE,
+            color_vector = c("salmon", "white", "royalblue4")) +
+  labs(x = "",
+       y = "",
+       title = "Heatmap aggregated at the phylum level across kits and sample types") +
+  theme_bw(base_size = 10) +
+  theme(legend.position = "right",
+        axis.text.x = element_text(angle = 90, face = "bold", vjust = 0.5, size = 10),
+        axis.text.y = element_text(face = "bold", size = 10),
+        plot.margin = unit(c(0, 1, 0, 0), "cm"),
+        plot.title = element_text(hjust = 0.5, face = "bold", size = 10),
+        strip.text.x = element_text(size = 7, face = "bold"),
+        strip.text.y = element_text(size = 7, face = "bold"),
+        legend.title = element_text(face = "bold"),
+        legend.text = element_text(face = "bold", size = 10))
+
+heatmap
+
+ordination <- dat_types_sub4000_ra %>%
+  #amp_subset_samples(!Soil_type == "Activated sludge") %>%
+  amp_ordinate(sample_color_by = "Soil_type",
+               sample_shape_by = "Protocol",
+               filter_species = 0.01,
+               type = "PCoA",
+               transform = "none",
+               distmeasure = "bray",
+               sample_colorframe = F) +
+  ggforce::geom_mark_ellipse(aes(fill = Soil_type, color = Soil_type)) +
+  #ggtitle("PCoA of microbial diversity", subtitle = bquote(atop(c("PERMANOVA", "Soil type:" ~R^2~ "= 0.54, p-value = 0.001", "Protocol:" ~R^2~ "= 0.02, p-value = 0.214")))) +
+  labs(title = "PCA of microbial diversity",
+       fill = "Sample type") +
+  scale_fill_manual(values = colors) +
+  scale_color_manual(values = colors, guide = "none") +
+  theme_bw(base_size = 10) +
+  theme(legend.position = "right",
+        axis.text.x = element_text(face = "bold", vjust = 0.5, size = 10),
+        axis.text.y = element_text(face = "bold", size = 10),
+        axis.title = element_text(face = "bold", size = 10),
+        plot.margin = unit(c(0, 1, 0, 0), "cm"),
+        plot.title = element_text(hjust = 0.5, face = "bold", size = 10),
+        strip.text.x = element_text(size = 7, face = "bold"),
+        strip.text.y = element_text(size = 7, face = "bold"),
+        legend.title = element_text(face = "bold"),
+        legend.text = element_text(face = "bold", size = 10))
+
+ordination
+
+
+otu <- dat_types_sub4000_ra$abund %>% t() %>%
+  decostand(method = "hellinger")
+
+otu.dist <- dat_types_sub4000_ra$abund %>%
+  mutate(across(where(is.numeric), ~./sum(.))) %>% 
+  t() %>%
+  decostand(method = "hellinger")
+
+permanova <- adonis2(otu.dist ~ Protocol+Soil_type, data = dat_types_sub4000_ra$metadata, permutations = 999, method = "bray")
+
+permanova %>%
+  rownames_to_column("Variable") %>%
+  mutate(across(3:6, ~round(., digits = 3))) %>%
+  gridExtra::tableGrob(rows = NULL) %>%
+  gridExtra::grid.arrange(.)
+
+dist <- vegdist(otu, method = "bray")
+anova(betadisper(dist, dat_types_sub4000_ra$metadata$Protocol))
+
+anosim <- anosim(otu, grouping = dat_types_sub4000_ra$metadata$Protocol, permutations = 999, distance = "bray")
+
+print(anosim)
+```
+
+```{r}
+temp <- amp_export_long(dat_types_sub4000_ra, metadata_vars = c("Protocol","Soil_type"))
+
+temp2 <- temp %>%
+  select(Soil_type, Protocol, OTU, count) %>%
+  filter(count >= 4) %>%
+  group_by(Soil_type, Protocol) %>% 
+  
+
+
+temp <- vegdist(otu, method = "bray")
+  
+
+tmp <- amp_export_long(dat_types_sub4000_ra, metadata_vars = c("Protocol","Soil_type"))
+#  .[,count := as.numeric(count > 0)] %>%
+  .[,keep := uniqueN(SeqID) > 1,by = .(Protocol, Soil_type)] %>%
+  .[(keep)] %>%
+  .[,keep := NULL]
+  
+# Calculate average bray-curtis distance within replicates. 
+tmp2 <- tmp[,.(AvgDist = {
+    data.table(x = OTU,y = SeqID,z = count) %>%
+    dcast(x ~ y,value.var = "z") %>%
+    column_to_rownames("x") %>%
+    t() %>%
+    vegdist(method = "bray") %>% 
+    as.vector() %>%
+    mean()
+  }),by = .(Protocol,Soil_type)]
+
+result <- t.test(AvgDist ~ Protocol, data = tmp2)$p.value %>%
+  signif(., digits = 3)
+
+df_p_val <- data.frame(
+  group1 = "2 x 5 µL",
+  group2 = "2 x 25 µL",
+  label = result,
+  y.position = 0.8)
+
+
+Avg.BA.replicates <- tmp2 %>%
+  ggplot() + 
+  geom_violin(aes(x = Protocol, y = AvgDist), alpha = 0.5, width = 0.25) +
+  ggprism::add_pvalue(df_p_val, xmin = "group1", xmax = "group2", 
+                      label = "label", y.position = "y.position") +
+  geom_point(aes(x = Protocol, y = AvgDist, color = Soil_type)) +
+  geom_line(aes(x = Protocol, y = AvgDist, group = Soil_type, color = Soil_type), alpha = 0.5) +
+  scale_color_manual(values = colors) +
+  labs(x = "", y = "Average Bray-Curtis distance") +
+  theme_bw(base_size = 10) +
+  theme(legend.position = "none",
+      axis.text.x = element_text(angle = 90, face = "bold", vjust = 0.5, size = 10),
+      axis.text.y = element_text(face = "bold", size = 10),
+      axis.title = element_text(face = "bold", size = 10),
+      plot.margin = unit(c(0, 1, 0, 0), "cm"),
+      plot.title = element_text(hjust = 0.5, face = "bold", size = 10),
+      strip.text.x = element_text(size = 7, face = "bold"),
+      strip.text.y = element_text(size = 7, face = "bold"),
+      legend.title = element_text(face = "bold"),
+      legend.text = element_text(face = "bold", size = 10))
+  
+Avg.BA.replicates
+```
+
+```{r}
+data.merged <- dat_types_sub4000_ra %>%
+  amp_merge_replicates(merge_var = "Protocol")
+
+dat.merged_long <- amp_export_long(dat_types, metadata_vars = c("Soil_type", "Protocol"), tax_levels = c("OTU")) %>%
+  select(-SeqID) %>%
+  group_by(OTU, Protocol, Soil_type) %>%
+  summarise(count_sum = sum(count)) %>%
+  ungroup() %>%
+  group_by(Protocol, Soil_type) %>%
+  mutate(mean_abund = count_sum/sum(count_sum)*100) %>%
+  ungroup() %>%
+  select(-count_sum) %>%
+  filter(rowSums(across(where(is.numeric)))!=0) %>%
+  group_by(OTU, Soil_type) %>%
+  pivot_wider(names_from = "Protocol", values_from = "mean_abund") %>%
+  mutate(across(Benchmarking:Benchmarking_old, ~replace_na(., 0))) %>%
+  mutate(presence = case_when(Benchmarking_old == 0 ~ "2 x 5 µL only",
+                              Benchmarking == 0 ~ "2 x 25 µL only",
+                              Benchmarking_old != 0 & Benchmarking != 0 ~ "Both"))
+
+ASV.abund <- dat.merged_long %>%
+  ggplot(aes(x = Benchmarking, y = Benchmarking_old, color = presence)) +
+  geom_abline() +
+  geom_smooth(method = "lm", se = FALSE) +
+  geom_point(alpha = 0.5) +
+  #facet_wrap(facets = vars(Soil_type), ncol = 3) +
+  scale_y_continuous(limits = c(0,1), "Mean ASV abundace 2 x 25 µL") +
+  scale_x_continuous(limits = c(0,1), "Mean ASV abundance 2 x 5 µL") +
+  scale_color_viridis_d(direction = -1) +
+  coord_equal() +
+  theme_bw()
+
+
+ASV.frac <- dat.merged_long %>%
+  pivot_longer(cols = c(Benchmarking_old, Benchmarking), names_to = "Protocol", values_to = "abund") %>%
+  select(-abund) %>%
+  group_by(Soil_type, Protocol) %>%
+  mutate(asv_count = n(),
+         Both = sum(str_count(presence, "Both"))/asv_count,
+         `2 x 25 µL only` = sum(str_count(presence, "2 x 25 µL only"))/asv_count,
+         `2 x 5 µL only`= sum(str_count(presence, "2 x 5 µL only"))/asv_count) %>%
+  ungroup() %>%
+  select(-OTU, -Protocol, -presence, -asv_count) %>%
+  unique() %>%
+  pivot_longer(!Soil_type, names_to = "fraction", values_to = "value") %>%
+  ggplot(aes(x = Soil_type, y = value)) +
+  geom_bar(aes(fill = fraction), stat = 'identity') +
+  coord_flip() +
+  scale_fill_viridis_d(direction = -1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+dat.clay_long %>%
+  filter(presence != "2 x 25 µL only") %>%
+  pivot_longer(cols = c(Benchmarking_old, Benchmarking), names_to = "Protocol", values_to = "abund") %>%
+  ggplot(aes(x = abund, fill = presence)) +
+  geom_histogram(bins = 10)
+
+dat.clay_long %>%
+  filter(presence != "2 x 5 µL only") %>%
+  pivot_longer(cols = c(Benchmarking_old, Benchmarking), names_to = "Protocol", values_to = "abund") %>%
+  ggplot(aes(x = abund, fill = presence)) +
+  geom_histogram(bins = 50)
+
+dat.clay.agg <- ampvis2:::aggregate_abund(dat.clay$abund, dat.clay$tax, tax_aggregate = "Genus", format = "long") %>%
+  rename(Protocol = Sample,
+         count = Sum,
+         Genus = Display) %>%
+  select(-Abundance) %>%
+  unique() %>%
+  group_by(Protocol) %>%
+  mutate(abund = count/sum(count)*100) %>%
+  mutate(across(abund, ~./max(abund))) %>%
+  ungroup() %>%
+  select(-count) %>%
+  group_by(Genus) %>%
+  pivot_wider(names_from = "Protocol", values_from = "abund") %>%
+  mutate(presence = case_when(Benchmarking_old == 0 ~ "2 x 5 µL only",
+                              Benchmarking == 0 ~ "2 x 25 µL only",
+                              Benchmarking_old != 0 & Benchmarking != 0 ~ "Both"))
+
+dat.clay.agg %>%
+  ggplot(aes(x = Benchmarking, y = Benchmarking_old, color = presence)) +
+  geom_abline() +
+  geom_point() +
+  scale_y_continuous(limits = c(-0.1,1)) +
+  scale_x_continuous(limits = c(-0.1,1))
+```
+
+
+
+```{r}
+d10 <- amp_subset_samples(dat_types, Protocol == "2 x 5 µL", normalise = T, rarefy = 20000, minreads = 10000, !Soil_type == "Beach sand")
+
+d50 <- amp_subset_samples(dat_types, Protocol == "2 x 25 µL", normalise = T, rarefy = 20000, minreads = 10000, !Soil_type == "Beach sand")
+
+ASVs_noGenus <- as.character(d10$tax[d10$tax$Genus == "" | is.na(d10$tax$Genus),"OTU"])
+
+d10_clas_g <- amp_subset_taxa(d10, tax_vector = ASVs_noGenus, remove = TRUE)
+
+gV10 <- amp_heatmap(d10_clas_g,
+            group_by = c("Kit"),
+            tax_aggregate = "Genus",
+            measure = "median",
+            tax_show = 7000,
+            normalise = FALSE,
+            textmap = TRUE
+            )
+
+gV10 <- setDT(gV10, keep.rownames = TRUE)
+gV10 <- as.data.frame(gV10)
+names(gV10)[1] <- "Genus"
+names(gV10)[2] <- "V10_mean_abundance"
+
+ASVs_noGenus <- as.character(d50$tax[d50$tax$Genus == "" | is.na(d50$tax$Genus),"OTU"])
+
+d50_clas_g <- amp_subset_taxa(d50, tax_vector = ASVs_noGenus, remove = TRUE)
+
+gV50 <- amp_heatmap(d50_clas_g,
+            group_by = c("Kit"),
+            tax_aggregate = "Genus",
+            measure = "median",
+            tax_show = 7000,
+            normalise = FALSE,
+            textmap = TRUE
+            )
+
+gV50 <- setDT(gV50, keep.rownames = TRUE)
+gV50 <- as.data.frame(gV50)
+names(gV50)[1] <- "Genus"
+names(gV50)[2] <- "V50_mean_abundance"
+
+#merge V13 and V4 data
+gV1050 <- merge.data.frame(gV10, gV50, by ="Genus", all.x = TRUE, all.y = TRUE)
+#replace NA's with 0
+gV1050[is.na(gV1050)] <- 0
+#remove Genera that are < 0.001% abundant in either V13 or V4 
+gV1050 <- gV1050 %>% filter(V10_mean_abundance >= 0.001 | V50_mean_abundance >= 0.001)
+#Change all values <0.001 to 0.001 to allow calculation of fold difference in between V13 and V4 
+gV1050[gV1050<0.001] <- 0.001
+#Calculate -log2(fold change) (FC)
+gV1050 <- gV1050 %>% 
+  mutate(FC=-log2(V10_mean_abundance/V50_mean_abundance))
+#Subset genera based on their preferential detection
+gV1050 <- gV1050 %>%
+  mutate(Bias=if_else(FC>1,"More abundant with 2 x 25 µL",if_else(FC<(-1), "More abundant with 2 x 5 µL", "Equally detected")))
+summary <- gV1050 %>%
+  group_by(Bias) %>%
+  summarise(Counts = n())
+
+write.csv(gV1050,"output/DataS2.csv", row.names = FALSE, quote = FALSE)
+
+#Create scatter plot
+p <- ggplot(gV1050, aes_string(x = "V10_mean_abundance", y= "V50_mean_abundance", fill="Bias")) + 
+  geom_point(size = 4, alpha = 0.5, shape = 21) +
+  geom_abline(size = 0.5) +
+    ggrepel::geom_label_repel(
+    aes(label = Genus),
+    data = filter(gV1050, gV1050$FC>1 & gV1050$V50_mean_abundance>0.01),
+    color = "black", fill= NA, box.padding = 1, max.overlaps = 10) +
+      ggrepel::geom_label_repel(
+    aes(label = Genus),
+    data = filter(gV1050, gV1050$FC<(-1) & gV1050$V10_mean_abundance>0.01),
+    color = "black", fill= NA, box.padding = 1, max.overlaps = 10) +
+  xlab("Mean amplicon Genus read abundance (%) [2 x 5 µL]") + 
+  ylab("Mean amplicon Genus read abundance (%) [2 x 25 µL]") +
+  scale_x_log10(limits=c(0.001,2)) +
+  scale_y_log10(limits=c(0.001,2)) +
+  theme_bw() +
+  scale_fill_manual(values = c("grey", "royalblue4", "salmon"))
+
+#Create heatmaps
+gV1050_V10 <- gV1050 %>%
+  filter(FC<(-1)) %>%
+  arrange(desc(V10_mean_abundance)) %>%
+  select(1:3) %>%
+  slice(1:20) %>%
+  rename("2 x 5 µL" = V10_mean_abundance, "2 x 25 µL" = V50_mean_abundance) %>%
+  gather(2:3, key="Amplicon",value = "Abundance")
+gV1050_V10sub <- gV1050_V10 %>% filter(Amplicon=="2 x 5 µL")
+gV1050_V10$Genus <- reorder(gV1050_V10sub$Genus, gV1050_V10sub$Abundance)  
+gV1050_V50 <- gV1050 %>%
+  filter(FC>1) %>%
+  arrange(desc(V50_mean_abundance)) %>%
+  select(1:3) %>%
+  slice(1:20) %>%
+  rename("2 x 5 µL" = V10_mean_abundance, "2 x 25 µL" = V50_mean_abundance) %>%
+  gather(2:3, key="Amplicon",value = "Abundance")
+gV1050_V50sub <- gV1050_V50 %>% filter(Amplicon=="2 x 25 µL")
+gV1050_V50$Genus <- reorder(gV1050_V50sub$Genus, gV1050_V50sub$Abundance)
+
+p1 <- ggplot(gV1050_V10, aes(Amplicon, Genus)) +
+    geom_tile(aes(fill = Abundance)) + 
+    geom_text(aes(label = round(Abundance, 2))) +
+    #scale_fill_gradientn(colors = rev(c("#a50026", "#d73027", "#f46d43", "#fdae61",
+    #                               "#fee090","#ffffbf","#e0f3f8","#abd9e9","#74add1",
+    #                               "#4575b4","#313695")), trans = "log10",, breaks = c(0.001, 0.01, 0.1, 1), limits=c(0.001,1)) +
+  #scale_fill_viridis_b(option="plasma", trans = "log10") +
+  scale_fill_gradient2(low = "salmon", mid = "white", high = "royalblue4", midpoint = 0.05) +
+    theme_bw()
+
+p2 <- ggplot(gV1050_V50, aes(Amplicon, Genus)) +
+    geom_tile(aes(fill = Abundance)) + 
+    geom_text(aes(label = round(Abundance, 2))) +
+    #scale_fill_gradientn(colors = rev(c("#a50026", "#d73027", "#f46d43", "#fdae61",
+    #                               "#fee090","#ffffbf","#e0f3f8","#abd9e9","#74add1",
+    #                               "#4575b4","#313695")), trans = "log10",, breaks = c(0.001, 0.01, 0.1, 1),
+    #                     limits=c(0.001,1)) +
+    scale_fill_gradient2(low = "salmon", mid = "white", high = "royalblue4", midpoint = 0.5) +
+    theme_bw()
+
+p3 <- p+p1+p2
+p3
+```
+
+# Plotting
+```{r}
+#Figur 1
+design <- "
+  12
+  34
+"
+
+heatmap + alpha.diversity + ordination + p + plot_layout(design = design, guides = "collect")
+  #theme(legend.position = "right")
+
+ggsave("scaledown1.png", width = 15.36, height = 8.14, dpi = 600)
+```
+
+
+
+
+
+```{r}
+tiff("Amplicon_scale.tiff", units="in", width=5, height=5, res=300)
+heatmap + ordination / Avg.BA.replicates + ASV.abund / ASV.frac
+dev.off()
+
+png("Amplicon_scale.png", width = 1500, height = 750) 
+(heatmap + Avg.BA.replicates) / (p + ordination)
+dev.off()
+
+
+```
+

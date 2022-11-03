@@ -1,0 +1,178 @@
+---
+title: "Batch-effects"
+author: "TYM"
+date: "13/2/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+knitr::opts_chunk$set(
+  echo    = F,
+  #fig.pos = "H", 
+  message = FALSE, 
+  warning = FALSE)
+options("scipen"=100, "digits"=4)
+
+library(data.table)
+library(tidyverse)
+library(ampvis2)
+library(DESeq2)
+library(vegan)
+source("loaddata.R")
+```
+
+Load data.
+```{r}
+dat <- readRDS("data/tilThomas.rds")
+
+# Extract relevant metadata.
+meta <- dat$metadata %>% select(SeqID, Analysis, Soil_type)
+
+# Extract the OTU matrix.
+otu <- amp_export_long(dat, metadata_vars = c("Analysis", "Soil_type"), tax_levels = "OTU") %>%
+  .[,pct := count/sum(count), by = SeqID] 
+
+otu_count <- dcast(otu,OTU ~ SeqID,value.var = "count") %>%
+  select(OTU,one_of(meta$SeqID))
+otu_pct   <- dcast(otu,OTU ~ SeqID,value.var = "pct") %>%
+  select(OTU,one_of(meta$SeqID))
+
+# Extract matrix summarized to phylum.
+phylum <- amp_export_long(dat,metadata_vars = c("Analysis","Soil_type"),tax_levels = "OTU") %>%
+  .[,.(count = sum(count)),by = .(SeqID,OTU,Analysis,Soil_type)] %>%
+  .[,pct := count/sum(count),by = SeqID]# %>%
+  #.[Phylum != ""]
+
+#phylum_count <- dcast(phylum,OTU ~ SeqID,value.var = "count") %>%
+ # select(OTU,one_of(meta$SeqID))
+
+#phylum_pct   <- dcast(phylum,OTU ~ SeqID,value.var = "pct") %>%
+ # select(OTU,one_of(meta$SeqID))
+```
+
+# Differential abundance analysis
+ 
+```{r}
+de_AS <- DESeqDataSetFromMatrix(
+  countData = otu_count,
+  colData   = meta,
+  tidy      = T,
+  design    = ~ Soil_type + Analysis)
+```
+ 
+ 
+## Is there an overall batch effect?
+
+```{r}
+de_phylum <- DESeqDataSetFromMatrix(
+  countData = otu_count,
+  colData   = meta,
+  tidy      = T,
+  design    = ~ Soil_type + Analysis)
+
+de  <- DESeq(de_phylum,fitType = "local",test = "LRT",reduced = ~ Soil_type)
+res <- results(de) %>% 
+  as.data.frame() %>%
+  mutate(OTU = otu_count$OTU) %>%
+  filter(!is.na(padj)) %>%
+  mutate(log10padj = -log10(padj)) %>%
+  mutate(signf     = ifelse(padj < 0.05,"Yes","No"))
+
+ggplot(res,aes(x = baseMean,y = padj,colour = signf)) +
+  geom_point() +
+  labs(colour = "P-adj < 0.05") +
+  theme(legend.position = c(1,0.5),legend.justification = c(1,0.5))
+
+# Print the differentially abundant phyla.
+res_diff <- filter(res,signf == "Yes") %>% select(OTU,baseMean,padj)
+res_diff
+```
+
+Visualize the differntially abundant phyla.
+
+```{r}
+ggplot(filter(phylum,OTU %in% res_diff$OTU),
+       aes(x = Analysis,y = pct)) +
+  facet_grid(rows = vars(OTU),cols = vars(Soil_type),scales = "free_y") +
+  geom_jitter(width = .1)
+```
+
+## Is the batch-effect different between `Soil_type`?
+
+```{r}
+de_phylum <- DESeqDataSetFromMatrix(
+  countData = otu_count,
+  colData   = meta,
+  tidy      = T,
+  design    = ~ Soil_type + Analysis + Soil_type:Analysis)
+
+de  <- DESeq(de_phylum,fitType = "local",test = "LRT",reduced = ~ Soil_type + Analysis)
+res <- results(de) %>% 
+  as.data.frame() %>%
+  mutate(OTU = otu_count$OTU) %>%
+  filter(!is.na(padj)) %>%
+  mutate(log10padj = -log10(padj)) %>%
+  mutate(signf     = ifelse(padj < 0.05,"Yes","No"))
+
+ggplot(res,aes(x = baseMean,y = padj,colour = signf)) +
+  geom_point() +
+  labs(colour = "P-adj < 0.05") +
+  theme(legend.position = c(1,0.5),legend.justification = c(1,0.5))
+
+# Print the differentially abundant phyla.
+res_diff <- filter(res,signf == "Yes") %>% select(OTU,baseMean,padj)
+res_diff
+```
+
+Visualize the differntially abundant phyla.
+
+```{r}
+ggplot(filter(phylum,OTU %in% res_diff$OTU),
+       aes(x = Analysis,y = pct)) +
+  facet_grid(rows = vars(OTU),cols = vars(Soil_type),scales = "free_y") +
+  geom_jitter(width = .1)
+```
+
+# Multivariate analysis
+
+We fit and RDA model.
+
+```{r}
+X <- otu_pct %>%
+  mutate_at(vars(-OTU),sqrt) %>%
+  column_to_rownames(var = "OTU") %>%
+  t()
+
+Y <- meta %>% select(Analysis,Soil_type)
+
+fit <- rda(X ~ Analysis*Soil_type,data = Y,scale = T)
+fit
+```
+
+plot the model.
+```{r}
+plot(fit)
+```
+
+Lets do an anova.
+```{r}
+anova(fit,by = "terms")
+```
+
+The interaction is non-significant, we drop it and redo analysis.
+
+```{r}
+fit <- rda(X ~ Analysis+ Soil_type,data = Y,scale = T)
+fit
+```
+
+plot the model.
+```{r}
+plot(fit)
+```
+
+Lets do an anova.
+```{r}
+anova(fit,by = "terms")
+```
