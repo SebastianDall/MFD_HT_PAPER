@@ -1,3 +1,15 @@
+# Data directories
+Amplicon_data/
+
+Amplicon_scaledown/data/
+
+*output_old/
+
+*.xlsx
+
+
+
+
 # History files
 .Rhistory
 .Rapp.history
