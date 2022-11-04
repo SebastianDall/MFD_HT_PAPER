@@ -11,9 +11,12 @@ output:
 library(knitr)
 knitr::opts_chunk$set(
   echo    = F,
-  #fig.pos = "H", 
-  message = FALSE, 
-  warning = FALSE)
+  # fig.pos = "H",
+  message = FALSE,
+  warning = FALSE
+)
+
+setwd(here("Amplicon_scaledown"))
 
 # Load the needed packages.
 library(data.table)
