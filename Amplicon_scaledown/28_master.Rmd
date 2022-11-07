@@ -9,6 +9,7 @@ output:
 
 ```{r setup, include=FALSE}
 library(knitr)
+library(here)
 knitr::opts_chunk$set(
   echo    = F,
   # fig.pos = "H",
@@ -144,7 +145,7 @@ dat_types_sub4000_ra <- amp_subset_samples(dat_types_sub4000, rarefy = min(colSu
 dat_types_sub8000 <- amp_subset_samples(dat_types, minreads = 8000, !Soil_type == "Beach Sand")
 dat_types_sub8000_ra <- amp_subset_samples(dat_types_sub8000, rarefy = min(colSums(dat_types_sub8000$abund)), !Soil_type == "Beach Sand")
 ```
-
+#### alphadiversity
 ```{r alphadiversity}
 div_multicomp <- dat_types_sub4000_ra %>%
   amp_alphadiv(
@@ -212,7 +213,7 @@ result <- t.test(mean_div ~ Protocol, data = temp)$p.value %>%
 
 result
 ```
-
+#### Heatmap
 
 ```{r heatmap}
 phyla.text <- dat_types_sub4000 %>%
@@ -252,6 +253,7 @@ heatmap <- dat_types_sub4000 %>%
 heatmap
 ```
 
+#### Ordination
 ```{r ordination}
 ordination_CA_relabfil_0.1_all <- dat_types_sub4000_ra %>%
   plotAmpliconOrdination()
@@ -289,7 +291,7 @@ anosim <- anosim(otu, grouping = dat_types_sub4000_ra$metadata$Protocol, permuta
 print(anosim)
 ```
 
-
+#### Distance heatmap
 ```{r distance matrix}
 otu_sub400_ra_hellinger <- dat_types_sub4000_ra$abund %>%
   t() %>%
@@ -331,6 +333,7 @@ otu_sub400_ra_hellinger_bray_dist_sample_names_long %>%
 
 
 
+#### Rel abundance correlation plot
 > Next chunk merges replicates and sample type. It needs to be one plot per soil type
 
 ```{r}
