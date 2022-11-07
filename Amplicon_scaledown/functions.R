@@ -32,8 +32,6 @@ plotAmpliconOrdination <- function(df, ord_type = "CA", rel_ab_filter = 0.1) {
             title = paste0(ord_type, " of microbial diversity"),
             fill = "Sample type"
         ) +
-        scale_fill_manual(values = colors) +
-        scale_color_manual(values = colors, guide = "none") +
         articletheme +
         theme(legend.position = "none")
 }
@@ -65,4 +63,18 @@ abundance_filter <- function(df, abundance_threshold = 0.1, verbose = F) {
     }
 
     return(df_filtered)
+}
+
+
+
+plotDiffRelabund <- function(df, filter_soil_type) {
+    gg <- df %>%
+        filter(Soil_type == filter_soil_type) %>%
+        ggplot(aes(x = Fullscale, y = Downscaled, color = Bias)) +
+        geom_point(size = 4, alpha = 0.5, position = position_jitter()) +
+        scale_color_manual(values = c("grey", "red", "blue")) +
+        geom_abline(size = 0.5) +
+        articletheme
+
+    return(gg)
 }
