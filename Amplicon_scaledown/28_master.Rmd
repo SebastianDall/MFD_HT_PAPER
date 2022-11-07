@@ -325,16 +325,49 @@ colnames(otu_sub400_ra_hellinger_bray_dist_sample_names) <- c("SeqID", "Soil_typ
 otu_sub400_ra_hellinger_bray_dist_sample_names_long <- otu_sub400_ra_hellinger_bray_dist_sample_names %>%
   pivot_longer(-c(SeqID, Soil_type_sample), names_to = "sample_id", values_to = "bray_dist")
 
-# %>%
-# arrange(Soil_type_sample) %>%
-# group_by(Soil_type_sample) %>%
-# filter(row_number() >= which(Soil_type_sample == sample_id))
 
-otu_sub400_ra_hellinger_bray_dist_sample_names_long %>%
+axiscolors <- otu_sub400_ra_hellinger_bray_dist_sample_names_long %>%
+  distinct(Soil_type_sample) %>%
+  arrange(Soil_type_sample) %>%
+  mutate(axiscolor = if_else(
+    str_detect(Soil_type_sample, "Beach Sand -"),
+    colors[1],
+    if_else(
+      str_detect(Soil_type_sample, "^Clay -"),
+      colors[2],
+      if_else(
+        str_detect(Soil_type_sample, "Organic -"),
+        colors[3],
+        if_else(
+          str_detect(Soil_type_sample, "Sand -"),
+          colors[4],
+          colors[5]
+        )
+      )
+    )
+  ))
+
+
+gg_bray_dist_matrix <- otu_sub400_ra_hellinger_bray_dist_sample_names_long %>%
   ggplot(aes(x = Soil_type_sample, y = sample_id, fill = bray_dist)) +
   geom_tile(color = "white") +
+  labs(x = "", y = "") +
   articletheme +
-  labs(fill = "Dissimilarity", title = "Bray-Curtis Dissimilarity based on Hellinger transformed Relative Abundance")
+  labs(fill = "Dissimilarity", title = "Bray-Curtis Dissimilarity based on Hellinger transformed Relative Abundance") +
+  theme(
+    axis.text.x = element_text(face = "bold", color = axiscolors$axiscolor),
+    axis.text.y = element_text(face = "bold", color = axiscolors$axiscolor)
+  )
+
+gg_bray_dist_matrix
+
+ggsave(here("Amplicon_scaledown", "figures", "hellinger_transformed_bray_curtis_dist_matrix.png"), device = "png", width = 12, height = 10)
+```
+
+```{r}
+ggarrange(gg_arranged_ordination, gg_bray_dist_matrix, nrow = 2)
+
+ggsave(here("Amplicon_scaledown", "figures", "ordination_bray_combined.png"), device = "png", height = 13, width = 13)
 ```
 
 
