@@ -254,15 +254,21 @@ heatmap
 ```
 
 #### Ordination
+
+
 ```{r ordination}
 ordination_CA_relabfil_0.1_all <- dat_types_sub4000_ra %>%
-  plotAmpliconOrdination()
+  plotAmpliconOrdination() +
+  scale_fill_manual(values = colors) +
+  scale_color_manual(values = colors, guide = "none")
 
 ordination_CA_relabfil_0.1_no_beachsand <- dat_types_sub4000_ra %>%
   amp_subset_samples(Soil_type != "Beach Sand") %>%
-  plotAmpliconOrdination()
+  plotAmpliconOrdination() +
+  scale_fill_manual(values = colors[-1]) +
+  scale_color_manual(values = colors[-1], guide = "none")
 
-ggarrange(ordination_CA_relabfil_0.1_all, ordination_CA_relabfil_0.1_no_beachsand, labels = c("A", "B"), common.legend = T)
+gg_arranged_ordination <- ggarrange(ordination_CA_relabfil_0.1_all, ordination_CA_relabfil_0.1_no_beachsand, labels = c("A", "B"), common.legend = T)
 ```
 
 ```{r anosim}
