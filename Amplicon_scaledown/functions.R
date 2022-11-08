@@ -33,7 +33,10 @@ plotAmpliconOrdination <- function(df, ord_type = "CA", rel_ab_filter = 0.1) {
             fill = "Sample type"
         ) +
         articletheme +
-        theme(legend.position = "none")
+        theme(
+            legend.position = "none",
+            axis.text.x = element_text(angle = 0)
+        )
 }
 
 
@@ -68,13 +71,22 @@ abundance_filter <- function(df, abundance_threshold = 0.1, verbose = F) {
 
 
 plotDiffRelabund <- function(df, filter_soil_type) {
+    soiltypeTitle <- df %>%
+        filter(Soil_type == filter_soil_type) %>%
+        distinct(Soil_type)
+
     gg <- df %>%
         filter(Soil_type == filter_soil_type) %>%
         ggplot(aes(x = Fullscale, y = Downscaled, color = Bias)) +
         geom_point(size = 4, alpha = 0.5, position = position_jitter()) +
         scale_color_manual(values = c("grey", "red", "blue")) +
         geom_abline(size = 0.5) +
-        articletheme
+        articletheme +
+        theme(
+            legend.position = "bottom",
+            axis.text.x = element_text(angle = 0)
+        )
+    labs(x = "Relative Abundance [%], 2 x 25 µL", y = "Relative Abundance [%], 2 x 5 µL", title = paste0("Amplicon Read Relative Abundance for ", soiltypeTitle$Soil_type[1]))
 
     return(gg)
 }
