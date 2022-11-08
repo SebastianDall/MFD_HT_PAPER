@@ -85,8 +85,8 @@ plotDiffRelabund <- function(df, filter_soil_type) {
         theme(
             legend.position = "bottom",
             axis.text.x = element_text(angle = 0)
-        )
-    labs(x = "Relative Abundance [%], 2 x 25 µL", y = "Relative Abundance [%], 2 x 5 µL", title = paste0("Amplicon Read Relative Abundance for ", soiltypeTitle$Soil_type[1]))
+        ) +
+        labs(x = "Relative Abundance [%], 2 x 25 µL", y = "Relative Abundance [%], 2 x 5 µL", title = paste0("Amplicon Read Relative Abundance for ", soiltypeTitle$Soil_type[1]))
 
     return(gg)
 }
