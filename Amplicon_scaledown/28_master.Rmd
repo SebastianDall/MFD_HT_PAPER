@@ -120,8 +120,17 @@ result
 ```
 
 
-> Sekventeringsdybde. Skriv det er rarefied til XXXX
+
 ```{r}
+tabReads <- merge(
+  dat_types$metadata,
+  data.frame(NumReads = apply(dat_types$abund, 2, sum)),
+  by = 0
+)
+
+numberOfReads <- tabReads %>%
+  select(SeqID, Soil_type, Kit, NumReads)
+
 alpha_div_subs4000_ra <- dat_types_sub4000_ra %>%
   amp_alphadiv(
     measure = c("observed", "shannon", "simpson"),
@@ -133,10 +142,15 @@ alpha_div_subs4000_ra <- dat_types_sub4000_ra %>%
     Protocol,
     ObservedOTUs,
     Shannon
-  ) %>%
+  )
+
+alpha_div_subs4000_ra_summarised <- alpha_div_subs4000_ra %>%
+  left_join(numberOfReads) %>%
   group_by(Soil_type, Protocol) %>%
   mutate(failed_lib = 3 - n()) %>%
   summarise(
+    meanReads = round(mean(NumReads)),
+    # sdReads = sd(NumReads),
     meanOTU = round(mean(ObservedOTUs), 0),
     sdOTU = sd(ObservedOTUs),
     mean_shannon = mean(Shannon),
@@ -145,13 +159,17 @@ alpha_div_subs4000_ra <- dat_types_sub4000_ra %>%
   ) %>%
   ungroup() %>%
   mutate(across(where(is.numeric), ~ round(., 2)))
+arrange(Soil_type, Protocol)
+
+hjustification_matrix <- as.vector(matrix(c(0, 0, 1, 1, 1, 1, 1, 1), ncol = 8, nrow = nrow(alpha_div_subs4000_ra_summarised), byrow = TRUE))
+xjustification_matrix <- as.vector(matrix(c(0.1, 0.1, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9), ncol = 8, nrow = nrow(alpha_div_subs4000_ra_summarised), byrow = TRUE))
 
 
-alpha_table <- alpha_div_subs4000_ra %>%
+alpha_table <- alpha_div_subs4000_ra_summarised %>%
   mutate(Soil_type = if_else(Protocol == "2 x 5 µL", "", Soil_type)) %>%
   relocate(failed_lib, .after = Protocol) %>%
-  rename(`Soil Type` = Soil_type, `Mean\nASVs` = meanOTU, `Sd\nASVs` = sdOTU, `Mean\nShannon` = mean_shannon, `Sd\nShannon` = sdShannon, `Failed\nLibraries` = failed_lib) %>%
-  ggtexttable(rows = NULL, theme = ttheme("blank")) %>%
+  rename(`Soil Type` = Soil_type, `Mean\nReads` = meanReads, `Mean\nASVs` = meanOTU, `Sd\nASVs` = sdOTU, `Mean\nShannon` = mean_shannon, `Sd\nShannon` = sdShannon, `Failed\nLibraries` = failed_lib) %>%
+  ggtexttable(rows = NULL, theme = ttheme(colnames.style = colnames_style(fill = "white"), tbody.style = tbody_style(fill = "white", hjust = hjustification_matrix, x = xjustification_matrix))) %>%
   tab_add_hline(at.row = 1:2, row.side = "top", linewidth = 2) %>%
   tab_add_hline(at.row = seq(4, 10, 2), row.side = "top", linewidth = 1)
 ```
@@ -208,8 +226,6 @@ ggsave(here("Amplicon_scaledown", "figures", "heatmap_alpha_div.png"), device = 
 ```
 
 #### Ordination
-
-
 ```{r ordination}
 ordination_CA_relabfil_0.1_all <- dat_types_sub4000_ra %>%
   plotAmpliconOrdination() +
@@ -219,6 +235,7 @@ ordination_CA_relabfil_0.1_all <- dat_types_sub4000_ra %>%
 ordination_CA_relabfil_0.1_no_beachsand <- dat_types_sub4000_ra %>%
   amp_subset_samples(Soil_type != "Beach Sand") %>%
   plotAmpliconOrdination() +
+  labs(title = "CA of microbial diversity, without beach-sand") +
   scale_fill_manual(values = colors[-1]) +
   scale_color_manual(values = colors[-1], guide = "none")
 ```
@@ -303,6 +320,7 @@ axiscolors <- otu_sub400_ra_hellinger_bray_dist_sample_names_long %>%
 gg_bray_dist_matrix <- otu_sub400_ra_hellinger_bray_dist_sample_names_long %>%
   ggplot(aes(x = Soil_type_sample, y = sample_id, fill = bray_dist)) +
   geom_tile(color = "white") +
+  scale_fill_gradient(low = "black", high = "white") +
   labs(x = "", y = "") +
   articletheme +
   labs(fill = "Dissimilarity", title = "Bray-Curtis Dissimilarity based on Hellinger transformed Relative Abundance") +
@@ -383,6 +401,6 @@ gg_arranged_ordination <- ggarrange(ordination_CA_relabfil_0.1_all, ordination_C
 gg_diff_dist <- ggarrange(gg_bray_dist_matrix, ggdiff_clay, labels = c("C", "D"), ncol = 2, widths = c(1, 0.8))
 ggarrange(gg_arranged_ordination, gg_diff_dist, nrow = 2)
 
-ggsave(here("Amplicon_scaledown", "figures", "ordination_bray_diff_combined.png"), device = "png", height = 13, width = 16)
+ggsave(here("Amplicon_scaledown", "figures", "ordination_bray_diff_combined_v2.png"), device = "png", height = 13, width = 16)
 ```
 
