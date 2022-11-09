@@ -42,93 +42,93 @@ dat_types <- datraw %>%
 
 For FastSpin, MIDAS HT and ZymoMagbead HT we observe that especially the Organic samples fails to produce successful libraries resulting in low amount of reads. This is possible related directly to PCR inhibition due to lack of removal of humic substances. 
 ```{r}
-tabReads <- merge(
-  dat_types$metadata,
-  data.frame(NumReads = apply(dat_types$abund, 2, sum)),
-  by = 0
-)
+# tabReads <- merge(
+#   dat_types$metadata,
+#   data.frame(NumReads = apply(dat_types$abund, 2, sum)),
+#   by = 0
+# )
 
-plot.Num_reads <- tabReads %>%
-  ggplot(aes(x = Soil_type, y = NumReads, fill = Soil_type)) +
-  facet_wrap(facets = vars(Kit), nrow = 1) +
-  geom_boxplot(alpha = 0.5) +
-  geom_point(position = position_jitterdodge(jitter.width = .1)) +
-  theme(legend.position = "right") +
-  labs(
-    x = "",
-    y = "",
-    title = "Number of reads across sample types"
-  ) +
-  scale_fill_manual(values = colors, name = "") +
-  theme_bw(base_size = 10) +
-  theme(
-    legend.position = "none",
-    axis.text.x = element_blank(),
-    axis.text.y = element_text(face = "bold", size = 10),
-    axis.title = element_blank(),
-    axis.ticks.x = element_blank(),
-    plot.margin = unit(c(0, 1, 0, 0), "cm"),
-    plot.title = element_text(hjust = 0.5, face = "bold", size = 10),
-    strip.text.x = element_blank(),
-    strip.text.y = element_blank(),
-    legend.title = element_text(face = "bold"),
-    legend.text = element_text(face = "bold", size = 10)
-  )
+# plot.Num_reads <- tabReads %>%
+#   ggplot(aes(x = Soil_type, y = NumReads, fill = Soil_type)) +
+#   facet_wrap(facets = vars(Kit), nrow = 1) +
+#   geom_boxplot(alpha = 0.5) +
+#   geom_point(position = position_jitterdodge(jitter.width = .1)) +
+#   theme(legend.position = "right") +
+#   labs(
+#     x = "",
+#     y = "",
+#     title = "Number of reads across sample types"
+#   ) +
+#   scale_fill_manual(values = colors, name = "") +
+#   theme_bw(base_size = 10) +
+#   theme(
+#     legend.position = "none",
+#     axis.text.x = element_blank(),
+#     axis.text.y = element_text(face = "bold", size = 10),
+#     axis.title = element_blank(),
+#     axis.ticks.x = element_blank(),
+#     plot.margin = unit(c(0, 1, 0, 0), "cm"),
+#     plot.title = element_text(hjust = 0.5, face = "bold", size = 10),
+#     strip.text.x = element_blank(),
+#     strip.text.y = element_blank(),
+#     legend.title = element_text(face = "bold"),
+#     legend.text = element_text(face = "bold", size = 10)
+#   )
 
-plot.Num_reads
+# plot.Num_reads
 
-plot.failed_libs <- tabReads %>%
-  group_by(Kit, Soil_type) %>%
-  summarise(failed_lib = sum(NumReads < 10E03)) %>%
-  ungroup() %>%
-  ggplot(aes(x = Kit, y = failed_lib, fill = Soil_type)) +
-  geom_bar(stat = "identity", alpha = 0.5, color = "black") +
-  facet_wrap(facets = vars(Kit), nrow = 1, scales = "free_x") +
-  labs(
-    x = "",
-    y = "",
-    title = "Number of failed libraries",
-    fill = "Sample type"
-  ) +
-  scale_fill_manual(values = colors) +
-  theme_bw(base_size = 10) +
-  theme(
-    legend.position = "none",
-    axis.text.x = element_blank(),
-    axis.text.y = element_text(face = "bold", size = 10),
-    axis.title = element_blank(),
-    axis.ticks.x = element_blank(),
-    plot.margin = unit(c(0, 1, 0, 0), "cm"),
-    plot.title = element_text(hjust = 0.5, face = "bold", size = 10),
-    strip.text.x = element_text(size = 7, face = "bold"),
-    strip.text.y = element_text(size = 7, face = "bold"),
-    legend.title = element_text(face = "bold"),
-    legend.text = element_text(face = "bold", size = 10)
-  )
+# plot.failed_libs <- tabReads %>%
+#   group_by(Kit, Soil_type) %>%
+#   summarise(failed_lib = sum(NumReads < 10E03)) %>%
+#   ungroup() %>%
+#   ggplot(aes(x = Kit, y = failed_lib, fill = Soil_type)) +
+#   geom_bar(stat = "identity", alpha = 0.5, color = "black") +
+#   facet_wrap(facets = vars(Kit), nrow = 1, scales = "free_x") +
+#   labs(
+#     x = "",
+#     y = "",
+#     title = "Number of failed libraries",
+#     fill = "Sample type"
+#   ) +
+#   scale_fill_manual(values = colors) +
+#   theme_bw(base_size = 10) +
+#   theme(
+#     legend.position = "none",
+#     axis.text.x = element_blank(),
+#     axis.text.y = element_text(face = "bold", size = 10),
+#     axis.title = element_blank(),
+#     axis.ticks.x = element_blank(),
+#     plot.margin = unit(c(0, 1, 0, 0), "cm"),
+#     plot.title = element_text(hjust = 0.5, face = "bold", size = 10),
+#     strip.text.x = element_text(size = 7, face = "bold"),
+#     strip.text.y = element_text(size = 7, face = "bold"),
+#     legend.title = element_text(face = "bold"),
+#     legend.text = element_text(face = "bold", size = 10)
+#   )
 
-plot.rarecurve <- dat_types %>%
-  amp_rarecurve(facet_by = "Kit", color_by = "Soil_type") +
-  facet_grid(cols = vars(Kit)) +
-  scale_color_manual(values = alpha(colors, 0.5)) +
-  theme_bw(base_size = 10) +
-  labs(
-    x = "",
-    y = "",
-    title = "Number of observed ASVs as function of sequencing depth"
-  ) +
-  theme_bw(base_size = 10) +
-  theme(
-    legend.position = "none",
-    plot.title = element_text(hjust = 0.5, face = "bold", size = 10),
-    axis.text.x = element_text(angle = 90, face = "bold", vjust = 0.5, size = 10),
-    axis.text.y = element_text(face = "bold", size = 10),
-    plot.margin = unit(c(1, 1, 0, 0), "cm"),
-    strip.background = element_blank(),
-    strip.text.x = element_blank()
-  )
+# plot.rarecurve <- dat_types %>%
+#   amp_rarecurve(facet_by = "Kit", color_by = "Soil_type") +
+#   facet_grid(cols = vars(Kit)) +
+#   scale_color_manual(values = alpha(colors, 0.5)) +
+#   theme_bw(base_size = 10) +
+#   labs(
+#     x = "",
+#     y = "",
+#     title = "Number of observed ASVs as function of sequencing depth"
+#   ) +
+#   theme_bw(base_size = 10) +
+#   theme(
+#     legend.position = "none",
+#     plot.title = element_text(hjust = 0.5, face = "bold", size = 10),
+#     axis.text.x = element_text(angle = 90, face = "bold", vjust = 0.5, size = 10),
+#     axis.text.y = element_text(face = "bold", size = 10),
+#     plot.margin = unit(c(1, 1, 0, 0), "cm"),
+#     strip.background = element_blank(),
+#     strip.text.x = element_blank()
+#   )
 
-# Stacked plot
-plot.failed_libs / plot.Num_reads / plot.rarecurve
+# # Stacked plot
+# plot.failed_libs / plot.Num_reads / plot.rarecurve
 ```
 
 **Conclusion: Especially the MIDAS HT kit struggles with humic substance removal**
@@ -151,7 +151,11 @@ We asses $\alpha$-diversity after rarefying the reads pr sample. We look at the 
 ```{r}
 missingMIDAS <- tibble(Soil_type = c("Organic", "Sand-Clay"), Kit = "MIDAS HT", failed_lib = 3)
 
-numberOfReads <- tabReads %>%
+numberOfReads <- merge(
+  dat_types$metadata,
+  data.frame(NumReads = apply(dat_types$abund, 2, sum)),
+  by = 0
+) %>%
   select(SeqID, Soil_type, Kit, NumReads) %>%
   filter(NumReads > 10000)
 
@@ -193,11 +197,15 @@ whereNA <- alpha_div_subs10000_ra_summarise %>%
   pivot_longer(-c(Soil_type, Kit, rownumber), names_to = "variable", values_to = "value")
 
 
+hjustification_matrix <- as.vector(matrix(c(0, 0, 1, 1, 1, 1, 1, 1), ncol = 8, nrow = nrow(alpha_div_subs10000_ra_summarise), byrow = TRUE))
+xjustification_matrix <- as.vector(matrix(c(0.1, 0.1, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9), ncol = 8, nrow = nrow(alpha_div_subs10000_ra_summarise), byrow = TRUE))
+
+
 alpha_table <- alpha_div_subs10000_ra_summarise %>%
   mutate(Soil_type = if_else(Kit != "FastSpin", "", Soil_type)) %>%
   relocate(failed_lib, .after = Kit) %>%
   rename(`Soil Type` = Soil_type, `Mean\nASVs` = meanOTU, `Sd\nASVs` = sdOTU, `Mean\nShannon` = mean_shannon, `Sd\nShannon` = sdShannon, `Failed\nLibraries` = failed_lib, `Mean\nReads` = meanReads) %>%
-  ggtexttable(rows = NULL, theme = ttheme("blank")) %>%
+  ggtexttable(rows = NULL, theme = ttheme(colnames.style = colnames_style(fill = "white"), tbody.style = tbody_style(fill = "white", hjust = hjustification_matrix, x = xjustification_matrix))) %>%
   tab_add_hline(at.row = 1:2, row.side = "top", linewidth = 2) %>%
   tab_add_hline(at.row = seq(8, 26, 6), row.side = "top", linewidth = 1) %>%
   addTableColor(df = whereNA, filter_col = "meanReads", column = 4) %>%
@@ -205,43 +213,44 @@ alpha_table <- alpha_div_subs10000_ra_summarise %>%
   addTableColor(df = whereNA, filter_col = "sdOTU", column = 6) %>%
   addTableColor(df = whereNA, filter_col = "mean_shannon", column = 7) %>%
   addTableColor(df = whereNA, filter_col = "sdShannon", column = 8) %>%
-  table_cell_font(row = filter(whereNA, variable == "failed_lib", value > 0)$rownumber, column = 3, face = "bold", color = "black", hjust = 0)
+  table_cell_font(row = filter(whereNA, variable == "failed_lib", value > 0)$rownumber, column = 3, face = "bold", color = "black") %>%
+  tab_add_title(text = "Table 1: Sequencing Stats and Microbial Alpha diversity")
 
-alpha_table
+# alpha_table
 ```
 
 ```{r}
-div_multicomp <- amp_alphadiv(dat_types_sub10000_ra,
-  measure  = c("observed", "shannon", "simpson"),
-  richness = T
-) %>%
-  select(SeqID, Kit, Soil_type, ObservedOTUs, Shannon, Simpson, Chao1, ACE) %>%
-  pivot_longer(cols = c(ObservedOTUs, Shannon, Simpson, Chao1, ACE), names_to = "index", values_to = "diversity")
+# div_multicomp <- amp_alphadiv(dat_types_sub10000_ra,
+#   measure  = c("observed", "shannon", "simpson"),
+#   richness = T
+# ) %>%
+#   select(SeqID, Kit, Soil_type, ObservedOTUs, Shannon, Simpson, Chao1, ACE) %>%
+#   pivot_longer(cols = c(ObservedOTUs, Shannon, Simpson, Chao1, ACE), names_to = "index", values_to = "diversity")
 
-plot.alpha <- div_multicomp %>%
-  filter(index %in% c("Shannon")) %>%
-  ggplot(aes(x = Kit, y = diversity, fill = Soil_type)) +
-  facet_grid(cols = vars(Soil_type)) +
-  # geom_violin(alpha = 0.5) +
-  geom_boxplot(outlier.size = 0, alpha = 0.5) +
-  geom_point(position = position_jitterdodge(jitter.width = .1)) +
-  labs(x = "", y = "", title = "Shannon diversity index across samples") +
-  scale_fill_manual(values = colors) +
-  theme_bw(base_size = 10) +
-  theme(
-    legend.position = "none",
-    axis.text.x = element_text(angle = 90, face = "bold", vjust = 0.5, size = 10),
-    axis.text.y = element_text(face = "bold", size = 10),
-    axis.title = element_text(face = "bold", size = 10),
-    plot.margin = unit(c(1, 1, 0, 0), "cm"),
-    plot.title = element_text(hjust = 0.5, face = "bold", size = 10),
-    strip.text.x = element_text(size = 7, face = "bold"),
-    strip.text.y = element_text(size = 7, face = "bold"),
-    legend.title = element_text(face = "bold"),
-    legend.text = element_text(face = "bold", size = 10)
-  )
+# plot.alpha <- div_multicomp %>%
+#   filter(index %in% c("Shannon")) %>%
+#   ggplot(aes(x = Kit, y = diversity, fill = Soil_type)) +
+#   facet_grid(cols = vars(Soil_type)) +
+#   # geom_violin(alpha = 0.5) +
+#   geom_boxplot(outlier.size = 0, alpha = 0.5) +
+#   geom_point(position = position_jitterdodge(jitter.width = .1)) +
+#   labs(x = "", y = "", title = "Shannon diversity index across samples") +
+#   scale_fill_manual(values = colors) +
+#   theme_bw(base_size = 10) +
+#   theme(
+#     legend.position = "none",
+#     axis.text.x = element_text(angle = 90, face = "bold", vjust = 0.5, size = 10),
+#     axis.text.y = element_text(face = "bold", size = 10),
+#     axis.title = element_text(face = "bold", size = 10),
+#     plot.margin = unit(c(1, 1, 0, 0), "cm"),
+#     plot.title = element_text(hjust = 0.5, face = "bold", size = 10),
+#     strip.text.x = element_text(size = 7, face = "bold"),
+#     strip.text.y = element_text(size = 7, face = "bold"),
+#     legend.title = element_text(face = "bold"),
+#     legend.text = element_text(face = "bold", size = 10)
+#   )
 
-plot.alpha
+# plot.alpha
 ```
 
 Lets try to quantify how much the kit and soil_type contributes to explaining the variance in diversity. For that we construct a linear model and run ANOVA on it. For `Shannon`:
@@ -268,28 +277,42 @@ plot.ordinate <- plotAmpliconOrdination(dat_types_sub10000_ra, rel_ab_filter = 0
   scale_color_manual(values = colors) +
   scale_fill_manual(values = colors) +
   theme(legend.position = "bottom")
-# guide(fill = guide_legend(label.vjust = -3))
 
 
-plot.ordinate + guides(fill = guide_legend(label.vjust = -3))
+plot.ordinate
 
+plot.xlim <- c(-0.45, -0.375)
+plot.ylim <- c(-2.05, -1.8)
 # The plot with a zoom
-# plot.insert <- plot.ordinate +
-#   ylim (0, 0.2) +
-#   xlim (-1, -0.4) +
-#   theme(plot.title = element_blank(),
-#         axis.title.x = element_blank(),
-#         axis.title.y = element_blank(),
-#         legend.position = "none")
+plot.insert <- plot.ordinate +
+  ylim(plot.ylim) +
+  xlim(plot.xlim) +
+  theme(
+    plot.title = element_blank(),
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    legend.position = "none"
+  )
 
-# plot.ordinate.insert <- plot.ordinate +
-#   annotation_custom(ggplotGrob(plot.insert), xmin = -0.15, xmax = 0.35, ymin = 0.0, ymax = 0.5) +
-#   geom_rect(aes(xmin = -0.15, xmax = 0.35, ymin = 0.0, ymax = 0.5), color='black', linetype='dashed', alpha=0) +
-#   geom_rect(aes(xmin = -0.25, xmax = -0.175, ymin = -0.03, ymax = 0.02), color = "black", alpha = 0) +
-#     geom_segment(aes(x = -0.25, y = 0.02, xend = -0.15, yend = 0.5), color = "black", linetype = "dashed") +
-#       geom_segment(aes(x = -0.175, y = -0.03, xend = 0.35, yend = 0.0), color = "black", linetype = "dashed")
 
-# plot.ordinate.insert
+plot.insert.x <- 0
+plot.insert.xmax <- 1.4
+plot.insert.y <- -2
+plot.insert.ymax <- 0
+
+
+
+plot.ordinate.insert <- plot.ordinate +
+  # add plot
+  annotation_custom(ggplotGrob(plot.insert), xmin = plot.insert.x, xmax = plot.insert.xmax, ymin = plot.insert.y, ymax = plot.insert.ymax) +
+  # Add rect around plot
+  geom_rect(aes(xmin = plot.insert.x - 0.05, xmax = plot.insert.xmax - 0.05, ymin = plot.insert.y - 0.05, ymax = plot.insert.ymax + 0.05), color = "black", linetype = "dashed", alpha = 0) +
+  # Add rect around data
+  geom_rect(aes(xmin = plot.xlim[1], xmax = plot.xlim[2], ymin = plot.ylim[1], ymax = plot.ylim[2]), color = "black", alpha = 0) +
+  geom_segment(aes(x = plot.xlim[2], y = plot.ylim[1], xend = plot.insert.x - 0.05, yend = plot.insert.y - 0.05), color = "black", linetype = "dashed") +
+  geom_segment(aes(x = plot.xlim[2], y = plot.ylim[2], xend = plot.insert.x - 0.05, yend = plot.insert.ymax + 0.05), color = "black", linetype = "dashed")
+
+plot.ordinate.insert
 ```
 #### Permanova ordination
 ```{r}
@@ -317,14 +340,16 @@ permanova1 %>%
 
 # Plotting
 ```{r}
-p <- ggarrange(alpha_table, plot.ordinate, ncol = 2, common.legend = T, legend = "bottom", heights = c(0.5, 1))
+dummy_table <- ggarrange(alpha_table, NULL, nrow = 2, heights = c(1, 0.035))
 
-ggsave(here("Benchmarking", "figures", "ordination_CA_table.png"), device = "png", height = 11, width = 13, plot = p)
+p <- ggarrange(dummy_table, NULL, plot.ordinate.insert, ncol = 3, common.legend = T, legend = "bottom", widths = c(1, 0.05, 1), labels = c("A", "B"))
+
+ggsave(here("Benchmarking", "figures", "ordination_CA_table_v2.png"), device = "png", height = 11, width = 15, plot = p)
 ```
 
 
 
-
+# Below is old figures
 
 ```{r}
 # Figur 1
