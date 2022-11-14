@@ -1,3 +1,7 @@
+library(tidyverse)
+library(ggpubr)
+library(RColorBrewer)
+
 
 # theme
 articletheme <- theme_bw(base_size = 10) +
@@ -47,52 +51,30 @@ addTableColor <- function(table, df, filter_col, column) {
     return(new_tab)
 }
 
-# abundance_filter <- function(df, abundance_threshold = 0.1, verbose = F) {
-#     n_before <- ncol(df)
 
-#     df_filter <- df %>%
-#         rownames_to_column("id") %>%
-#         pivot_longer(-id, names_to = "clade_name", values_to = "relative_abundance") %>%
-#         group_by(id) %>%
-#         mutate(relative_abundance = relative_abundance / sum(relative_abundance)) %>%
-#         group_by(clade_name) %>%
-#         summarise(relative_abundance = max(relative_abundance)) %>%
-#         filter(relative_abundance >= abundance_threshold / 100)
-
-#     df_filtered <- df %>%
-#         select(df_filter$clade_name)
-
-#     n_after <- ncol(df_filtered)
-#     if (verbose) {
-#         cat(paste0(
-#             "Species before: ", n_before, "\n",
-#             "Species after: ", n_after, "\n",
-#             "Removed species: ", n_before - n_after, "\n"
-#         ))
-#     }
-
-#     return(df_filtered)
-# }
+createGGMetricsPlot <- function(df, metric_filter, plot_legend = "none") {
+    ggobj <- df %>%
+        filter(metric == metric_filter) %>%
+        ggplot(aes(x = kit, y = value, color = fct_rev(soil_type_fct), group = interaction(soil_type_fct, kit))) +
+        geom_boxplot(aes(fill = fct_rev(soil_type_fct)), color = "black") +
+        geom_point(position = position_dodge(0.75)) +
+        labs(x = "", y = "", title = metric_filter) +
+        scale_color_brewer(palette = "Dark2") +
+        scale_fill_brewer(palette = "Dark2") +
+        articletheme
+    return(ggobj)
+}
 
 
+createGGMetricsPlotForCombined <- function(df, metric_filter, plot_legend = "none") {
+    colors <- c("grey", "darkgoldenrod2", "royalblue4", "seagreen", "salmon", "purple", "#0a6faa")
 
-# plotDiffRelabund <- function(df, filter_soil_type) {
-#     soiltypeTitle <- df %>%
-#         filter(Soil_type == filter_soil_type) %>%
-#         distinct(Soil_type)
-
-#     gg <- df %>%
-#         filter(Soil_type == filter_soil_type) %>%
-#         ggplot(aes(x = Fullscale, y = Downscaled, color = Bias)) +
-#         geom_point(size = 4, alpha = 0.5, position = position_jitter()) +
-#         scale_color_manual(values = c("grey", "red", "blue")) +
-#         geom_abline(size = 0.5) +
-#         articletheme +
-#         theme(
-#             legend.position = "bottom",
-#             axis.text.x = element_text(angle = 0)
-#         ) +
-#         labs(x = "Relative Abundance [%], 2 x 25 µL", y = "Relative Abundance [%], 2 x 5 µL", title = paste0("Amplicon Read Relative Abundance for ", soiltypeTitle$Soil_type[1]))
-
-#     return(gg)
-# }
+    ggobj <- df %>%
+        filter(metric == metric_filter) %>%
+        ggplot(aes(x = kit, y = value, color = fct_rev(soil_type_fct), group = interaction(soil_type_fct, kit))) +
+        geom_point(aes(shape = benchmark), size = 5, alpha = 0.5, position = position_dodge(width = 0.75)) +
+        scale_color_manual(values = colors) +
+        scale_fill_manual(values = colors) +
+        articletheme
+    return(ggobj)
+}
