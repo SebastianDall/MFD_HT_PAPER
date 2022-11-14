@@ -52,19 +52,6 @@ addTableColor <- function(table, df, filter_col, column) {
 }
 
 
-createGGMetricsPlot <- function(df, metric_filter, plot_legend = "none") {
-    ggobj <- df %>%
-        filter(metric == metric_filter) %>%
-        ggplot(aes(x = kit, y = value, color = fct_rev(soil_type_fct), group = interaction(soil_type_fct, kit))) +
-        geom_boxplot(aes(fill = fct_rev(soil_type_fct)), color = "black") +
-        geom_point(position = position_dodge(0.75)) +
-        labs(x = "", y = "", title = metric_filter) +
-        scale_color_brewer(palette = "Dark2") +
-        scale_fill_brewer(palette = "Dark2") +
-        articletheme
-    return(ggobj)
-}
-
 
 createGGMetricsPlotForCombined <- function(df, metric_filter, plot_legend = "none") {
     colors <- c("grey", "darkgoldenrod2", "royalblue4", "seagreen", "salmon", "purple", "#0a6faa")
@@ -75,6 +62,7 @@ createGGMetricsPlotForCombined <- function(df, metric_filter, plot_legend = "non
         geom_point(aes(shape = benchmark), size = 5, alpha = 0.5, position = position_dodge(width = 0.75)) +
         scale_color_manual(values = colors) +
         scale_fill_manual(values = colors) +
-        articletheme
+        articletheme +
+        theme(lengend.position = "none")
     return(ggobj)
 }
