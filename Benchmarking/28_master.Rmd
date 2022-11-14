@@ -28,6 +28,10 @@ library(ggpubr)
 source("loaddata.R")
 source(here("Benchmarking", "functions.R"))
 colors <- c("grey", "darkgoldenrod2", "royalblue4", "seagreen", "salmon", "purple")
+
+
+# Load theme
+source("../article_theme.R")
 ```
 
 ## filter data

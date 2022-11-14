@@ -33,6 +33,7 @@ source("loaddata.R")
 colors <- c("grey", "darkgoldenrod2", "royalblue4", "seagreen", "salmon", "purple")
 
 ### Load plot functions and theme
+source("../article_theme.R")
 source("./functions.R")
 ```
 

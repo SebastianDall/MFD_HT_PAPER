@@ -24,6 +24,10 @@ library(ampvis2)
 library(data.table)
 library(tidyverse)
 source("loaddata.R")
+
+# Load theme
+source("../article_theme.R")
+
 colors <- c("royalblue4", "seagreen", "salmon")
 colors2 <- c("#C6DBEF", "#4292C6", "#08306B")
 ```
