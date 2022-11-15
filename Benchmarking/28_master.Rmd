@@ -318,6 +318,23 @@ plot.ordinate.insert <- plot.ordinate +
 
 plot.ordinate.insert
 ```
+
+```{r}
+# plot.ordinate <- dat_types_sub10000_ra %>%
+#   plotAmpliconOrdinationSoil(rel_ab_filter = 0.1, soil_filter = "Clay") +
+#   scale_color_manual(values = colors) +
+#   scale_fill_manual(values = colors) +
+#   theme(legend.position = "bottom")
+soil <- unique(dat_types_sub10000_ra$metadata$Soil_type)
+ord_type <- "CA"
+
+for (s in soil) {
+  p <- plotAmpliconOrdinationSoil(dat_types_sub10000_ra, s, ord_type = ord_type)
+  ggsave(here("Benchmarking", "figures", paste0("ordination_", ord_type, "_rel_ab_0.1_rarefied_", s, ".png")), plot = p, height = 7, width = 9, device = "png")
+}
+```
+
+
 #### Permanova ordination
 ```{r}
 otu <- dat_types_sub10000_ra$abund %>% t()

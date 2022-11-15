@@ -29,6 +29,30 @@ plotAmpliconOrdination <- function(df, ord_type = "CA", rel_ab_filter = 0.1) {
         )
 }
 
+plotAmpliconOrdinationSoil <- function(df, soil_filter, ord_type = "CA", rel_ab_filter = 0.1) {
+    df %>%
+        amp_subset_samples(Soil_type == soil_filter) %>%
+        amp_ordinate(
+            filter_species = 0.1,
+            type = ord_type,
+            constrain = "Kit",
+            transform = "hellinger",
+            distmeasure = "bray",
+            sample_colorframe = "Kit",
+            species_plot = T
+        ) +
+        # ggforce::geom_mark_ellipse(aes(fill = Kit, group = Kit), alpha = 0.5, color = "black") +
+        labs(
+            title = paste0(soil_filter, ": ", ord_type, " of microbial diversity")
+            # fill = "Extraction Kit",
+        ) +
+        articletheme +
+        theme(
+            legend.position = "bottom",
+            axis.text.x = element_text(angle = 0, hjust = 0, vjust = 0)
+        )
+}
+
 addTableColor <- function(table, df, filter_col, column) {
     NA_vector <- df %>%
         filter(variable == filter_col, is.na(value))
