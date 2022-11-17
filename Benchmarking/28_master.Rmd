@@ -20,7 +20,7 @@ library(readxl)
 library(writexl)
 library(tidyverse)
 library(ampvis2)
-# library(DESeq2)
+library(DESeq2)
 library(vegan)
 # library(patchwork)
 library(ggpubr)
@@ -30,7 +30,6 @@ source("loaddata.R")
 source(here("Benchmarking", "functions.R"))
 colors <- c("grey", "darkgoldenrod2", "royalblue4", "seagreen", "salmon", "purple")
 
-
 # Load theme
 source("../article_theme.R")
 ```
@@ -38,7 +37,7 @@ source("../article_theme.R")
 ## filter data
 ```{r}
 dat_types <- datraw %>%
-  amp_subset_samples(!Soil_type %in% c("Blank", "Activated sludge") & !is.na(Kit))
+  amp_subset_samples(!Soil_type %in% c("Blank", "Activated sludge") & !is.na(Kit) & Kit != "MIDAS HT")
 ```
 
 ## $\alpha$-diversity
@@ -59,10 +58,8 @@ We asses $\alpha$-diversity after rarefying the reads pr sample. We look at the 
 >MIDAS was removed at this stage.
 
 ```{r}
-tax_data_rel_0.1 <- dat_types_sub10000_ra$abund %>%
-  t() %>%
-  as.data.frame() %>%
-  abundance_filter(abundance_threshold = 0.1, verbose = T)
+tax_data_rel_0.1 <- dat_types_sub10000_ra_rel_0.1$abund %>%
+  t()
 
 bray_distance <- as.matrix(vegdist(tax_data_rel_0.1)) %>%
   as.data.frame() %>%
@@ -71,15 +68,17 @@ bray_distance <- as.matrix(vegdist(tax_data_rel_0.1)) %>%
 metadata <- dat_types_sub10000_ra$metadata %>%
   select(SeqID, Sample_id, Kit, Soil_type)
 
-bray_with_metadata <- metadata %>%
-  left_join(bray_distance) %>%
-  pivot_longer(!SeqID:Soil_type, names_to = "comparison", "value") %>%
-  left_join(rename(
-    select(metadata, SeqID, Kit, Soil_type),
+metadata_renamed <- metadata %>% 
+  dplyr::rename(
     comparison = SeqID,
     compared_soil = Soil_type,
     compared_kit = Kit
-  ))
+  )
+
+bray_with_metadata <- metadata %>%
+  left_join(bray_distance) %>%
+  pivot_longer(!SeqID:Soil_type, names_to = "comparison", "value") %>%
+  left_join(metadata_renamed)
 
 bray_with_metadata_comparisons <- bray_with_metadata %>%
   filter(SeqID != comparison) %>%
@@ -96,7 +95,7 @@ bray_with_metadata_comparisons <- bray_with_metadata %>%
 lab_metadata <- amplicon_metadata %>%
   select(Sample_id, Plate, Kit, Soil_type, Conc_quibit, `260/280`, `260/230`, PCR2) %>%
   dplyr::rename(Elution_placement = Plate, lib_conc = PCR2, Conc_qubit = Conc_quibit) %>%
-  filter(!Soil_type %in% c("Activated sludge", "Blank"))
+  filter(!Soil_type %in% c("Activated sludge", "Blank"), Kit != "MIDAS HT")
 
 soil_properties_filtered <- soil_properties %>%
   filter(!is.na(Soil_properties)) %>%
@@ -117,22 +116,23 @@ rarefied_alphadiveristy <- dat_types_sub10000_ra_rel_0.1 %>%
     Shannon
   )
 
-
+# Join different data: Lab, Alpha.
 combine_alpha_beta_with_metadata <- rarefied_alphadiveristy %>%
   right_join(lab_metadata) %>%
-  filter(Kit != "MIDAS HT") %>%
   group_by(Soil_type, Kit) %>%
   mutate(failed_lib = 3 - sum(!is.na(ObservedOTUs))) %>%
   summarise(
     across(where(is.numeric), .fns = list(mean = ~ mean(., na.rm = T), sd = ~ sd(., na.rm = T)), .names = "{.fn}_{.col}")
   ) %>%
   ungroup() %>%
+  # Calculate mean and sd for all variables
   mutate(
     failed_lib = as.character(mean_failed_lib),
     across(where(is.numeric), ~ format(round(., 2), nsmall = 2)),
     mean_ObservedOTUs = format(round(as.numeric(mean_ObservedOTUs))),
     sd_ObservedOTUs = format(round(as.numeric(sd_ObservedOTUs)))
   ) %>%
+  # Add bray variation
   left_join(bray_with_metadata_comparisons) %>%
   arrange(Soil_type, Kit)
 
@@ -154,15 +154,8 @@ mean_sd_table_wide <- mean_sd_table_long %>%
   relocate(Soil_properties, .after = Soil_type) %>%
   relocate(Conc_qubit:`260/230`, .after = Kit) %>%
   relocate(lib_conc, .after = failed_lib) %>%
-  # mutate(
-  #   long_lati = str_replace(long_lati, ",", "\n"),
-  #   long_lati = if_else(Kit == "FastSpin", str_replace(long_lati, "\n.*", ""), long_lati),
-  #   long_lati = if_else(Kit == "FastSpin HT", str_replace(long_lati, ".*\n", ""), long_lati),
-  #   long_lati = if_else(str_detect(long_lati, "\n"), "", long_lati)
-  # ) %>%
   group_by(Soil_type) %>%
-  mutate_at(vars(Soil_type, Soil_properties), funs(replace(., duplicated(.), ""))) # %>%
-# mutate(bray = str_replace(bray, " .*", ""))
+  mutate_at(vars(Soil_type, Soil_properties), ~replace(., duplicated(.), ""))
 
 
 names <- tibble(
@@ -172,43 +165,12 @@ names <- tibble(
 
 final_table <- mean_sd_table_wide %>%
   rename_at(vars(names$old_names), ~ names$new_names)
-
+```
+```{r}
 writexl::write_xlsx(final_table, path = "./files/megatable.xlsx")
 ```
 
-```{r}
-# div_multicomp <- amp_alphadiv(dat_types_sub10000_ra,
-#   measure  = c("observed", "shannon", "simpson"),
-#   richness = T
-# ) %>%
-#   select(SeqID, Kit, Soil_type, ObservedOTUs, Shannon, Simpson, Chao1, ACE) %>%
-#   pivot_longer(cols = c(ObservedOTUs, Shannon, Simpson, Chao1, ACE), names_to = "index", values_to = "diversity")
 
-# plot.alpha <- div_multicomp %>%
-#   filter(index %in% c("Shannon")) %>%
-#   ggplot(aes(x = Kit, y = diversity, fill = Soil_type)) +
-#   facet_grid(cols = vars(Soil_type)) +
-#   # geom_violin(alpha = 0.5) +
-#   geom_boxplot(outlier.size = 0, alpha = 0.5) +
-#   geom_point(position = position_jitterdodge(jitter.width = .1)) +
-#   labs(x = "", y = "", title = "Shannon diversity index across samples") +
-#   scale_fill_manual(values = colors) +
-#   theme_bw(base_size = 10) +
-#   theme(
-#     legend.position = "none",
-#     axis.text.x = element_text(angle = 90, face = "bold", vjust = 0.5, size = 10),
-#     axis.text.y = element_text(face = "bold", size = 10),
-#     axis.title = element_text(face = "bold", size = 10),
-#     plot.margin = unit(c(1, 1, 0, 0), "cm"),
-#     plot.title = element_text(hjust = 0.5, face = "bold", size = 10),
-#     strip.text.x = element_text(size = 7, face = "bold"),
-#     strip.text.y = element_text(size = 7, face = "bold"),
-#     legend.title = element_text(face = "bold"),
-#     legend.text = element_text(face = "bold", size = 10)
-#   )
-
-# plot.alpha
-```
 
 Lets try to quantify how much the kit and soil_type contributes to explaining the variance in diversity. For that we construct a linear model and run ANOVA on it. For `Shannon`:
 ```{r}
@@ -273,13 +235,8 @@ plot.ordinate.insert
 ```
 
 ```{r}
-# plot.ordinate <- dat_types_sub10000_ra %>%
-#   plotAmpliconOrdinationSoil(rel_ab_filter = 0.1, soil_filter = "Clay") +
-#   scale_color_manual(values = colors) +
-#   scale_fill_manual(values = colors) +
-#   theme(legend.position = "bottom")
 soil <- unique(dat_types_sub10000_ra$metadata$Soil_type)
-ord_type <- "CA"
+ord_type <- "PCA"
 
 for (s in soil) {
   p <- plotAmpliconOrdinationSoil(dat_types_sub10000_ra, s, ord_type = ord_type)
