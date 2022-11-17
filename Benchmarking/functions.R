@@ -73,6 +73,6 @@ createGGMetricsPlotForCombined <- function(df, metric_filter, plot_legend = "non
         scale_color_manual(values = colors) +
         scale_fill_manual(values = colors) +
         articletheme +
-        theme(lengend.position = "none")
+        theme(legend.position = "bottom")
     return(ggobj)
 }

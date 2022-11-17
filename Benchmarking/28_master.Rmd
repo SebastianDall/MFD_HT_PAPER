@@ -17,11 +17,12 @@ setwd(here("Benchmarking"))
 # Load the needed packages.
 library(data.table)
 library(readxl)
+library(writexl)
 library(tidyverse)
 library(ampvis2)
 # library(DESeq2)
 library(vegan)
-library(patchwork)
+# library(patchwork)
 library(ggpubr)
 
 ### Load and tidy ###
@@ -46,82 +47,133 @@ dat_types <- datraw %>%
 # Create subsets
 dat_types_sub10000 <- amp_subset_samples(dat_types, minreads = 10000)
 dat_types_sub10000_ra <- amp_subset_samples(dat_types_sub10000, rarefy = min(colSums(dat_types_sub10000$abund)))
+dat_types_sub10000_ra_rel_0.1 <- filter_otus(dat_types_sub10000_ra, 0.1)
 ```
 
 We set a cutoff of at 10000 reads, and rarefy to the lowest number of reads in the remaining dataset. Doing this we go from `r nrow(dat_types$metadata)` to `r nrow(dat_types_sub10000_ra$metadata)` samples and create a rarified dataset as well.
 
 We asses $\alpha$-diversity after rarefying the reads pr sample. We look at the Shannon-index and number of ASVs.
 
+## Big summary statistics table
+
+>MIDAS was removed at this stage.
 
 ```{r}
-missingMIDAS <- tibble(Soil_type = c("Organic", "Sand-Clay"), Kit = "MIDAS HT", failed_lib = 3)
+tax_data_rel_0.1 <- dat_types_sub10000_ra$abund %>%
+  t() %>%
+  as.data.frame() %>%
+  abundance_filter(abundance_threshold = 0.1, verbose = T)
 
-numberOfReads <- merge(
-  dat_types$metadata,
-  data.frame(NumReads = apply(dat_types$abund, 2, sum)),
-  by = 0
-) %>%
-  select(SeqID, Soil_type, Kit, NumReads) %>%
-  filter(NumReads > 10000)
+bray_distance <- as.matrix(vegdist(tax_data_rel_0.1)) %>%
+  as.data.frame() %>%
+  rownames_to_column("SeqID")
 
+metadata <- dat_types_sub10000_ra$metadata %>%
+  select(SeqID, Sample_id, Kit, Soil_type)
 
-alpha_div_subs10000_ra <- dat_types_sub10000_ra %>%
+bray_with_metadata <- metadata %>%
+  left_join(bray_distance) %>%
+  pivot_longer(!SeqID:Soil_type, names_to = "comparison", "value") %>%
+  left_join(rename(
+    select(metadata, SeqID, Kit, Soil_type),
+    comparison = SeqID,
+    compared_soil = Soil_type,
+    compared_kit = Kit
+  ))
+
+bray_with_metadata_comparisons <- bray_with_metadata %>%
+  filter(SeqID != comparison) %>%
+  filter(paste0(Kit, Soil_type) == paste0(compared_kit, compared_soil)) %>%
+  filter(!duplicated(paste0(pmax(SeqID, comparison), pmin(SeqID, comparison)))) %>%
+  group_by(Soil_type, Kit) %>%
+  summarise(
+    mean_bray = format(round(mean(value, na.rm = TRUE), 2), nsmall = 2),
+    sd_bray = format(round(sd(value, na.rm = TRUE), 2), nsmall = 2)
+  )
+```
+
+```{r}
+lab_metadata <- amplicon_metadata %>%
+  select(Sample_id, Plate, Kit, Soil_type, Conc_quibit, `260/280`, `260/230`, PCR2) %>%
+  dplyr::rename(Elution_placement = Plate, lib_conc = PCR2, Conc_qubit = Conc_quibit) %>%
+  filter(!Soil_type %in% c("Activated sludge", "Blank"))
+
+soil_properties_filtered <- soil_properties %>%
+  filter(!is.na(Soil_properties)) %>%
+  select(Soil_type, Soil_properties)
+
+rarefied_alphadiveristy <- dat_types_sub10000_ra_rel_0.1 %>%
   amp_alphadiv(
     measure = c("observed", "shannon", "simpson"),
     richness = T
   ) %>%
   select(
     SeqID,
+    Sample_id,
+    Elution_placement,
     Soil_type,
     Kit,
     ObservedOTUs,
     Shannon
   )
 
-alpha_div_subs10000_ra_summarise <- alpha_div_subs10000_ra %>%
-  left_join(numberOfReads) %>%
+
+combine_alpha_beta_with_metadata <- rarefied_alphadiveristy %>%
+  right_join(lab_metadata) %>%
+  filter(Kit != "MIDAS HT") %>%
   group_by(Soil_type, Kit) %>%
-  mutate(failed_lib = 3 - n()) %>%
+  mutate(failed_lib = 3 - sum(!is.na(ObservedOTUs))) %>%
   summarise(
-    meanReads = round(mean(NumReads)),
-    # sdReads = sd(NumReads),
-    meanOTU = round(mean(ObservedOTUs), 0),
-    sdOTU = sd(ObservedOTUs),
-    mean_shannon = mean(Shannon),
-    sdShannon = sd(Shannon),
-    failed_lib = max(failed_lib)
+    across(where(is.numeric), .fns = list(mean = ~ mean(., na.rm = T), sd = ~ sd(., na.rm = T)), .names = "{.fn}_{.col}")
   ) %>%
   ungroup() %>%
-  mutate(across(where(is.numeric), ~ round(., 2))) %>%
-  bind_rows(missingMIDAS) %>%
+  mutate(
+    failed_lib = as.character(mean_failed_lib),
+    across(where(is.numeric), ~ format(round(., 2), nsmall = 2)),
+    mean_ObservedOTUs = format(round(as.numeric(mean_ObservedOTUs))),
+    sd_ObservedOTUs = format(round(as.numeric(sd_ObservedOTUs)))
+  ) %>%
+  left_join(bray_with_metadata_comparisons) %>%
   arrange(Soil_type, Kit)
 
-whereNA <- alpha_div_subs10000_ra_summarise %>%
-  mutate(rownumber = row_number() + 1) %>%
-  filter(if_any(where(is.numeric), is.na) | failed_lib > 0) %>%
-  pivot_longer(-c(Soil_type, Kit, rownumber), names_to = "variable", values_to = "value")
+mean_sd_table_long <- combine_alpha_beta_with_metadata %>%
+  select(-c(sd_failed_lib, mean_failed_lib)) %>%
+  pivot_longer(cols = -c(Soil_type, Kit, failed_lib, contains("sd")), names_to = "mean", values_to = "mean_value", names_prefix = "mean_") %>%
+  pivot_longer(cols = -c(Soil_type, Kit, failed_lib, contains("mean")), names_to = "sd", values_to = "sd_value", names_prefix = "sd_") %>%
+  group_by(Soil_type, Kit) %>%
+  filter(mean == sd) %>%
+  mutate(
+    mean_sd = paste0(mean_value, " (", sd_value, ")")
+  ) %>%
+  select(!mean_value:sd_value)
 
 
-hjustification_matrix <- as.vector(matrix(c(0, 0, 1, 1, 1, 1, 1, 1), ncol = 8, nrow = nrow(alpha_div_subs10000_ra_summarise), byrow = TRUE))
-xjustification_matrix <- as.vector(matrix(c(0.1, 0.1, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9), ncol = 8, nrow = nrow(alpha_div_subs10000_ra_summarise), byrow = TRUE))
+mean_sd_table_wide <- mean_sd_table_long %>%
+  pivot_wider(names_from = mean, values_from = mean_sd) %>%
+  left_join(soil_properties_filtered) %>%
+  relocate(Soil_properties, .after = Soil_type) %>%
+  relocate(Conc_qubit:`260/230`, .after = Kit) %>%
+  relocate(lib_conc, .after = failed_lib) %>%
+  # mutate(
+  #   long_lati = str_replace(long_lati, ",", "\n"),
+  #   long_lati = if_else(Kit == "FastSpin", str_replace(long_lati, "\n.*", ""), long_lati),
+  #   long_lati = if_else(Kit == "FastSpin HT", str_replace(long_lati, ".*\n", ""), long_lati),
+  #   long_lati = if_else(str_detect(long_lati, "\n"), "", long_lati)
+  # ) %>%
+  group_by(Soil_type) %>%
+  mutate_at(vars(Soil_type, Soil_properties), funs(replace(., duplicated(.), ""))) # %>%
+# mutate(bray = str_replace(bray, " .*", ""))
 
 
-alpha_table <- alpha_div_subs10000_ra_summarise %>%
-  mutate(Soil_type = if_else(Kit != "FastSpin", "", Soil_type)) %>%
-  relocate(failed_lib, .after = Kit) %>%
-  rename(`Soil Type` = Soil_type, `Mean\nASVs` = meanOTU, `Sd\nASVs` = sdOTU, `Mean\nShannon` = mean_shannon, `Sd\nShannon` = sdShannon, `Failed\nLibraries` = failed_lib, `Mean\nReads` = meanReads) %>%
-  ggtexttable(rows = NULL, theme = ttheme(colnames.style = colnames_style(fill = "white"), tbody.style = tbody_style(fill = "white", hjust = hjustification_matrix, x = xjustification_matrix))) %>%
-  tab_add_hline(at.row = 1:2, row.side = "top", linewidth = 2) %>%
-  tab_add_hline(at.row = seq(8, 26, 6), row.side = "top", linewidth = 1) %>%
-  addTableColor(df = whereNA, filter_col = "meanReads", column = 4) %>%
-  addTableColor(df = whereNA, filter_col = "meanOTU", column = 5) %>%
-  addTableColor(df = whereNA, filter_col = "sdOTU", column = 6) %>%
-  addTableColor(df = whereNA, filter_col = "mean_shannon", column = 7) %>%
-  addTableColor(df = whereNA, filter_col = "sdShannon", column = 8) %>%
-  table_cell_font(row = filter(whereNA, variable == "failed_lib", value > 0)$rownumber, column = 3, face = "bold", color = "black") %>%
-  tab_add_title(text = "Table 1: Sequencing Stats and Microbial Alpha diversity")
+names <- tibble(
+  old_names = colnames(mean_sd_table_wide),
+  new_names = c("Soil type", "Properties", "Kit", "DNA ext conc. [ng/µL]", "260/280", "260/230", "Failed Libraries", "Library conc. [ng/µL]", "ASVs", "Shannon Diversity", "Bray-Curtis Variation") # "Site name", "Longitude Latitude", "Environment",
+)
 
-# alpha_table
+final_table <- mean_sd_table_wide %>%
+  rename_at(vars(names$old_names), ~ names$new_names)
+
+writexl::write_xlsx(final_table, path = "./files/megatable.xlsx")
 ```
 
 ```{r}
