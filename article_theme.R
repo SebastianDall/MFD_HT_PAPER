@@ -12,3 +12,32 @@ articletheme <- theme_bw(base_size = 10) +
         legend.title = element_text(face = "bold"),
         legend.text = element_text(face = "bold", size = 10)
     )
+
+
+
+abundance_filter <- function(df, abundance_threshold = 0.1, verbose = F) {
+    n_before <- ncol(df)
+
+    df_filter <- df %>%
+        rownames_to_column("id") %>%
+        pivot_longer(-id, names_to = "clade_name", values_to = "relative_abundance") %>%
+        group_by(id) %>%
+        mutate(relative_abundance = relative_abundance / sum(relative_abundance)) %>%
+        group_by(clade_name) %>%
+        summarise(relative_abundance = max(relative_abundance)) %>%
+        filter(relative_abundance >= abundance_threshold / 100)
+
+    df_filtered <- df %>%
+        select(df_filter$clade_name)
+
+    n_after <- ncol(df_filtered)
+    if (verbose) {
+        cat(paste0(
+            "Species before: ", n_before, "\n",
+            "Species after: ", n_after, "\n",
+            "Removed species: ", n_before - n_after, "\n"
+        ))
+    }
+
+    return(df_filtered)
+}
