@@ -27,6 +27,7 @@ library(ampvis2)
 library(vegan)
 library(patchwork)
 library(ggpubr)
+library(rlist)
 
 ### Load and tidy ###
 source("loaddata.R")
@@ -48,53 +49,58 @@ dat_types <- datraw %>%
 # Create subsets
 dat_types_sub4000 <- amp_subset_samples(dat_types, minreads = 4000)
 dat_types_sub4000_ra <- amp_subset_samples(dat_types_sub4000, rarefy = min(colSums(dat_types_sub4000$abund)))
+dat_types_sub4000_ra_rel_0.1 <- filter_otus(dat_types_sub4000_ra, 0.1)
+
 dat_types_sub8000 <- amp_subset_samples(dat_types, minreads = 8000, !Soil_type == "Beach Sand")
 dat_types_sub8000_ra <- amp_subset_samples(dat_types_sub8000, rarefy = min(colSums(dat_types_sub8000$abund)), !Soil_type == "Beach Sand")
 ```
-#### alphadiversity
-```{r alphadiversity}
-div_multicomp <- dat_types_sub4000_ra %>%
-  amp_alphadiv(
-    measure = c("observed", "shannon", "simpson"),
-    richness = T
-  ) %>%
-  select(
-    SeqID,
-    Soil_type,
-    Protocol,
-    ObservedOTUs,
-    Shannon
-  ) %>%
-  pivot_longer(cols = 4:5, names_to = "index", values_to = "diversity")
 
-# alpha.diversity <- div_multicomp %>%
-#   filter(index == "Shannon") %>%
-#   ggplot(aes(
-#     x = Soil_type,
-#     y = diversity,
-#     color = Soil_type,
-#     shape = Protocol
-#   )) +
-#   facet_wrap(facets = "index", scales = "free_y", nrow = 2) +
-#   geom_point(size = 5, alpha = 0.75, position = position_dodge(0.75)) +
-#   labs(x = "", y = "", title = "Shannon diversity index across samples and protocol") +
-#   scale_fill_manual(values = colors) +
-#   theme_bw(base_size = 10) +
-#   guides(color = "none") +
-#   theme(
-#     axis.text.x = element_text(angle = 90, face = "bold", vjust = 0.5, size = 10, hjust = 1),
-#     axis.text.y = element_text(face = "bold", size = 10),
-#     axis.title = element_text(face = "bold", size = 10),
-#     plot.margin = unit(c(0, 1, 0, 0), "cm"),
-#     plot.title = element_text(hjust = 0.5, face = "bold", size = 10),
-#     strip.text.x = element_text(size = 7, face = "bold"),
-#     strip.text.y = element_text(size = 7, face = "bold"),
-#     legend.title = element_text(face = "bold"),
-#     legend.text = element_text(face = "bold", size = 10)
-#   )
+### Bray Curtis variation
+```{r}
+tax_data_rel_0.1 <- dat_types_sub4000_ra_rel_0.1$abund %>%
+  t()
 
-# alpha.diversity
+bray_distance <- as.matrix(vegdist(tax_data_rel_0.1)) %>%
+  as.data.frame() %>%
+  rownames_to_column("SeqID")
+
+metadata <- dat_types_sub4000_ra_rel_0.1$metadata %>%
+  select(SeqID, Sample_id, Protocol, Soil_type)
+
+metadata_renamed <- metadata %>%
+  dplyr::rename(
+    comparison = SeqID,
+    compared_soil = Soil_type,
+    compared_protocol = Protocol
+  ) %>%
+  select(-Sample_id)
+
+bray_with_metadata <- metadata %>%
+  left_join(bray_distance) %>%
+  pivot_longer(!SeqID:Soil_type, names_to = "comparison", "value") %>%
+  left_join(metadata_renamed, by = "comparison")
+
+bray_variation_protocol <- bray_with_metadata %>%
+  filter(SeqID != comparison) %>%
+  filter(paste0(Protocol, Soil_type) == paste0(compared_protocol, compared_soil)) %>%
+  filter(!duplicated(paste0(pmax(SeqID, comparison), pmin(SeqID, comparison)))) %>%
+  group_by(Soil_type, Protocol) %>%
+  summarise(
+    mean_bray = format(round(mean(value, na.rm = TRUE), 2), nsmall = 2),
+    sd_bray = format(round(sd(value, na.rm = TRUE), 2), nsmall = 2)
+  )
+
+bray_variation_between_protocols <- bray_with_metadata %>%
+  filter(SeqID != comparison, Protocol != compared_protocol) %>%
+  filter(Soil_type == compared_soil) %>%
+  filter(!duplicated(paste0(pmax(SeqID, comparison), pmin(SeqID, comparison)))) %>%
+  group_by(Soil_type) %>%
+  summarise(
+    mean_bray = format(round(mean(value, na.rm = TRUE), 2), nsmall = 2),
+    sd_bray = format(round(sd(value, na.rm = TRUE), 2), nsmall = 2)
+  )
 ```
+
 
 And then for `Shannon`:
 ```{r}
@@ -228,17 +234,21 @@ ggsave(here("Amplicon_scaledown", "figures", "heatmap_alpha_div.png"), device = 
 
 #### Ordination
 ```{r ordination}
-ordination_CA_relabfil_0.1_all <- dat_types_sub4000_ra %>%
-  plotAmpliconOrdination() +
-  scale_fill_manual(values = colors) +
-  scale_color_manual(values = colors, guide = "none")
+soil <- unique(dat_types_sub4000_ra$metadata$Soil_type)
 
-ordination_CA_relabfil_0.1_no_beachsand <- dat_types_sub4000_ra %>%
-  amp_subset_samples(Soil_type != "Beach Sand") %>%
-  plotAmpliconOrdination() +
-  labs(title = "CA of microbial diversity, without beach-sand") +
-  scale_fill_manual(values = colors[-1]) +
-  scale_color_manual(values = colors[-1], guide = "none")
+plot_soil_ord <- function(soil) {
+  plotAmpliconOrdinationSoil(dat_types_sub4000_ra, soil, ord_type = "PCA")
+}
+
+plot_list <- map(soil, plot_soil_ord)
+
+ggleg <- plot_list[[1]] + theme(legend.position = "right")
+
+leg <- list(get_legend(ggleg))
+
+plot_list2 <- append(plot_list, leg)
+
+p <- ggarrange(plotlist = plot_list2, nrow = 2, ncol = ceiling(length(plot_list) / 2), labels = toupper(letters[1:5]))
 ```
 
 ```{r anosim}
@@ -269,69 +279,69 @@ print(anosim)
 
 #### Distance heatmap
 ```{r distance matrix}
-otu_sub400_ra_hellinger <- dat_types_sub4000_ra$abund %>%
-  t() %>%
-  as.data.frame() %>%
-  abundance_filter(verbose = T) %>%
-  decostand(method = "hellinger")
+# otu_sub400_ra_hellinger <- dat_types_sub4000_ra$abund %>%
+#   t() %>%
+#   as.data.frame() %>%
+#   abundance_filter(verbose = T) %>%
+#   decostand(method = "hellinger")
 
-otu_sub400_ra_hellinger_bray_dist <- vegdist(otu_sub400_ra_hellinger, method = "bray", diag = T, upper = T)
+# otu_sub400_ra_hellinger_bray_dist <- vegdist(otu_sub400_ra_hellinger, method = "bray", diag = T, upper = T)
 
-sample_names <- dat_types_sub4000_ra$metadata %>%
-  group_by(Soil_type, Protocol) %>%
-  mutate(Soil_type_sample = paste0(Soil_type, " - ", Protocol, " - ", row_number())) %>%
-  ungroup() %>%
-  select(SeqID, Soil_type_sample)
+# sample_names <- dat_types_sub4000_ra$metadata %>%
+#   group_by(Soil_type, Protocol) %>%
+#   mutate(Soil_type_sample = paste0(Soil_type, " - ", Protocol, " - ", row_number())) %>%
+#   ungroup() %>%
+#   select(SeqID, Soil_type_sample)
 
-otu_sub400_ra_hellinger_bray_dist_sample_names <- otu_sub400_ra_hellinger_bray_dist %>%
-  as.matrix() %>%
-  as.data.frame() %>%
-  rownames_to_column("SeqID") %>%
-  left_join(sample_names) %>%
-  relocate("Soil_type_sample", .after = "SeqID")
+# otu_sub400_ra_hellinger_bray_dist_sample_names <- otu_sub400_ra_hellinger_bray_dist %>%
+#   as.matrix() %>%
+#   as.data.frame() %>%
+#   rownames_to_column("SeqID") %>%
+#   left_join(sample_names) %>%
+#   relocate("Soil_type_sample", .after = "SeqID")
 
-colnames(otu_sub400_ra_hellinger_bray_dist_sample_names) <- c("SeqID", "Soil_type_sample", otu_sub400_ra_hellinger_bray_dist_sample_names$Soil_type_sample)
+# colnames(otu_sub400_ra_hellinger_bray_dist_sample_names) <- c("SeqID", "Soil_type_sample", otu_sub400_ra_hellinger_bray_dist_sample_names$Soil_type_sample)
 
-otu_sub400_ra_hellinger_bray_dist_sample_names_long <- otu_sub400_ra_hellinger_bray_dist_sample_names %>%
-  pivot_longer(-c(SeqID, Soil_type_sample), names_to = "sample_id", values_to = "bray_dist")
-
-
-axiscolors <- otu_sub400_ra_hellinger_bray_dist_sample_names_long %>%
-  distinct(Soil_type_sample) %>%
-  arrange(Soil_type_sample) %>%
-  mutate(axiscolor = if_else(
-    str_detect(Soil_type_sample, "Beach Sand -"),
-    colors[1],
-    if_else(
-      str_detect(Soil_type_sample, "^Clay -"),
-      colors[2],
-      if_else(
-        str_detect(Soil_type_sample, "Organic -"),
-        colors[3],
-        if_else(
-          str_detect(Soil_type_sample, "Sand -"),
-          colors[4],
-          colors[5]
-        )
-      )
-    )
-  ))
+# otu_sub400_ra_hellinger_bray_dist_sample_names_long <- otu_sub400_ra_hellinger_bray_dist_sample_names %>%
+#   pivot_longer(-c(SeqID, Soil_type_sample), names_to = "sample_id", values_to = "bray_dist")
 
 
-gg_bray_dist_matrix <- otu_sub400_ra_hellinger_bray_dist_sample_names_long %>%
-  ggplot(aes(x = Soil_type_sample, y = sample_id, fill = bray_dist)) +
-  geom_tile(color = "white") +
-  scale_fill_gradient(low = "black", high = "white") +
-  labs(x = "", y = "") +
-  articletheme +
-  labs(fill = "Dissimilarity", title = "Bray-Curtis Dissimilarity based on Hellinger transformed Relative Abundance") +
-  theme(
-    axis.text.x = element_text(face = "bold", color = axiscolors$axiscolor),
-    axis.text.y = element_text(face = "bold", color = axiscolors$axiscolor),
-    legend.position = "right"
-  )
+# axiscolors <- otu_sub400_ra_hellinger_bray_dist_sample_names_long %>%
+#   distinct(Soil_type_sample) %>%
+#   arrange(Soil_type_sample) %>%
+#   mutate(axiscolor = if_else(
+#     str_detect(Soil_type_sample, "Beach Sand -"),
+#     colors[1],
+#     if_else(
+#       str_detect(Soil_type_sample, "^Clay -"),
+#       colors[2],
+#       if_else(
+#         str_detect(Soil_type_sample, "Organic -"),
+#         colors[3],
+#         if_else(
+#           str_detect(Soil_type_sample, "Sand -"),
+#           colors[4],
+#           colors[5]
+#         )
+#       )
+#     )
+#   ))
 
-gg_bray_dist_matrix
+
+# gg_bray_dist_matrix <- otu_sub400_ra_hellinger_bray_dist_sample_names_long %>%
+#   ggplot(aes(x = Soil_type_sample, y = sample_id, fill = bray_dist)) +
+#   geom_tile(color = "white") +
+#   scale_fill_gradient(low = "black", high = "white") +
+#   labs(x = "", y = "") +
+#   articletheme +
+#   labs(fill = "Dissimilarity", title = "Bray-Curtis Dissimilarity based on Hellinger transformed Relative Abundance") +
+#   theme(
+#     axis.text.x = element_text(face = "bold", color = axiscolors$axiscolor),
+#     axis.text.y = element_text(face = "bold", color = axiscolors$axiscolor),
+#     legend.position = "right"
+#   )
+
+# gg_bray_dist_matrix
 ```
 ```{r}
 ggsave(here("Amplicon_scaledown", "figures", "hellinger_transformed_bray_curtis_dist_matrix.png"), device = "png", width = 12, height = 10)
@@ -341,21 +351,52 @@ ggsave(here("Amplicon_scaledown", "figures", "hellinger_transformed_bray_curtis_
 > Next chunk merges replicates and sample type. It needs to be one plot per soil type
 
 ```{r}
-dat_types_ra_filtered <- filter_otus(dat_types_sub4000_ra, 0.1)
+soil <- unique(dat_types_sub4000_ra$metadata$Soil_type)
 
-metadata_ra <- dat_types_ra_filtered$metadata
-otu_ra <- dat_types_ra_filtered$abund
+deseq_function <- function(soil) {
+  deseqmatrix <- dat_types %>%
+    amp_subset_samples(Soil_type == soil)
 
-otu_ra_long <- otu_ra %>%
+  dds <- DESeqDataSetFromMatrix(
+    countData = deseqmatrix$abund,
+    colData = deseqmatrix$metadata,
+    design = ~Protocol
+  )
+
+  deseq <- DESeq(dds)
+  res <- as.data.frame(results(deseq))
+  res$Soil_type <- soil
+  return(res)
+}
+
+deseq_results <- tibble(soil = soil) %>%
+  mutate(deseq = map(.x = soil, .f = ~ deseq_function(.x)))
+
+dif_abundance <- list.rbind(deseq_results$deseq) %>%
+  mutate(
+    pval_signif = if_else(padj < 0.05, TRUE, FALSE),
+    fc_signif = if_else(abs(log2FoldChange) > 1, TRUE, FALSE),
+  ) %>%
+  rownames_to_column("OTU")
+```
+
+
+```{r}
+dat_types_filtered_0.1 <- filter_otus(dat_types_sub4000_ra, 0.1)
+
+metadata <- dat_types$metadata
+otu <- dat_types_filtered_0.1$abund
+
+otu_long <- otu %>%
   t() %>%
   as.data.frame() %>%
   rownames_to_column("SeqID") %>%
   pivot_longer(-SeqID, names_to = "OTU", values_to = "abund")
 
-metadata_ra_selected <- metadata_ra %>%
+metadata_selected <- metadata %>%
   select(SeqID, Soil_type, Protocol)
 
-metadata_otu_combined <- left_join(metadata_ra_selected, otu_ra_long)
+metadata_otu_combined <- left_join(metadata_selected, otu_long)
 
 
 metadata_otu_combined_summarized_trip <- metadata_otu_combined %>%
@@ -366,22 +407,24 @@ metadata_otu_combined_summarized_trip <- metadata_otu_combined %>%
     total_abund = sum(abund),
     rel_abund = abund / total_abund * 100
   ) %>%
-  select(-abund, -total_abund)
+  select(-abund, -total_abund) %>%
+  filter(OTU %in% rownames(dat_types_filtered_0.1$abund))
 
 
 metadata_otu_combined_summarized_trip_wide_protocol <- metadata_otu_combined_summarized_trip %>%
   relocate(OTU, .before = Protocol) %>%
   pivot_wider(names_from = Protocol, values_from = rel_abund) %>%
-  rename(Downscaled = `2 x 5 µL`, Fullscale = `2 x 25 µL`) %>%
+  dplyr::rename(Downscaled = `2 x 5 µL`, Fullscale = `2 x 25 µL`) %>%
   rowwise() %>%
   filter(sum(Fullscale, Downscaled) > 0) %>%
   mutate(
     FC = -log2(Downscaled / Fullscale),
     Bias = if_else(FC > 1, "More abundant with 2 x 25 µL", if_else(FC < (-1), "More abundant with 2 x 5 µL", "Equally detected"))
-  )
+  ) %>%
+  left_join(dif_abundance)
 ```
 ```{r}
-ggdiff_clay <- plotDiffRelabund(metadata_otu_combined_summarized_trip_wide_protocol, "Clay")
+plotDiffRelabund(metadata_otu_combined_summarized_trip_wide_protocol, "Beach Sand")
 ```
 
 ```{r}
