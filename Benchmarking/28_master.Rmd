@@ -29,6 +29,7 @@ library(ggpubr)
 source("loaddata.R")
 source(here("Benchmarking", "functions.R"))
 colors <- c("grey", "darkgoldenrod2", "royalblue4", "seagreen", "salmon", "purple")
+kit_colors <- brewer.pal(5, "Dark2")
 
 # Load theme
 source("../article_theme.R")
@@ -68,7 +69,7 @@ bray_distance <- as.matrix(vegdist(tax_data_rel_0.1)) %>%
 metadata <- dat_types_sub10000_ra$metadata %>%
   select(SeqID, Sample_id, Kit, Soil_type)
 
-metadata_renamed <- metadata %>% 
+metadata_renamed <- metadata %>%
   dplyr::rename(
     comparison = SeqID,
     compared_soil = Soil_type,
@@ -155,7 +156,7 @@ mean_sd_table_wide <- mean_sd_table_long %>%
   relocate(Conc_qubit:`260/230`, .after = Kit) %>%
   relocate(lib_conc, .after = failed_lib) %>%
   group_by(Soil_type) %>%
-  mutate_at(vars(Soil_type, Soil_properties), ~replace(., duplicated(.), ""))
+  mutate_at(vars(Soil_type, Soil_properties), ~ replace(., duplicated(.), ""))
 
 
 names <- tibble(
@@ -234,14 +235,29 @@ plot.ordinate.insert <- plot.ordinate +
 plot.ordinate.insert
 ```
 
+
+# Soil ordination panel
 ```{r}
 soil <- unique(dat_types_sub10000_ra$metadata$Soil_type)
-ord_type <- "PCA"
+gg_kit_colors <- scale_color_manual(values = kit_colors)
+gg_kit_fill <- scale_fill_manual(values = kit_colors)
 
-for (s in soil) {
-  p <- plotAmpliconOrdinationSoil(dat_types_sub10000_ra, s, ord_type = ord_type)
-  ggsave(here("Benchmarking", "figures", paste0("ordination_", ord_type, "_rel_ab_0.1_rarefied_", s, ".png")), plot = p, height = 7, width = 9, device = "png")
+plot_soil_ord <- function(soil) {
+  plotAmpliconOrdinationSoil(dat_types_sub10000_ra, soil, ord_type = "PCA") + gg_kit_colors + gg_kit_fill
 }
+
+plot_list <- map(soil, plot_soil_ord)
+
+ggleg <- plot_list[[1]] + theme(legend.position = "right")
+
+leg <- list(get_legend(ggleg))
+
+plot_list2 <- append(plot_list, leg)
+
+p <- ggarrange(plotlist = plot_list2, nrow = 2, ncol = ceiling(length(plot_list) / 2), labels = toupper(letters[1:5]))
+```
+```{r}
+ggsave("./figures/benchmark_ordination_panel.png", device = "png", height = 10, width = 12, plot = p)
 ```
 
 

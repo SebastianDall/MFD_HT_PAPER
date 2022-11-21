@@ -39,6 +39,8 @@ plotAmpliconOrdinationSoil <- function(df, soil_filter, ord_type = "CA", rel_ab_
             transform = "hellinger",
             distmeasure = "bray",
             sample_colorframe = "Kit",
+            species_nlabels = 5,
+            species_label_taxonomy = "Phylum",
             species_plot = T
         ) +
         # ggforce::geom_mark_ellipse(aes(fill = Kit, group = Kit), alpha = 0.5, color = "black") +
@@ -48,7 +50,7 @@ plotAmpliconOrdinationSoil <- function(df, soil_filter, ord_type = "CA", rel_ab_
         ) +
         articletheme +
         theme(
-            legend.position = "bottom",
+            legend.position = "none",
             axis.text.x = element_text(angle = 0, hjust = 0, vjust = 0)
         )
 }
