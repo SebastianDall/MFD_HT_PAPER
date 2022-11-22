@@ -357,28 +357,11 @@ soil <- unique(dat_types$metadata$Soil_type)
 deseq_results <- tibble(soil = soil) %>%
   mutate(deseq = map(.x = soil, .f = ~ deseq_function(.x)))
 
-dif_abundance <- list.rbind(deseq_results$deseq) %>%
+deseq_results_dataframe <- list.rbind(deseq_results$deseq) %>%
   mutate(
     pval_signif = if_else(padj < 0.05, TRUE, FALSE),
     fc_signif = if_else(abs(log2FoldChange) > 1, TRUE, FALSE),
   )
-```
-
-  deseq <- DESeq(dds)
-  res <- as.data.frame(results(deseq))
-  res$Soil_type <- soil
-  return(res)
-}
-
-deseq_results <- tibble(soil = soil) %>%
-  mutate(deseq = map(.x = soil, .f = ~ deseq_function(.x)))
-
-dif_abundance <- list.rbind(deseq_results$deseq) %>%
-  mutate(
-    pval_signif = if_else(padj < 0.05, TRUE, FALSE),
-    fc_signif = if_else(abs(log2FoldChange) > 1, TRUE, FALSE),
-  ) %>%
-  rownames_to_column("OTU")
 ```
 
 
@@ -386,40 +369,15 @@ dif_abundance <- list.rbind(deseq_results$deseq) %>%
 dat_types_filtered_0.1 <- dat_types %>%
   filter_otus(0.1)
 
-metadata <- dat_types$metadata
+metadata <- dat_types$metadata %>%
+  mutate(Protocol = str_replace(Protocol, "µ", "u"))
 otu <- dat_types_filtered_0.1$abund
 
-otu_long <- otu %>%
-  t() %>%
-  as.data.frame() %>%
-  rownames_to_column("SeqID") %>%
-  pivot_longer(-SeqID, names_to = "OTU", values_to = "abund")
-
-metadata_selected <- metadata %>%
-  select(SeqID, Soil_type, Protocol)
-
-metadata_otu_combined <- left_join(metadata_selected, otu_long)
-
-# Summmarise triplicates
-metadata_otu_combined_summarized_trip <- metadata_otu_combined %>%
-  group_by(Soil_type, Protocol, OTU) %>%
-  summarise(abund = round(mean(abund))) %>%
-  group_by(Soil_type, Protocol) %>%
-  mutate(
-    total_abund = sum(abund, na.rm = TRUE),
-    rel_abund = abund / total_abund * 100
-  ) %>%
-  select(-abund, -total_abund) %>%
-  filter(OTU %in% rownames(dat_types_filtered_0.1$abund))
-
-# Add DESeq2 data
-metadata_otu_combined_summarized_trip_wide_protocol <- metadata_otu_combined_summarized_trip %>%
-  relocate(OTU, .before = Protocol) %>%
-  pivot_wider(names_from = Protocol, values_from = rel_abund) %>%
-  dplyr::rename(Downscaled = `2 x 5 µL`, Fullscale = `2 x 25 µL`) %>%
-  rowwise() %>%
-  filter(sum(Fullscale, Downscaled) > 0) %>%
-  left_join(dif_abundance) %>%
+ProtocolDifferentialAbundance <- combine_otu_w_metadata(metadata = metadata, otu = otu) %>%
+  summarise_triplicates() %>%
+  calculate_relative_abundance() %>%
+  filter_double_zeros() %>%
+  left_join(deseq_results_dataframe) %>%
   mutate(
     Bias = if_else(log2FoldChange < 0 & pval_signif, "More abundant with 2 x 25 µL", if_else(pval_signif & log2FoldChange > 0, "More abundant with 2 x 5 µL", "Equally detected"))
   ) %>%
