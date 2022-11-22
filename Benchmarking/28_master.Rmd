@@ -120,13 +120,15 @@ rarefied_alphadiveristy <- dat_types_sub10000_ra_rel_0.1 %>%
 # Join different data: Lab, Alpha.
 combine_alpha_beta_with_metadata <- rarefied_alphadiveristy %>%
   right_join(lab_metadata) %>%
+  # Calculate failed libraries
   group_by(Soil_type, Kit) %>%
   mutate(failed_lib = 3 - sum(!is.na(ObservedOTUs))) %>%
+  # Calculate mean and sd for all variables
   summarise(
     across(where(is.numeric), .fns = list(mean = ~ mean(., na.rm = T), sd = ~ sd(., na.rm = T)), .names = "{.fn}_{.col}")
   ) %>%
+  # Format mean and sd
   ungroup() %>%
-  # Calculate mean and sd for all variables
   mutate(
     failed_lib = as.character(mean_failed_lib),
     across(where(is.numeric), ~ format(round(., 2), nsmall = 2)),
