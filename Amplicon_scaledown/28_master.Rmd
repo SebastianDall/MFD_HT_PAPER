@@ -98,8 +98,89 @@ bray_variation_between_protocols <- bray_with_metadata %>%
   group_by(Soil_type) %>%
   summarise(
     mean_bray = format(round(mean(value, na.rm = TRUE), 2), nsmall = 2),
-    sd_bray = format(round(sd(value, na.rm = TRUE), 2), nsmall = 2)
+    sd_bray = format(round(sd(value, na.rm = TRUE), 2), nsmall = 2),
+    bray_between = paste0(mean_bray, " (", sd_bray,")")
+  ) %>% 
+  mutate(Protocol = "2 x 25 µL") %>% 
+  select(Soil_type, Protocol, bray_between)
+
+```
+
+
+
+```{r}
+rarefied_alphadiversity <- dat_types_sub4000_ra %>%
+  amp_alphadiv(
+    measure = c("observed", "shannon", "simpson"),
+    richness = T
+  ) %>%
+  select(
+    SeqID,
+    Soil_type,
+    Protocol,
+    Shannon
   )
+
+combine_alpha_beta_with_metadata <- rarefied_alphadiversity %>%
+  # add library_concentration
+  # Calculate failed libraries
+  group_by(Soil_type, Protocol) %>%
+  mutate(failed_lib = 3 - n()) %>%
+  # Calculate mean and sd for all numeric varaibles.
+  summarise(
+    across(where(is.numeric), .fns = list(mean = ~ mean(., na.rm = T), sd = ~ sd(., na.rm = T)), .names = "{.fn}_{.col}")
+  ) %>%
+  # Format mean and sd
+  ungroup() %>%
+  mutate(
+    failed_lib = as.character(mean_failed_lib),
+    across(where(is.numeric), ~ format(round(., 2), nsmall = 2))
+  ) %>%
+  left_join(bray_variation_protocol) %>%
+  arrange(Soil_type, Protocol) %>% 
+  select(-c(sd_failed_lib, mean_failed_lib))
+
+
+
+
+
+mean_sd_table <- combine_alpha_beta_with_metadata %>% 
+  pivot_longer(cols = -c(Soil_type, Protocol, failed_lib, contains("sd")), names_to = "mean", values_to = "mean_value", names_prefix = "mean_") %>%
+  pivot_longer(cols = -c(Soil_type, Protocol, failed_lib, contains("mean")), names_to = "sd", values_to = "sd_value", names_prefix = "sd_") %>%
+  group_by(Soil_type, Protocol) %>%
+  # Filter for wrong match
+  filter(mean == sd) %>%
+  # Paste mean (sd)
+  mutate(
+    mean_sd = paste0(mean_value, " (", sd_value, ")")
+  ) %>%
+  select(!mean_value:sd_value) %>% 
+  # make wide and add bray variation between protocols
+  pivot_wider(names_from = mean, values_from = mean_sd) %>% 
+  left_join(bray_variation_between_protocols) %>% 
+  # Remove duplicate Soil type
+  group_by(Soil_type) %>% 
+  mutate_at(vars(Soil_type), ~ replace(., duplicated(.), "")) %>% 
+  mutate(bray_between = if_else(is.na(bray_between), "", bray_between))
+
+
+names <- tibble(
+  old_names = colnames(mean_sd_table),
+  new_names = c("Soil type", "Protocol", "Failed Libraries", "Shannon Diversity", "Bray-Curtis Variation", "Bray-Curtis Variation\nBetween protocols") # "Site name", "Longitude Latitude", "Environment",
+)
+
+final_table <- mean_sd_table %>% 
+  rename_at(vars(names$old_names), ~ names$new_names)
+
+
+hjustification_matrix <- as.vector(matrix(c(0, 0, 1, 1, 1, 1), ncol = ncol(mean_sd_table), nrow = nrow(mean_sd_table), byrow = TRUE))
+xjustification_matrix <- as.vector(matrix(c(0.1, 0.1, 0.9, 0.9, 0.9, 0.9), ncol = ncol(mean_sd_table), nrow = nrow(mean_sd_table), byrow = TRUE))
+
+
+alpha_table <- final_table %>%
+  ggtexttable(rows = NULL, theme = ttheme(colnames.style = colnames_style(fill = "white"), tbody.style = tbody_style(fill = "white", hjust = hjustification_matrix, x = xjustification_matrix))) %>%
+  tab_add_hline(at.row = 1:2, row.side = "top", linewidth = 2) %>%
+  tab_add_hline(at.row = seq(4, 10, 2), row.side = "top", linewidth = 1)
 ```
 
 
@@ -125,61 +206,6 @@ result <- t.test(mean_div ~ Protocol, data = temp)$p.value %>%
   signif(., digits = 3)
 
 result
-```
-
-
-
-```{r}
-tabReads <- merge(
-  dat_types$metadata,
-  data.frame(NumReads = apply(dat_types$abund, 2, sum)),
-  by = 0
-)
-
-numberOfReads <- tabReads %>%
-  select(SeqID, Soil_type, Kit, NumReads)
-
-alpha_div_subs4000_ra <- dat_types_sub4000_ra %>%
-  amp_alphadiv(
-    measure = c("observed", "shannon", "simpson"),
-    richness = T
-  ) %>%
-  select(
-    SeqID,
-    Soil_type,
-    Protocol,
-    ObservedOTUs,
-    Shannon
-  )
-
-alpha_div_subs4000_ra_summarised <- alpha_div_subs4000_ra %>%
-  left_join(numberOfReads) %>%
-  group_by(Soil_type, Protocol) %>%
-  mutate(failed_lib = 3 - n()) %>%
-  summarise(
-    meanReads = round(mean(NumReads)),
-    # sdReads = sd(NumReads),
-    meanOTU = round(mean(ObservedOTUs), 0),
-    sdOTU = sd(ObservedOTUs),
-    mean_shannon = mean(Shannon),
-    sdShannon = sd(Shannon),
-    failed_lib = max(failed_lib)
-  ) %>%
-  ungroup() %>%
-  mutate(across(where(is.numeric), ~ round(., 2)))
-arrange(Soil_type, Protocol)
-
-hjustification_matrix <- as.vector(matrix(c(0, 0, 1, 1, 1, 1, 1, 1), ncol = 8, nrow = nrow(alpha_div_subs4000_ra_summarised), byrow = TRUE))
-xjustification_matrix <- as.vector(matrix(c(0.1, 0.1, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9), ncol = 8, nrow = nrow(alpha_div_subs4000_ra_summarised), byrow = TRUE))
-
-
-alpha_table <- alpha_div_subs4000_ra_summarised %>%
-  mutate(Soil_type = if_else(Protocol == "2 x 5 µL", "", Soil_type)) %>%
-  relocate(failed_lib, .after = Protocol) %>%
-  rename(`Soil Type` = Soil_type, `Mean\nReads` = meanReads, `Mean\nASVs` = meanOTU, `Sd\nASVs` = sdOTU, `Mean\nShannon` = mean_shannon, `Sd\nShannon` = sdShannon, `Failed\nLibraries` = failed_lib) %>%
-  ggtexttable(rows = NULL, theme = ttheme(colnames.style = colnames_style(fill = "white"), tbody.style = tbody_style(fill = "white", hjust = hjustification_matrix, x = xjustification_matrix))) %>%
-  tab_add_hline(at.row = 1:2, row.side = "top", linewidth = 2) %>%
-  tab_add_hline(at.row = seq(4, 10, 2), row.side = "top", linewidth = 1)
 ```
 
 
@@ -389,7 +415,7 @@ Note on p-values set to NA: some values in the results table can be set to NA fo
 * If within a row, all samples have zero counts, the baseMean column will be zero, and the log2 fold change estimates, p value and adjusted p value will all be set to NA.
 * If a row contains a sample with an extreme count outlier then the p value and adjusted p value will be set to NA. These outlier counts are detected by Cook’s distance. Customization of this outlier filtering and description of functionality for replacement of outlier counts and refitting is described below
 * If a row is filtered by automatic independent filtering, for having a low mean normalized count, then only the adjusted p value will be set to NA. Description and customization of independent filtering is described below
-
+`NAs can be omitted by setting independentFiltering = FALSE, cooksCutoff = FALSE`
 
 
 
