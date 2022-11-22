@@ -28,6 +28,7 @@ library(vegan)
 library(patchwork)
 library(ggpubr)
 library(rlist)
+library(DESeq2)
 
 ### Load and tidy ###
 source("loaddata.R")
@@ -351,17 +352,17 @@ ggsave(here("Amplicon_scaledown", "figures", "hellinger_transformed_bray_curtis_
 > Next chunk merges replicates and sample type. It needs to be one plot per soil type
 
 ```{r}
-soil <- unique(dat_types_sub4000_ra$metadata$Soil_type)
+soil <- unique(dat_types$metadata$Soil_type)
 
-deseq_function <- function(soil) {
-  deseqmatrix <- dat_types %>%
-    amp_subset_samples(Soil_type == soil)
+deseq_results <- tibble(soil = soil) %>%
+  mutate(deseq = map(.x = soil, .f = ~ deseq_function(.x)))
 
-  dds <- DESeqDataSetFromMatrix(
-    countData = deseqmatrix$abund,
-    colData = deseqmatrix$metadata,
-    design = ~Protocol
+dif_abundance <- list.rbind(deseq_results$deseq) %>%
+  mutate(
+    pval_signif = if_else(padj < 0.05, TRUE, FALSE),
+    fc_signif = if_else(abs(log2FoldChange) > 1, TRUE, FALSE),
   )
+```
 
   deseq <- DESeq(dds)
   res <- as.data.frame(results(deseq))
@@ -382,7 +383,8 @@ dif_abundance <- list.rbind(deseq_results$deseq) %>%
 
 
 ```{r}
-dat_types_filtered_0.1 <- filter_otus(dat_types_sub4000_ra, 0.1)
+dat_types_filtered_0.1 <- dat_types %>%
+  filter_otus(0.1)
 
 metadata <- dat_types$metadata
 otu <- dat_types_filtered_0.1$abund
@@ -398,37 +400,64 @@ metadata_selected <- metadata %>%
 
 metadata_otu_combined <- left_join(metadata_selected, otu_long)
 
-
+# Summmarise triplicates
 metadata_otu_combined_summarized_trip <- metadata_otu_combined %>%
   group_by(Soil_type, Protocol, OTU) %>%
   summarise(abund = round(mean(abund))) %>%
   group_by(Soil_type, Protocol) %>%
   mutate(
-    total_abund = sum(abund),
+    total_abund = sum(abund, na.rm = TRUE),
     rel_abund = abund / total_abund * 100
   ) %>%
   select(-abund, -total_abund) %>%
   filter(OTU %in% rownames(dat_types_filtered_0.1$abund))
 
-
+# Add DESeq2 data
 metadata_otu_combined_summarized_trip_wide_protocol <- metadata_otu_combined_summarized_trip %>%
   relocate(OTU, .before = Protocol) %>%
   pivot_wider(names_from = Protocol, values_from = rel_abund) %>%
   dplyr::rename(Downscaled = `2 x 5 µL`, Fullscale = `2 x 25 µL`) %>%
   rowwise() %>%
   filter(sum(Fullscale, Downscaled) > 0) %>%
+  left_join(dif_abundance) %>%
   mutate(
-    FC = -log2(Downscaled / Fullscale),
-    Bias = if_else(FC > 1, "More abundant with 2 x 25 µL", if_else(FC < (-1), "More abundant with 2 x 5 µL", "Equally detected"))
+    Bias = if_else(log2FoldChange < 0 & pval_signif, "More abundant with 2 x 25 µL", if_else(pval_signif & log2FoldChange > 0, "More abundant with 2 x 5 µL", "Equally detected"))
   ) %>%
-  left_join(dif_abundance)
+  filter(!is.na(Bias))
 ```
+
+Note on p-values set to NA: some values in the results table can be set to NA for one of the following reasons:
+
+* If within a row, all samples have zero counts, the baseMean column will be zero, and the log2 fold change estimates, p value and adjusted p value will all be set to NA.
+* If a row contains a sample with an extreme count outlier then the p value and adjusted p value will be set to NA. These outlier counts are detected by Cook’s distance. Customization of this outlier filtering and description of functionality for replacement of outlier counts and refitting is described below
+* If a row is filtered by automatic independent filtering, for having a low mean normalized count, then only the adjusted p value will be set to NA. Description and customization of independent filtering is described below
+
+
+
+
+
+
+
 ```{r}
-plotDiffRelabund(metadata_otu_combined_summarized_trip_wide_protocol, "Beach Sand")
+plot_list <- map(.x = soil, ~ plotDiffRelabund(metadata_otu_combined_summarized_trip_wide_protocol, .x))
+
+ggleg <- plot_list[[5]] + theme(legend.position = "right")
+
+leg <- list(get_legend(ggleg))
+
+plot_list2 <- append(plot_list, leg)
+
+p <- ggarrange(plotlist = plot_list2, nrow = 2, ncol = ceiling(length(plot_list) / 2), labels = toupper(letters[1:5]))
+p
 ```
 
 ```{r}
-# for(s in unique(metadata_ra$Soil_type)){
+ggsave("./figures/diff_abundance_panel.png", plot = p, height = 13, width = 15, device = "png")
+```
+
+
+```{r}
+# for(s in soil){
 #   print(s)
 
 #   p <- plotDiffRelabund(metadata_otu_combined_summarized_trip_wide_protocol, s)
