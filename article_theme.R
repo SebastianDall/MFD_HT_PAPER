@@ -13,6 +13,7 @@ articletheme <- theme_bw(base_size = 10) +
         legend.text = element_text(face = "bold", size = 10)
     )
 
+articlethemex0 <- articletheme + theme(axis.text.x = element_text(angle = 0, face = "bold", vjust = 0, size = 10, hjust = 0.5))
 
 
 abundance_filter <- function(df, abundance_threshold = 0.1, verbose = F) {
