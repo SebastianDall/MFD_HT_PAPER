@@ -136,14 +136,14 @@ combine_alpha_beta_with_metadata <- rarefied_alphadiversity %>%
     across(where(is.numeric), ~ format(round(., 2), nsmall = 2))
   ) %>%
   left_join(bray_variation_protocol) %>%
-  arrange(Soil_type, Protocol) %>% 
+  arrange(Soil_type, Protocol) %>%
   select(-c(sd_failed_lib, mean_failed_lib))
 
 
 
 
 
-mean_sd_table <- combine_alpha_beta_with_metadata %>% 
+mean_sd_table <- combine_alpha_beta_with_metadata %>%
   pivot_longer(cols = -c(Soil_type, Protocol, failed_lib, contains("sd")), names_to = "mean", values_to = "mean_value", names_prefix = "mean_") %>%
   pivot_longer(cols = -c(Soil_type, Protocol, failed_lib, contains("mean")), names_to = "sd", values_to = "sd_value", names_prefix = "sd_") %>%
   group_by(Soil_type, Protocol) %>%
@@ -153,22 +153,22 @@ mean_sd_table <- combine_alpha_beta_with_metadata %>%
   mutate(
     mean_sd = paste0(mean_value, " (", sd_value, ")")
   ) %>%
-  select(!mean_value:sd_value) %>% 
+  select(!mean_value:sd_value) %>%
   # make wide and add bray variation between protocols
-  pivot_wider(names_from = mean, values_from = mean_sd) %>% 
-  left_join(bray_variation_between_protocols) %>% 
+  pivot_wider(names_from = mean, values_from = mean_sd) %>%
+  left_join(bray_variation_between_protocols) %>%
   # Remove duplicate Soil type
-  group_by(Soil_type) %>% 
-  mutate_at(vars(Soil_type), ~ replace(., duplicated(.), "")) %>% 
+  group_by(Soil_type) %>%
+  mutate_at(vars(Soil_type), ~ replace(., duplicated(.), "")) %>%
   mutate(bray_between = if_else(is.na(bray_between), "", bray_between))
 
 
 names <- tibble(
   old_names = colnames(mean_sd_table),
-  new_names = c("Soil type", "Protocol", "Failed Libraries", "Shannon Diversity", "Bray-Curtis Variation", "Bray-Curtis Variation\nBetween protocols") # "Site name", "Longitude Latitude", "Environment",
+  new_names = c("Soil type", "Protocol", "Failed\nLibraries", "Shannon\nDiversity", "Bray-Curtis\nVariation", "Bray-Curtis Variation\nBetween protocols") # "Site name", "Longitude Latitude", "Environment",
 )
 
-final_table <- mean_sd_table %>% 
+final_table <- mean_sd_table %>%
   rename_at(vars(names$old_names), ~ names$new_names)
 
 
@@ -252,10 +252,10 @@ heatmap
 
 
 ```{r}
-gg_table_dummy <- ggarrange(alpha_table, NULL, nrow = 2, ncol = 1, heights = c(1, 0.9))
-ggarrange(heatmap, gg_table_dummy, ncol = 2, labels = c("A", "B"), widths = c(1.4, 1))
+gg_table_dummy <- ggarrange(alpha_table, NULL, nrow = 2, ncol = 1, heights = c(1, 0.8))
+ggarrange(gg_table_dummy, heatmap, ncol = 2, labels = c("A", "B"), widths = c(1, 1))
 
-ggsave(here("Amplicon_scaledown", "figures", "heatmap_alpha_div.png"), device = "png", width = 14, height = 7)
+ggsave(here("Amplicon_scaledown", "figures", "heatmap_alpha_div_v2.png"), device = "png", width = 14, height = 7)
 ```
 
 #### Ordination
