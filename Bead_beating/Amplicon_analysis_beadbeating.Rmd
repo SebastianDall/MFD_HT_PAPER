@@ -25,6 +25,7 @@ library(ampvis2)
 library(data.table)
 library(tidyverse)
 library(here)
+library(ggpubr)
 
 setwd(here("Bead_beating"))
 
@@ -45,14 +46,14 @@ Data removed for RPM = 1000 as results are bad - bead beating does not seem to w
 ## QC - samples
 
 ```{r}
-dat_types <- amp_subset_samples(datraw, Soil_type != "Blank" & !is.na(Kit))
-```
-
-```{r}
+dat_types <- amp_subset_samples(datraw, !Soil_type %in% c("Blank", "MIDAS") & !is.na(Kit))
 # Create subsets
 dat_types_sub4000 <- amp_subset_samples(dat_types, minreads = 4000)
 dat_types_sub4000_ra <- amp_subset_samples(dat_types_sub4000, rarefy = min(colSums(dat_types_sub4000$abund)))
+```
 
+### Heatmap
+```{r}
 phyla.text <- dat_types_sub4000_ra %>%
   amp_heatmap(
     group_by = c("Project_id"),
@@ -85,251 +86,131 @@ plot.heat_all <- dat_types_sub4000 %>%
     y = "",
     title = "Heatmap aggregated at phylum level across RPM and time"
   ) +
-  theme_bw(base_size = 10) +
-  theme(
-    legend.position = "right",
-    axis.text.x = element_text(angle = 90, face = "bold", vjust = 0.5, size = 10),
-    axis.text.y = element_text(face = "bold", size = 10),
-    plot.margin = unit(c(0, 1, 0, 0), "cm"),
-    plot.title = element_text(hjust = 0.5, face = "bold", size = 10),
-    strip.text.x = element_text(size = 7, face = "bold"),
-    strip.text.y = element_text(size = 7, face = "bold"),
-    legend.title = element_text(face = "bold"),
-    legend.text = element_text(face = "bold", size = 10)
-  )
+  articlethemex0
 
-plot.ord_all <- dat_types_sub4000_ra %>%
-  # amp_subset_samples(Soil_type == "Clay") %>%
-  amp_ordinate(
-    filter_species = 0.05,
-    type = "PCoA",
-    distmeasure = "bray",
-    transform = "none",
-    species_plot = FALSE,
-    sample_color_by = "Soil_type",
-    sample_shape_by = "RPM",
-    sample_colorframe = FALSE
-  ) +
-  scale_color_manual(values = colors, guide = "none") +
-  scale_fill_manual(values = colors) +
-  labs(
-    title = "PCoA of microbial diversity",
-    fill = "Sample type",
-    shape = "Intensity [RPM]"
-  ) +
-  ggforce::geom_mark_ellipse(aes(fill = Soil_type, group = Soil_type), alpha = 0.5, color = "black") +
-  theme_bw(base_size = 10) +
-  theme(
-    legend.position = "right",
-    axis.text.x = element_text(face = "bold", vjust = 0.5, size = 10),
-    axis.text.y = element_text(face = "bold", size = 10),
-    axis.title = element_text(face = "bold", size = 10),
-    plot.margin = unit(c(0, 1, 0, 0), "cm"),
-    plot.title = element_text(hjust = 0.5, face = "bold", size = 10),
-    strip.text.x = element_text(size = 7, face = "bold"),
-    strip.text.y = element_text(size = 7, face = "bold"),
-    legend.title = element_text(face = "bold"),
-    legend.text = element_text(face = "bold", size = 10)
-  )
+plot.heat_all
+```
 
-plot.ord_all
-
-# The plot with a zoom
-plot.insert <- plot.ord_all +
-  xlim(0.16, 0.22) +
-  ylim(-0.35, -0.28) +
-  theme(
-    plot.title = element_blank(),
-    axis.title.x = element_blank(),
-    axis.title.y = element_blank(),
-    legend.position = "none"
-  )
-
-plot.ordinate.insert <- plot.ord_all +
-  annotation_custom(ggplotGrob(plot.insert), xmin = -0.3, xmax = 0.2, ymin = -0.2, ymax = 0.2) +
-  geom_rect(aes(xmin = -0.3, xmax = 0.2, ymin = -0.2, ymax = 0.2), color = "black", linetype = "dashed", alpha = 0) +
-  geom_rect(aes(xmin = 0.16, xmax = 0.22, ymin = -0.35, ymax = -0.28), color = "black", alpha = 0) +
-  geom_segment(aes(x = 0.16, y = -0.35, xend = -0.3, yend = -0.2), color = "black", linetype = "dashed") +
-  geom_segment(aes(x = 0.22, y = -0.28, xend = 0.2, yend = 0.2), color = "black", linetype = "dashed")
-
-plot.ordinate.insert
-
-plot.rda_clay <- dat_types_sub4000_ra %>%
-  amp_subset_samples(Soil_type == "Clay") %>%
-  amp_ordinate(
-    filter_species = 0.05,
-    type = "RDA",
-    constrain = c("RPM", "Time"),
-    distmeasure = "bray",
-    # sample_trajectory = "Time",
-    transform = "none",
-    species_plot = FALSE,
-    # species_label_taxonomy = "Genus",
-    # species_nlabels = 10,
-    sample_color_by = "Time",
-    sample_shape_by = "RPM",
-    sample_colorframe = FALSE
-  ) +
-  # ggforce::geom_mark_hull(aes(group = RPM), alpha = 0.5, color = "black") +
-  ggforce::geom_mark_ellipse(aes(group = RPM), alpha = 0.5, color = "black") +
-  scale_color_manual(values = colors2) +
-  scale_shape_discrete(guide = "none") +
-  labs(
-    title = "RDA constrained by RPM and Time - Clay",
-    color = "Time [s]"
-  ) +
-  xlim(-10, 10) +
-  ylim(-10, 10) +
-  guides(color = guide_legend(override.aes = list(size = 5, shape = 15))) +
-  theme(
-    legend.position = "right",
-    axis.text.x = element_text(face = "bold", vjust = 0.5, size = 10),
-    axis.text.y = element_text(face = "bold", size = 10),
-    axis.title = element_text(face = "bold", size = 10),
-    plot.margin = unit(c(0, 1, 1, 0), "cm"),
-    plot.title = element_text(hjust = 0.5, face = "bold", size = 10),
-    strip.text.x = element_text(size = 7, face = "bold"),
-    strip.text.y = element_text(size = 7, face = "bold"),
-    legend.title = element_text(face = "bold"),
-    legend.text = element_text(face = "bold", size = 10)
-  )
-
-plot.rda_clay
-
-plot.rda_organic <- dat_types_sub4000_ra %>%
-  amp_subset_samples(Soil_type == "Organic") %>%
-  amp_ordinate(
-    filter_species = 0.05,
-    type = "RDA",
-    constrain = c("RPM", "Time"),
-    distmeasure = "bray",
-    # sample_trajectory = "Time",
-    transform = "none",
-    species_plot = FALSE,
-    sample_color_by = "Time",
-    sample_shape_by = "RPM",
-    sample_colorframe = FALSE
-  ) +
-  # ggforce::geom_mark_hull(aes(group = RPM), alpha = 0.5, color = "black") +
-  ggforce::geom_mark_ellipse(aes(group = RPM), alpha = 0.5, color = "black") +
-  scale_color_manual(values = colors2) +
-  labs(title = "RDA constrained by RPM and Time - Organic") +
-  xlim(-10, 10) +
-  ylim(-10, 10) +
-  theme(
-    legend.position = "none",
-    axis.text.x = element_text(face = "bold", vjust = 0.5, size = 10),
-    axis.text.y = element_text(face = "bold", size = 10),
-    axis.title = element_text(face = "bold", size = 10),
-    plot.margin = unit(c(0, 1, 1, 0), "cm"),
-    plot.title = element_text(hjust = 0.5, face = "bold", size = 10),
-    strip.text.x = element_text(size = 7, face = "bold"),
-    strip.text.y = element_text(size = 7, face = "bold"),
-    legend.title = element_text(face = "bold"),
-    legend.text = element_text(face = "bold", size = 10)
-  )
+### Ordination
 
 
-plot.rda_sand <- dat_types_sub4000_ra %>%
-  amp_subset_samples(Soil_type == "Sand") %>%
-  amp_ordinate(
-    filter_species = 0.05,
-    type = "RDA",
-    constrain = c("RPM", "Time"),
-    distmeasure = "bray",
-    # sample_trajectory = "Time",
-    transform = "none",
-    species_plot = FALSE,
-    # species_label_taxonomy = "Phylum",
-    # species_nlabels = 10,
-    # envfit_factor = "Time",
-    sample_color_by = "Time",
-    sample_shape_by = "RPM",
-    sample_colorframe = FALSE
-  ) +
-  # ggforce::geom_mark_hull(aes(group = RPM), alpha = 0.5, color = "black") +
-  ggforce::geom_mark_ellipse(aes(group = RPM), alpha = 0.5, color = "black") +
-  scale_color_manual(values = colors2) +
-  labs(
-    title = "RDA constrained by RPM and Time - Sand",
-    shape = "Intensity [RPM]"
-  ) +
-  xlim(-10, 10) +
-  ylim(-10, 10) +
-  theme(
-    legend.position = "none",
-    axis.text.x = element_text(face = "bold", vjust = 0.5, size = 10),
-    axis.text.y = element_text(face = "bold", size = 10),
-    axis.title = element_text(face = "bold", size = 10),
-    plot.margin = unit(c(0, 1, 1, 0), "cm"),
-    plot.title = element_text(hjust = 0.5, face = "bold", size = 10),
-    strip.text.x = element_text(size = 7, face = "bold"),
-    strip.text.y = element_text(size = 7, face = "bold"),
-    legend.title = element_text(face = "bold"),
-    legend.text = element_text(face = "bold", size = 10)
-  )
+```{r}
+plot_ordination <- function(soil) {
+  gg <- dat_types_sub4000_ra %>%
+    amp_subset_samples(Soil_type == soil) %>%
+    amp_ordinate(
+      filter_species = 0.05,
+      type = "RDA",
+      constrain = c("RPM", "Time"),
+      transform = "none",
+      species_plot = FALSE,
+      # species_label_taxonomy = "Genus",
+      # species_nlabels = 10,
+      sample_color_by = "Time",
+      sample_shape_by = "RPM",
+      sample_colorframe = FALSE,
+      sample_point_size = 5
+    ) +
+    geom_point(alpha = 0.5) +
+    ggforce::geom_mark_ellipse(aes(group = RPM), alpha = 0.5, color = "black") +
+    scale_color_manual(values = colors2) +
+    # scale_shape_discrete(guide = "none") +
+    labs(
+      title = paste0("RDA constrained by RPM and Time - ", soil),
+      color = "Time [s]",
+      shape = "Intensity [RPM]"
+    ) +
+    # xlim(-10, 10) +
+    # ylim(-10, 10) +
+    guides(color = guide_legend(override.aes = list(size = 5, shape = 15))) +
+    articlethemex0 +
+    theme(legend.position = "none")
+}
+```
 
-plot.rda_sand
+```{r}
+soil <- unique(dat_types_sub4000_ra$metadata$Soil_type)
+
+plot_list <- map(soil, plot_ordination)
+
+plot_list[[3]] <- plot_list[[3]] + theme(legend.position = "right")
 
 
+p <- ggarrange(plotlist = plot_list, nrow = 1, ncol = ceiling(length(plot_list)), labels = toupper(letters[2:4]), common.legend = TRUE, legend = "right")
+p
+```
+
+```{r}
+pf <- ggarrange(plot.heat_all, p, nrow = 2, labels = c("A", ""))
+
+ggsave("./figures/beadbeating_heatmap_RDA.png", device = "png", width = 15, height = 13)
+```
+
+
+```{r}
+metadata <- dat_types_sub4000_ra$metadata
 
 alpha <- dat_types_sub4000_ra %>%
   amp_alpha_diversity(measure = c("observed", "shannon", "simpson"), richness = TRUE) %>%
-  select(Time, RPM, Soil_type, ObservedOTUs, Shannon, Simpson, Chao1, ACE) %>%
-  group_by(Time, RPM, Soil_type) %>%
-  pivot_longer(cols = 4:8, names_to = "index", values_to = "diversity")
+  select(Time, RPM, Soil_type, Shannon)
 
-plot.alpha_all <- alpha %>%
-  filter(index %in% c("Shannon")) %>%
-  ggplot(aes(x = RPM, y = diversity, fill = Time)) +
-  facet_grid(
-    cols = vars(Soil_type),
-    scales = "free_y"
-  ) +
-  geom_boxplot(outlier.size = 0, alpha = 0.5) +
-  # geom_violin(alpha = 0.5) +
-  geom_point(position = position_jitterdodge(jitter.width = 0.1)) +
-  labs(
-    x = "",
-    y = "",
-    fill = "Time [s]",
-    color = "Time [S]"
-  ) +
-  scale_fill_manual(values = colors2) +
-  theme_bw(base_size = 10) +
-  labs(title = "Shannon diversity index across intensity and time") +
-  guides(color = guide_legend(override.aes = list(size = 1))) +
-  theme(
-    legend.position = "none",
-    axis.text.x = element_text(angle = 90, face = "bold", vjust = 0.5, size = 10),
-    axis.text.y = element_text(face = "bold", size = 10),
-    axis.title = element_text(face = "bold", size = 10),
-    plot.margin = unit(c(0, 1, 0, 0), "cm"),
-    plot.title = element_text(hjust = 0.5, face = "bold", size = 10),
-    strip.text.x = element_text(size = 7, face = "bold"),
-    strip.text.y = element_text(size = 7, face = "bold"),
-    legend.title = element_text(face = "bold"),
-    legend.text = element_text(face = "bold", size = 10)
-  )
+metadata_w_alpha_long <- metadata %>%
+  left_join(alpha) %>%
+  select(SeqID, Sample_id, Soil_type, RPM, Time, `260_280`:Conc_qubit, Integrity, Shannon) %>%
+  pivot_longer(-c(SeqID:Time), names_to = "variable", values_to = "value")
 
-(plot.heat_all / (plot.ord_all + plot.alpha_all)) | plot.rda_clay / plot.rda_organic / plot.rda_sand
+
+var <- unique(metadata_w_alpha_long$variable)[c(3, 1, 2, 4, 5)]
+
+metrics <- tibble(
+  variable = var,
+  explanation = c("260/280 ratio", "260/230 ratio", "Qubit [ng/µL]", "Fragment Length [Kbp]", "Shannon Diversity")
+)
+
+metadata_w_alpha_long_summarised <- metadata_w_alpha_long %>%
+  group_by(Soil_type, RPM, Time, variable) %>%
+  summarise(mean = mean(value), sd = sd(value)) %>%
+  left_join(metrics)
+
+plot_experiment_metrics <- function(var) {
+  dodge <- 0.75
+
+  df <- metadata_w_alpha_long_summarised %>%
+    filter(variable == var)
+
+  explanation <- unique(df$explanation)
+
+  gg <- metadata_w_alpha_long_summarised %>%
+    filter(variable == var) %>%
+    ggplot(aes(x = RPM, y = mean, color = Time, group = interaction(Soil_type, Time))) +
+    geom_point(size = 5, alpha = 0.5, position = position_dodge(dodge)) +
+    geom_line(position = position_dodge(dodge)) +
+    geom_errorbar(aes(ymin = mean - sd, ymax = mean + sd, width = .2), position = position_dodge(dodge)) +
+    facet_grid(~Soil_type, space = "free_y") +
+    labs(
+      title = paste0(explanation),
+      x = "",
+      y = ""
+    ) +
+    articletheme +
+    theme(legend.position = "none")
+
+  return(gg)
+}
 ```
 
-# Plotting
 ```{r}
-# Figur 1
-design <- "
-  224
-  224
-  225
-  315
-  316
-  316
-"
+plot_list <- map(var, plot_experiment_metrics)
 
-plot.ordinate.insert + plot.heat_all + plot.alpha_all + plot.rda_clay + plot.rda_organic + plot.rda_sand + plot_layout(design = design, guides = "collect")
-# theme(legend.position = "right")
+ggleg <- plot_list[[1]] + theme(legend.position = "right")
 
-ggsave("beadbeating1.png", width = 15.36, height = 8.14, dpi = 600)
+leg <- list(get_legend(ggleg))
+
+plot_list2 <- append(plot_list, leg)
+
+p <- ggarrange(plotlist = plot_list2, nrow = 2, ncol = ceiling(length(plot_list) / 2), labels = toupper(letters[1:5]))
+p
+
+ggsave(plot = p, filename = "./figures/beadbeating_experiment_metrics.png", device = "png", height = 13, width = 15)
 ```
 
