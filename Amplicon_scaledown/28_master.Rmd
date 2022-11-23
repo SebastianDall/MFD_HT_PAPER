@@ -99,11 +99,10 @@ bray_variation_between_protocols <- bray_with_metadata %>%
   summarise(
     mean_bray = format(round(mean(value, na.rm = TRUE), 2), nsmall = 2),
     sd_bray = format(round(sd(value, na.rm = TRUE), 2), nsmall = 2),
-    bray_between = paste0(mean_bray, " (", sd_bray,")")
-  ) %>% 
-  mutate(Protocol = "2 x 25 µL") %>% 
+    bray_between = paste0(mean_bray, " (", sd_bray, ")")
+  ) %>%
+  mutate(Protocol = "2 x 25 µL") %>%
   select(Soil_type, Protocol, bray_between)
-
 ```
 
 
