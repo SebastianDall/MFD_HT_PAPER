@@ -113,16 +113,16 @@ rarefied_alphadiveristy <- dat_types_sub10000_ra_rel_0.1 %>%
     Elution_placement,
     Soil_type,
     Kit,
-    ObservedOTUs,
+    # ObservedOTUs,
     Shannon
   )
 
-# Join different data: Lab, Alpha.
+# Join different data: Lab, Alpha, beta.
 combine_alpha_beta_with_metadata <- rarefied_alphadiveristy %>%
   right_join(lab_metadata) %>%
   # Calculate failed libraries
   group_by(Soil_type, Kit) %>%
-  mutate(failed_lib = 3 - sum(!is.na(ObservedOTUs))) %>%
+  mutate(libs = sum(!is.na(Shannon))) %>%
   # Calculate mean and sd for all variables
   summarise(
     across(where(is.numeric), .fns = list(mean = ~ mean(., na.rm = T), sd = ~ sd(., na.rm = T)), .names = "{.fn}_{.col}")
@@ -130,13 +130,15 @@ combine_alpha_beta_with_metadata <- rarefied_alphadiveristy %>%
   # Format mean and sd
   ungroup() %>%
   mutate(
-    failed_lib = as.character(mean_failed_lib),
-    across(where(is.numeric), ~ format(round(., 2), nsmall = 2)),
-    mean_ObservedOTUs = format(round(as.numeric(mean_ObservedOTUs))),
-    sd_ObservedOTUs = format(round(as.numeric(sd_ObservedOTUs)))
+    libs = as.character(mean_libs),
+    across(where(is.numeric), ~ format(round(., 2), nsmall = 2))
+    # mean_ObservedOTUs = format(round(as.numeric(mean_ObservedOTUs))),
+    # sd_ObservedOTUs = format(round(as.numeric(sd_ObservedOTUs)))
   ) %>%
   # Add bray variation
   left_join(bray_with_metadata_comparisons) %>%
+  # factor Kit
+  mutate(Kit = factor(Kit, levels = kit_levels, labels = kit_levels)) %>%
   arrange(Soil_type, Kit)
 
 mean_sd_table_long <- combine_alpha_beta_with_metadata %>%
@@ -156,14 +158,14 @@ mean_sd_table_wide <- mean_sd_table_long %>%
   left_join(soil_properties_filtered) %>%
   relocate(Soil_properties, .after = Soil_type) %>%
   relocate(Conc_qubit:`260/230`, .after = Kit) %>%
-  relocate(lib_conc, .after = failed_lib) %>%
+  relocate(lib_conc, .after = libs) %>%
   group_by(Soil_type) %>%
   mutate_at(vars(Soil_type, Soil_properties), ~ replace(., duplicated(.), ""))
 
 
 names <- tibble(
   old_names = colnames(mean_sd_table_wide),
-  new_names = c("Soil type", "Properties", "Kit", "DNA ext conc. [ng/µL]", "260/280", "260/230", "Failed Libraries", "Library conc. [ng/µL]", "ASVs", "Shannon Diversity", "Bray-Curtis Variation") # "Site name", "Longitude Latitude", "Environment",
+  new_names = c("Soil type", "Properties", "Kit", "DNA ext conc. [ng/µL]", "260/280", "260/230", "Libraries", "Library conc. [ng/µL]", "Shannon Diversity", "Bray-Curtis Variation") # "Site name", "Longitude Latitude", "Environment",
 )
 
 final_table <- mean_sd_table_wide %>%
