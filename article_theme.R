@@ -1,5 +1,7 @@
 library(ggplot2)
 
+kit_levels <- c("FastSpin", "PowerSoil", "FastSpin HT", "PowerSoil Pro HT", "ZymoMagbead HT")
+
 # theme
 articletheme <- theme_bw(base_size = 10) +
     theme(
