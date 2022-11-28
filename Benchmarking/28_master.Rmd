@@ -24,6 +24,7 @@ library(DESeq2)
 library(vegan)
 # library(patchwork)
 library(ggpubr)
+library(ggrepel)
 
 ### Load and tidy ###
 source("loaddata.R")
@@ -36,12 +37,14 @@ source("../article_theme.R")
 ```
 
 ## filter data
+> Sample MG200131-87 is a clear outlier in PCA space. Therefore it is removed.
+
 ```{r}
 dat_types <- datraw %>%
-  amp_subset_samples(!Soil_type %in% c("Blank", "Activated sludge") & !is.na(Kit) & Kit != "MIDAS HT")
+  amp_subset_samples(!Soil_type %in% c("Blank", "Activated sludge") & !is.na(Kit) & Kit != "MIDAS HT" & SeqID != "MQ200131-87")
 ```
 
-## $\alpha$-diversity
+
 
 ```{r}
 # Create subsets
@@ -49,6 +52,9 @@ dat_types_sub10000 <- amp_subset_samples(dat_types, minreads = 10000)
 dat_types_sub10000_ra <- amp_subset_samples(dat_types_sub10000, rarefy = min(colSums(dat_types_sub10000$abund)))
 dat_types_sub10000_ra_rel_0.1 <- filter_otus(dat_types_sub10000_ra, 0.1)
 ```
+
+
+## $\alpha$-diversity
 
 We set a cutoff of at 10000 reads, and rarefy to the lowest number of reads in the remaining dataset. Doing this we go from `r nrow(dat_types$metadata)` to `r nrow(dat_types_sub10000_ra$metadata)` samples and create a rarified dataset as well.
 
@@ -142,9 +148,9 @@ combine_alpha_beta_with_metadata <- rarefied_alphadiveristy %>%
   arrange(Soil_type, Kit)
 
 mean_sd_table_long <- combine_alpha_beta_with_metadata %>%
-  select(-c(sd_failed_lib, mean_failed_lib)) %>%
-  pivot_longer(cols = -c(Soil_type, Kit, failed_lib, contains("sd")), names_to = "mean", values_to = "mean_value", names_prefix = "mean_") %>%
-  pivot_longer(cols = -c(Soil_type, Kit, failed_lib, contains("mean")), names_to = "sd", values_to = "sd_value", names_prefix = "sd_") %>%
+  select(-c(sd_libs, mean_libs)) %>%
+  pivot_longer(cols = -c(Soil_type, Kit, libs, contains("sd")), names_to = "mean", values_to = "mean_value", names_prefix = "mean_") %>%
+  pivot_longer(cols = -c(Soil_type, Kit, libs, contains("mean")), names_to = "sd", values_to = "sd_value", names_prefix = "sd_") %>%
   group_by(Soil_type, Kit) %>%
   filter(mean == sd) %>%
   mutate(
@@ -195,59 +201,111 @@ anova.shannon <- anova(lm(diversity ~ Kit * Soil_type, data = tmp)) %>%
 
 ## $\beta$-diversity
 
-### Ordination
+
+# Soil ordination panel
 ```{r}
-plot.ordinate <- plotAmpliconOrdination(dat_types_sub10000_ra, rel_ab_filter = 0.1) +
-  scale_color_manual(values = colors) +
-  scale_fill_manual(values = colors) +
-  theme(legend.position = "bottom")
+otu <- dat_types_sub10000_ra$abund
+metadata <- dat_types_sub10000_ra$metadata
+tax <- dat_types_sub10000_ra$tax
 
+phylum <- tax %>%
+  select(Phylum, OTU) %>%
+  filter(!is.na(Phylum))
 
-plot.ordinate
+otu_phylum <- otu %>%
+  rownames_to_column("OTU") %>%
+  right_join(phylum) %>%
+  relocate(Phylum, .after = OTU)
 
-plot.xlim <- c(-0.45, -0.375)
-plot.ylim <- c(-2.05, -1.8)
-# The plot with a zoom
-plot.insert <- plot.ordinate +
-  ylim(plot.ylim) +
-  xlim(plot.xlim) +
-  theme(
-    plot.title = element_blank(),
-    axis.title.x = element_blank(),
-    axis.title.y = element_blank(),
-    legend.position = "none"
-  )
+total_asvs <- sum(otu_phylum$`MQ200131-1`)
 
+phylum_variable <- otu_phylum %>%
+  group_by(Phylum) %>%
+  summarise(
+    across(where(is.numeric), sum) / total_asvs
+  ) %>%
+  filter(Phylum != "")
 
-plot.insert.x <- 0
-plot.insert.xmax <- 1.4
-plot.insert.y <- -2
-plot.insert.ymax <- 0
+t_phylum_variable <- phylum_variable %>%
+  pivot_longer(-Phylum, names_to = "SeqID", values_to = "value") %>%
+  pivot_wider(SeqID, names_from = "Phylum", values_from = "value")
 
+metadata_with_phylum <- left_join(metadata, t_phylum_variable)
 
+ampdata <- amp_load(
+  metadata = metadata_with_phylum,
+  otutable = otu,
+  taxonomy = tax
+)
 
-plot.ordinate.insert <- plot.ordinate +
-  # add plot
-  annotation_custom(ggplotGrob(plot.insert), xmin = plot.insert.x, xmax = plot.insert.xmax, ymin = plot.insert.y, ymax = plot.insert.ymax) +
-  # Add rect around plot
-  geom_rect(aes(xmin = plot.insert.x - 0.05, xmax = plot.insert.xmax - 0.05, ymin = plot.insert.y - 0.05, ymax = plot.insert.ymax + 0.05), color = "black", linetype = "dashed", alpha = 0) +
-  # Add rect around data
-  geom_rect(aes(xmin = plot.xlim[1], xmax = plot.xlim[2], ymin = plot.ylim[1], ymax = plot.ylim[2]), color = "black", alpha = 0) +
-  geom_segment(aes(x = plot.xlim[2], y = plot.ylim[1], xend = plot.insert.x - 0.05, yend = plot.insert.y - 0.05), color = "black", linetype = "dashed") +
-  geom_segment(aes(x = plot.xlim[2], y = plot.ylim[2], xend = plot.insert.x - 0.05, yend = plot.insert.ymax + 0.05), color = "black", linetype = "dashed")
-
-plot.ordinate.insert
+phylum_vector <- grep("_{2}", colnames(ampdata$metadata), value = TRUE)
 ```
 
 
-# Soil ordination panel
+```{r}
+ordinate_soil_data <- function(soil) {
+  generateAmpliconOrdinationData(ampdata, soil, ord_type = "PCA", envvector = phylum_vector)
+}
+```
+
 ```{r}
 soil <- unique(dat_types_sub10000_ra$metadata$Soil_type)
 gg_kit_colors <- scale_color_manual(values = kit_colors)
 gg_kit_fill <- scale_fill_manual(values = kit_colors)
 
+# Use ampvis to generate ordination data
+ordinate_data2 <- tibble(soil = soil) %>%
+  mutate(ordination = map(.x = soil, ordinate_soil_data))
+
+# Plot ordination data with new ggplot parameters
+ordination_plots <- ordinate_data2 %>%
+  # extract ordination data
+  mutate(
+    metadata = map(ordination, ~ .x$dsites),
+    species = map(ordination, ~ .x$dspecies),
+    envfit = map(ordination, ~ .x$evf_numeric_model),
+    screeplotdata = map(ordination, ~ .x$screeplot$data)
+  ) %>%
+  # Factor kit
+  mutate(
+    metadata = map(.x = metadata, ~ mutate(.x, Kit = factor(Kit, levels = kit_levels)))
+  ) %>%
+  # create ggplots
+  mutate(
+    ggmeta = map(.x = metadata, ~ plotMetadataOrdination(.x)),
+    ggspecies = map2(.x = ggmeta, .y = species, ~ addSpeciesPlot(.x, .y)),
+    ggenv = map2(.x = ggspecies, .y = envfit, ~ addEnvVector(.x, .y)),
+    ggaestetics = map2(
+      .x = ggenv, .y = soil,
+      ~ .x + articlethemex0 + gg_kit_colors + gg_kit_fill + labs(title = paste0(.y)) + theme(legend.position = "none")
+    ),
+    ggfinal = map2(.x = ggaestetics, .y = screeplotdata, ~ .x + labs(
+      x = paste0("PC1 [", round(.y[1, 2], 1), "%]"),
+      y = paste0("PC2 [", round(.y[2, 2], 1), "%]")
+    ))
+  )
+
+
+plot_list_with_legend <- addLegendPlot(ordination_plots$ggfinal)
+
+
+p <- ggarrange(plotlist = plot_list_with_legend, nrow = 2, ncol = ceiling(length(plot_list_with_legend) / 2), labels = toupper(letters[1:5]))
+
+p
+```
+
+
+```{r}
+ggsave("./figures/benchmark_ordination_panel.png", device = "png", height = 10, width = 12, plot = p)
+```
+
+
+```{r}
+gg_kit_colors <- scale_color_manual(values = kit_colors)
+gg_kit_fill <- scale_fill_manual(values = kit_colors)
+
 plot_soil_ord <- function(soil) {
-  plotAmpliconOrdinationSoil(dat_types_sub10000_ra, soil, ord_type = "PCA") + gg_kit_colors + gg_kit_fill
+  plotAmpliconOrdinationSoil(ampdata, soil, ord_type = "PCA", envvector = phylum_vector) + gg_kit_colors + gg_kit_fill
 }
 
 plot_list <- map(soil, plot_soil_ord)
@@ -259,6 +317,7 @@ leg <- list(get_legend(ggleg))
 plot_list2 <- append(plot_list, leg)
 
 p <- ggarrange(plotlist = plot_list2, nrow = 2, ncol = ceiling(length(plot_list) / 2), labels = toupper(letters[1:5]))
+p
 ```
 ```{r}
 ggsave("./figures/benchmark_ordination_panel.png", device = "png", height = 10, width = 12, plot = p)
