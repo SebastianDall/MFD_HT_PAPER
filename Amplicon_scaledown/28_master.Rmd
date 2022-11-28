@@ -124,7 +124,7 @@ combine_alpha_beta_with_metadata <- rarefied_alphadiversity %>%
   # add library_concentration
   # Calculate failed libraries
   group_by(Soil_type, Protocol) %>%
-  mutate(failed_lib = 3 - n()) %>%
+  mutate(libs = n()) %>%
   # Calculate mean and sd for all numeric varaibles.
   summarise(
     across(where(is.numeric), .fns = list(mean = ~ mean(., na.rm = T), sd = ~ sd(., na.rm = T)), .names = "{.fn}_{.col}")
@@ -132,20 +132,20 @@ combine_alpha_beta_with_metadata <- rarefied_alphadiversity %>%
   # Format mean and sd
   ungroup() %>%
   mutate(
-    failed_lib = as.character(mean_failed_lib),
+    libs = as.character(mean_libs),
     across(where(is.numeric), ~ format(round(., 2), nsmall = 2))
   ) %>%
   left_join(bray_variation_protocol) %>%
   arrange(Soil_type, Protocol) %>%
-  select(-c(sd_failed_lib, mean_failed_lib))
+  select(-c(sd_libs, mean_libs))
 
 
 
 
 
 mean_sd_table <- combine_alpha_beta_with_metadata %>%
-  pivot_longer(cols = -c(Soil_type, Protocol, failed_lib, contains("sd")), names_to = "mean", values_to = "mean_value", names_prefix = "mean_") %>%
-  pivot_longer(cols = -c(Soil_type, Protocol, failed_lib, contains("mean")), names_to = "sd", values_to = "sd_value", names_prefix = "sd_") %>%
+  pivot_longer(cols = -c(Soil_type, Protocol, libs, contains("sd")), names_to = "mean", values_to = "mean_value", names_prefix = "mean_") %>%
+  pivot_longer(cols = -c(Soil_type, Protocol, libs, contains("mean")), names_to = "sd", values_to = "sd_value", names_prefix = "sd_") %>%
   group_by(Soil_type, Protocol) %>%
   # Filter for wrong match
   filter(mean == sd) %>%
@@ -165,7 +165,7 @@ mean_sd_table <- combine_alpha_beta_with_metadata %>%
 
 names <- tibble(
   old_names = colnames(mean_sd_table),
-  new_names = c("Soil type", "Protocol", "Failed\nLibraries", "Shannon\nDiversity", "Bray-Curtis\nVariation", "Bray-Curtis Variation\nBetween protocols") # "Site name", "Longitude Latitude", "Environment",
+  new_names = c("Soil type", "Protocol", "Libraries", "Shannon\nDiversity", "Bray-Curtis\nVariation", "Bray-Curtis Variation\nBetween protocols") # "Site name", "Longitude Latitude", "Environment",
 )
 
 final_table <- mean_sd_table %>%
@@ -247,7 +247,7 @@ heatmap <- dat_types_sub4000 %>%
   guides(fill = guide_colorbar(title.position = "right"))
 
 
-heatmap
+# heatmap
 ```
 
 
