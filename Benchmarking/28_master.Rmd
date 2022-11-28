@@ -101,8 +101,9 @@ bray_with_metadata_comparisons <- bray_with_metadata %>%
 ```{r}
 lab_metadata <- amplicon_metadata %>%
   select(Sample_id, Plate, Kit, Soil_type, Conc_quibit, `260/280`, `260/230`, PCR2) %>%
+  filter(Kit != "MIDAS HT", !Soil_type %in% c("Blank", "Activated sludge")) %>%
   dplyr::rename(Elution_placement = Plate, lib_conc = PCR2, Conc_qubit = Conc_quibit) %>%
-  filter(!Soil_type %in% c("Activated sludge", "Blank"), Kit != "MIDAS HT")
+  mutate(yield_ng = if_else(Kit == "PowerSoil Pro HT", Conc_qubit * 120, Conc_qubit * 60))
 
 soil_properties_filtered <- soil_properties %>%
   filter(!is.na(Soil_properties)) %>%
@@ -126,7 +127,7 @@ rarefied_alphadiveristy <- dat_types_sub10000_ra_rel_0.1 %>%
 # Join different data: Lab, Alpha, beta.
 combine_alpha_beta_with_metadata <- rarefied_alphadiveristy %>%
   right_join(lab_metadata) %>%
-  # Calculate failed libraries
+  # Calculate failed libraries - FastSpin for sand worked however one sample was an outlier
   group_by(Soil_type, Kit) %>%
   mutate(libs = sum(!is.na(Shannon))) %>%
   # Calculate mean and sd for all variables
@@ -137,9 +138,9 @@ combine_alpha_beta_with_metadata <- rarefied_alphadiveristy %>%
   ungroup() %>%
   mutate(
     libs = as.character(mean_libs),
-    across(where(is.numeric), ~ format(round(., 2), nsmall = 2))
-    # mean_ObservedOTUs = format(round(as.numeric(mean_ObservedOTUs))),
-    # sd_ObservedOTUs = format(round(as.numeric(sd_ObservedOTUs)))
+    across(where(is.numeric), ~ format(round(., 2), nsmall = 2)),
+    mean_yield_ng = format(round(as.numeric(mean_yield_ng))),
+    sd_yield_ng = format(round(as.numeric(sd_yield_ng)))
   ) %>%
   # Add bray variation
   left_join(bray_with_metadata_comparisons) %>%
@@ -164,6 +165,7 @@ mean_sd_table_wide <- mean_sd_table_long %>%
   left_join(soil_properties_filtered) %>%
   relocate(Soil_properties, .after = Soil_type) %>%
   relocate(Conc_qubit:`260/230`, .after = Kit) %>%
+  relocate(yield_ng, .after = Conc_qubit) %>%
   relocate(lib_conc, .after = libs) %>%
   group_by(Soil_type) %>%
   mutate_at(vars(Soil_type, Soil_properties), ~ replace(., duplicated(.), ""))
@@ -171,14 +173,14 @@ mean_sd_table_wide <- mean_sd_table_long %>%
 
 names <- tibble(
   old_names = colnames(mean_sd_table_wide),
-  new_names = c("Soil type", "Properties", "Kit", "DNA ext conc. [ng/µL]", "260/280", "260/230", "Libraries", "Library conc. [ng/µL]", "Shannon Diversity", "Bray-Curtis Variation") # "Site name", "Longitude Latitude", "Environment",
+  new_names = c("Soil type", "Properties", "Kit", "DNA ext conc. [ng/µL]", "DNA yield [ng]", "260/280", "260/230", "Libraries", "Library conc. [ng/µL]", "Shannon Diversity", "Bray-Curtis Variation") # "Site name", "Longitude Latitude", "Environment",
 )
 
 final_table <- mean_sd_table_wide %>%
   rename_at(vars(names$old_names), ~ names$new_names)
 ```
 ```{r}
-writexl::write_xlsx(final_table, path = "./files/megatable.xlsx")
+writexl::write_xlsx(final_table, path = "./files/benchmark_overview_table.xlsx")
 ```
 
 
@@ -232,19 +234,19 @@ t_phylum_variable <- phylum_variable %>%
 
 metadata_with_phylum <- left_join(metadata, t_phylum_variable)
 
-ampdata <- amp_load(
+dat_types_sub10000_ra_with_phylumMetdata <- amp_load(
   metadata = metadata_with_phylum,
   otutable = otu,
   taxonomy = tax
 )
 
-phylum_vector <- grep("_{2}", colnames(ampdata$metadata), value = TRUE)
+phylum_vector <- grep("_{2}", colnames(dat_types_sub10000_ra_with_phylumMetdata$metadata), value = TRUE)
 ```
 
 
 ```{r}
 ordinate_soil_data <- function(soil) {
-  generateAmpliconOrdinationData(ampdata, soil, ord_type = "PCA", envvector = phylum_vector)
+  generateAmpliconOrdinationData(dat_types_sub10000_ra_with_phylumMetdata, soil, ord_type = "PCA", envvector = phylum_vector)
 }
 ```
 
@@ -254,11 +256,11 @@ gg_kit_colors <- scale_color_manual(values = kit_colors)
 gg_kit_fill <- scale_fill_manual(values = kit_colors)
 
 # Use ampvis to generate ordination data
-ordinate_data2 <- tibble(soil = soil) %>%
+ordinate_data <- tibble(soil = soil) %>%
   mutate(ordination = map(.x = soil, ordinate_soil_data))
 
 # Plot ordination data with new ggplot parameters
-ordination_plots <- ordinate_data2 %>%
+ordination_plots <- ordinate_data %>%
   # extract ordination data
   mutate(
     metadata = map(ordination, ~ .x$dsites),
@@ -310,11 +312,7 @@ plot_soil_ord <- function(soil) {
 
 plot_list <- map(soil, plot_soil_ord)
 
-ggleg <- plot_list[[1]] + theme(legend.position = "right")
-
-leg <- list(get_legend(ggleg))
-
-plot_list2 <- append(plot_list, leg)
+plot_list2 <- addLegendPlot(plot_list)
 
 p <- ggarrange(plotlist = plot_list2, nrow = 2, ncol = ceiling(length(plot_list) / 2), labels = toupper(letters[1:5]))
 p
