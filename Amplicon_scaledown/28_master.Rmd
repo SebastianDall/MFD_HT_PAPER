@@ -106,7 +106,6 @@ bray_variation_between_protocols <- bray_with_metadata %>%
 ```
 
 
-
 ```{r}
 lab_metadata <- load_ampLibConc() %>%
   mutate(SeqID = str_replace(SeqID, "_", "-")) %>%
@@ -127,6 +126,7 @@ rarefied_alphadiversity <- dat_types_sub4000_ra %>%
 
 combine_alpha_beta_with_metadata <- rarefied_alphadiversity %>%
   # add library_concentration
+  left_join(lab_metadata) %>%
   # Calculate failed libraries
   group_by(Soil_type, Protocol) %>%
   mutate(libs = n()) %>%
@@ -143,9 +143,6 @@ combine_alpha_beta_with_metadata <- rarefied_alphadiversity %>%
   left_join(bray_variation_protocol) %>%
   arrange(Soil_type, Protocol) %>%
   select(-c(sd_libs, mean_libs))
-
-
-
 
 
 mean_sd_table <- combine_alpha_beta_with_metadata %>%
@@ -165,20 +162,22 @@ mean_sd_table <- combine_alpha_beta_with_metadata %>%
   # Remove duplicate Soil type
   group_by(Soil_type) %>%
   mutate_at(vars(Soil_type), ~ replace(., duplicated(.), "")) %>%
-  mutate(bray_between = if_else(is.na(bray_between), "", bray_between))
+  mutate(bray_between = if_else(is.na(bray_between), "", bray_between)) %>%
+  # Relocate columns
+  relocate(PCR2, .after = libs)
 
 
 names <- tibble(
   old_names = colnames(mean_sd_table),
-  new_names = c("Soil type", "Protocol", "Libraries", "Shannon\nDiversity", "Bray-Curtis\nVariation", "Bray-Curtis Variation\nBetween protocols") # "Site name", "Longitude Latitude", "Environment",
+  new_names = c("Soil type", "Protocol", "Libraries", "Library Conc.\n[ng/µL]", "Shannon\nDiversity", "Bray-Curtis\nVariation", "Bray-Curtis Variation\nBetween protocols") # "Site name", "Longitude Latitude", "Environment",
 )
 
 final_table <- mean_sd_table %>%
   rename_at(vars(names$old_names), ~ names$new_names)
 
 
-hjustification_matrix <- as.vector(matrix(c(0, 0, 1, 1, 1, 1), ncol = ncol(mean_sd_table), nrow = nrow(mean_sd_table), byrow = TRUE))
-xjustification_matrix <- as.vector(matrix(c(0.1, 0.1, 0.9, 0.9, 0.9, 0.9), ncol = ncol(mean_sd_table), nrow = nrow(mean_sd_table), byrow = TRUE))
+hjustification_matrix <- as.vector(matrix(c(0, 0, 1, 1, 1, 1, 1), ncol = ncol(mean_sd_table), nrow = nrow(mean_sd_table), byrow = TRUE))
+xjustification_matrix <- as.vector(matrix(c(0.1, 0.1, 0.9, 0.9, 0.9, 0.9, 0.9), ncol = ncol(mean_sd_table), nrow = nrow(mean_sd_table), byrow = TRUE))
 
 
 alpha_table <- final_table %>%
@@ -258,9 +257,9 @@ heatmap <- dat_types_sub4000 %>%
 
 ```{r}
 gg_table_dummy <- ggarrange(alpha_table, NULL, nrow = 2, ncol = 1, heights = c(1, 0.8))
-ggarrange(gg_table_dummy, heatmap, ncol = 2, labels = c("A", "B"), widths = c(1, 1))
+p <- ggarrange(gg_table_dummy, heatmap, ncol = 2, labels = c("A", "B"), widths = c(1.2, 1))
 
-ggsave(here("Amplicon_scaledown", "figures", "heatmap_alpha_div_v2.png"), device = "png", width = 14, height = 7)
+ggsave(here("Amplicon_scaledown", "figures", "heatmap_alpha_div_v2.png"), device = "png", width = 15, height = 7, plot = p)
 ```
 
 #### Ordination
