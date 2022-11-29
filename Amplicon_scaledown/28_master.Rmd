@@ -31,7 +31,7 @@ library(rlist)
 library(DESeq2)
 
 ### Load and tidy ###
-source("loaddata.R")
+source("loaddata.R", encoding = "UTF-8")
 colors <- c("grey", "darkgoldenrod2", "royalblue4", "seagreen", "salmon", "purple")
 
 ### Load plot functions and theme
@@ -42,7 +42,7 @@ source("./functions.R")
 
 ## Filter Data
 ```{r}
-dat_types <- datraw %>%
+dat_types <- load_datraw() %>%
   amp_subset_samples(!Soil_type %in% c("Blank", "Activated sludge") & !is.na(Kit))
 ```
 
@@ -108,6 +108,11 @@ bray_variation_between_protocols <- bray_with_metadata %>%
 
 
 ```{r}
+lab_metadata <- load_ampLibConc() %>%
+  mutate(SeqID = str_replace(SeqID, "_", "-")) %>%
+  select(SeqID, PCR2)
+
+
 rarefied_alphadiversity <- dat_types_sub4000_ra %>%
   amp_alphadiv(
     measure = c("observed", "shannon", "simpson"),
