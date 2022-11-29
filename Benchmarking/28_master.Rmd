@@ -360,7 +360,7 @@ ggsave(here("Benchmarking", "figures", "ordination_CA_table_v2.png"), device = "
 # Below is old figures
 
 ```{r}
-# Figur 1
+dat_types_sub10000_ra$metadata$Kit <- factor(dat_types_sub10000_ra$metadata$Kit, levels = kit_levels)
 design <- "
   15
   15
@@ -399,7 +399,7 @@ phyla.text <- dat_types_sub10000_ra %>%
   dplyr::slice(1:20) %>%
   rownames(.)
 
-heatmap <- dat_types_sub10000 %>%
+heatmap <- dat_types_sub10000_ra %>%
   amp_heatmap(
     facet_by = "Soil_type",
     group_by = "Kit",
