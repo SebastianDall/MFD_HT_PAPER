@@ -118,3 +118,32 @@ filter_double_zeros <- function(df) {
 
     return(df_filtered)
 }
+
+
+# Bray distance
+calculate_bray_distance <- function(ampdata) {
+    metadata <- ampdata$metadata %>%
+        select(SeqID, Sample_id, Protocol, Soil_type)
+
+    otutable <- ampdata$abund %>%
+        t()
+
+    bray_distance <- as.matrix(vegan::vegdist(otutable)) %>%
+        as.data.frame() %>%
+        rownames_to_column("SeqID")
+
+    metadata_renamed <- metadata %>%
+        dplyr::rename(
+            comparison = SeqID,
+            compared_soil = Soil_type,
+            compared_protocol = Protocol
+        ) %>%
+        select(-Sample_id)
+
+    bray_with_metadata <- metadata %>%
+        left_join(bray_distance) %>%
+        pivot_longer(!SeqID:Soil_type, names_to = "comparison", "value") %>%
+        left_join(metadata_renamed, by = "comparison")
+
+    return(bray_with_metadata)
+}
