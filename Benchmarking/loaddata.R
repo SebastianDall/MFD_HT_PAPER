@@ -27,7 +27,7 @@ datraw <- amp_load(
   pruneSingletons = T
 )
 
-rm(tab, tax)
+rm(tab, tax, meta, otutable)
 
 amplicon_metadata <- readxl::read_excel("./data/Amplicon_metadata.xlsx") %>%
   mutate(
