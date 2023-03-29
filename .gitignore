@@ -1,10 +1,11 @@
 # Data directories
-Amplicon_data/
+Amplicon_data/*.txt
+Amplicon_data/2022_10_21_run/*.txt
+!Amplicon_data/.gitkeep
+
 Metagenome_data/*.csv
 Metagenome_data/logs/
 
-
-Amplicon_scaledown/data/
 
 *output_old/
 

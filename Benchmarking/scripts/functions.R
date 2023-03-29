@@ -5,19 +5,19 @@ library(RColorBrewer)
 # Soil specific ordination
 plotAmpliconOrdinationSoil <- function(df, soil_filter, ord_type = "CA", envvector, rel_ab_filter = 0.1) {
     df %>%
-        amp_subset_samples(Soil_type == soil_filter) %>%
+        amp_subset_samples(soil_type == soil_filter) %>%
         amp_ordinate(
             filter_species = 0.1,
             type = ord_type,
-            constrain = "Kit",
+            constrain = "kit",
             transform = "hellinger",
             distmeasure = "bray",
-            envfit_numeric = envvector,
-            sample_colorframe = "Kit",
-            envfit_numeric_arrows_scale = 0.2,
-            envfit_arrowcolor = "#4bbbe1",
-            # species_nlabels = 5,
-            # species_label_taxonomy = "Phylum",
+            #envfit_numeric = envvector,
+            sample_colorframe = "kit",
+            #envfit_numeric_arrows_scale = 0.2,
+            #envfit_arrowcolor = "#4bbbe1",
+            species_nlabels = 5,
+            species_label_taxonomy = "Phylum",
             species_plot = T
         ) +
         # ggforce::geom_mark_ellipse(aes(fill = Kit, group = Kit), alpha = 0.5, color = "black") +
