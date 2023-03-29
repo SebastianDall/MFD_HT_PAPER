@@ -1,5 +1,8 @@
 # Data directories
 Amplicon_data/
+Metagenome_data/*.csv
+Metagenome_data/logs/
+
 
 Amplicon_scaledown/data/
 
