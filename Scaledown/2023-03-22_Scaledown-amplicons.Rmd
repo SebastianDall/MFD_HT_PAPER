@@ -1,0 +1,530 @@
+---
+title: "Scaledown Amplicons"
+author: "TBNJ"
+date: "2023-03-02"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+knitr::opts_chunk$set(
+  echo    = F,
+  # fig.pos = "H",
+  message = FALSE,
+  warning = FALSE
+)
+
+source("scripts/loaddata.R", encoding = "UTF-8")
+source("scripts//article_theme.R")
+source("scripts//functions.R")
+
+library(tidyverse)
+library(ampvis2)
+library(vegan)
+library(patchwork)
+library(ggpubr)
+library(DESeq2)
+library(rlist)
+
+colors <- c("grey", "darkgoldenrod2", "royalblue4", "seagreen", "salmon")
+rm("seq_meta", "metadata.metagenome", "ampvis.metagenome")
+```
+
+## Filter Data
+```{r remove blanks and pcr controls}
+dat.types.amp <- ampvis.amplicon %>%
+  amp_subset_samples(!is.na(project_id) & !soil_type %in% c("Blank", "Activated sludge"))
+
+# Create subsets
+dat.types.sub3000.amp <- dat.types.amp %>% amp_subset_samples(., minreads = 3000)
+
+dat.types.sub3000.amp.ra <- dat.types.sub3000.amp %>%
+  amp_subset_samples(., rarefy = min(colSums(dat.types.sub3000.amp[["abund"]])))
+
+dat.types.sub3000.amp.ra.rel_0.1 <- filter_otus(dat.types.sub3000.amp.ra, 0.1)
+```
+
+### Bray Curtis variation - amplicons
+# Only OTUs above 0.1 % relative abundance is used
+```{r calculate bray curtis variation}
+bray_with_metadata <- calculate_bray_distance(dat.types.sub3000.amp.ra.rel_0.1)
+
+bray_variation_protocol <- bray_with_metadata %>%
+  filter(seq_id != comparison) %>%
+  filter(paste0(lib_volume, soil_type) == paste0(compared_protocol, compared_soil)) %>%
+  filter(!duplicated(paste0(pmax(seq_id, comparison), pmin(seq_id, comparison)))) %>%
+  group_by(soil_type, lib_volume) %>%
+  summarise(
+    mean_bray = format(round(mean(value, na.rm = TRUE), 2), nsmall = 2),
+    sd_bray = format(round(sd(value, na.rm = TRUE), 2), nsmall = 2), .groups = "drop")
+
+bray_variation_between_protocols <- bray_with_metadata %>%
+  filter(seq_id != comparison, lib_volume != compared_protocol) %>%
+  filter(soil_type == compared_soil) %>%
+  filter(!duplicated(paste0(pmax(seq_id, comparison), pmin(seq_id, comparison)))) %>%
+  group_by(soil_type) %>%
+  summarise(
+    mean_bray = format(round(mean(value, na.rm = TRUE), 2), nsmall = 2),
+    sd_bray = format(round(sd(value, na.rm = TRUE), 2), nsmall = 2),
+    bray_between = paste0(mean_bray, " (", sd_bray, ")")
+  ) %>%
+  mutate(lib_volume = "Full-scale") %>%
+  select(soil_type, lib_volume, bray_between)
+```
+
+### Shannon Diversity variation - amplicons
+```{r calculate shannon variation}
+dat.types.sub3000.amp %>%
+  amp_rarecurve(color_by = "lib_volume",
+                facet_by = "soil_type",
+                facet_scales = "free_x") +
+  scale_color_manual(values = c(colors[5], colors[3]))
+
+tabReads <- data.frame(NumReads = apply(dat.types.sub3000.amp$abund, 2, sum)) %>%
+  rownames_to_column(var = "seq_id")
+
+lab.ampdata.amplicon <- metadata.amplicon %>%
+  select(seq_id, soil_type, lib_volume, lib_conc)
+
+rarefied_alphadiversity <- dat.types.sub3000.amp.ra %>%
+  amp_alphadiv(measure = c("observed", "shannon", "simpson"),
+               richness = T) %>%
+  dplyr::rename(shannon = Shannon) %>%
+  select(seq_id, soil_type, lib_volume, shannon) %>%
+  left_join(tabReads)
+
+combine_alpha_beta_with_metadata <- rarefied_alphadiversity %>%
+  # add library_concentration
+  left_join(lab.ampdata.amplicon) %>%
+  # Calculate failed libraries
+  group_by(soil_type, lib_volume) %>%
+  mutate(libs = n()) %>%
+  # Calculate mean and sd for all numeric varaibles.
+  summarise(across(where(is.numeric), .fns = list(mean = ~ mean(., na.rm = T), 
+                                                  sd = ~ sd(., na.rm = T)), .names = "{.fn}_{.col}")) %>%
+  # Format mean and sd
+  ungroup() %>%
+  mutate(libs = as.character(mean_libs)) %>%
+  relocate(c(libs, mean_NumReads, sd_NumReads), .after = lib_volume) %>%
+  mutate(across(mean_NumReads:sd_NumReads, ~ format(round(., 0))),
+         across(mean_shannon:sd_lib_conc, ~ format(round(., 2), nsmall = 2))) %>%
+  left_join(bray_variation_protocol) %>%
+  arrange(soil_type, lib_volume) %>%
+  select(-c(sd_libs, mean_libs))
+```
+
+## Statistical tests - two sample t-test or Mann-Whitney(Wilcoxon) on shannon and bray distance
+Figure out how to add to table and make efficiently
+```{r, eval=FALSE}
+# SHANNON
+tmp <- rarefied_alphadiversity %>%
+  filter(soil_type == "Beach Sand") 
+
+tmp2 <- tmp %>%
+  select(lib_volume, shannon) %>%
+  filter(lib_volume == "Small-scale")
+
+tmp3 <- tmp %>%
+  select(lib_volume, shannon) %>%
+  filter(lib_volume == "Full-scale")
+
+shapiro.test(tmp$shannon) # Data is not normally distributed
+var.test(shannon ~ lib_volume, data = tmp)
+
+tmp %>%
+  ggplot(aes(x = shannon)) +
+  geom_histogram(binwidth = 0.01)
+
+ggqqplot(tmp, x = "shannon")
+
+t.test(tmp2$shannon, tmp3$shannon, alternative = "two.sided", var.equal = FALSE)
+wilcox.test(tmp2$shannon, tmp3$shannon)
+
+## SHANNON = SAME
+
+# BRAY
+tmp4 <- bray_with_metadata %>%
+  filter(soil_type == "Beach Sand", compared_soil == "Beach Sand") %>%
+  select(seq_id, lib_volume, value, compared_protocol) %>%
+  filter(value != 0)
+
+tmp5 <- tmp4 %>%
+  filter(lib_volume == "Small-scale", compared_protocol == "Small-scale") %>%
+  distinct()
+
+tmp6 <- tmp4 %>%
+  filter(lib_volume == "Full-scale", compared_protocol == "Full-scale") %>%
+  distinct()
+
+tmp_agg <- rbind(tmp5, tmp6)
+
+tmp7 <- tmp4 %>%
+  filter(lib_volume == "Small-scale", compared_protocol == "Full-scale") %>%
+  distinct()
+
+
+t.test(tmp5$value, tmp6$value, alternative = "two.sided", var.equal = FALSE)
+wilcox.test(tmp5$value, tmp6$value)
+
+
+tmp7$value %>% mean(.)
+
+tmp5$value %>% mean(.)
+
+tmp6$value %>% mean(.)
+
+tmp_agg$value %>% mean(.)
+
+ks.test(tmp7$value, pnorm, mean(tmp_agg$value), sd(tmp_agg$value))
+t.test(tmp7$value, mu = mean(tmp_agg$value))
+wilcox.test(tmp7$value, tmp_agg$value)
+
+## BRAY = different between protocols 
+
+```
+
+
+
+## Final table - amplicons
+```{r create final table}
+mean_sd_table <- combine_alpha_beta_with_metadata %>%
+  pivot_longer(cols = -c(soil_type, lib_volume, libs, contains("sd")), 
+               names_to = "mean", values_to = "mean_value", names_prefix = "mean_") %>%
+  pivot_longer(cols = -c(soil_type, lib_volume, libs, contains("mean")), 
+               names_to = "sd", values_to = "sd_value", names_prefix = "sd_") %>%
+  group_by(soil_type, lib_volume) %>%
+  # Filter for wrong match
+  filter(mean == sd) %>%
+  mutate(across(everything(), ~trimws(.))) %>%
+  # Paste mean (sd)
+  mutate(mean_sd = paste0(mean_value, " (", sd_value, ")")) %>%
+  select(!mean_value:sd_value) %>%
+  # make wide and add bray variation between protocols
+  pivot_wider(names_from = mean, values_from = mean_sd) %>%
+  left_join(bray_variation_between_protocols) %>%
+  # Remove duplicate Soil type
+  mutate(bray_between = if_else(is.na(bray_between), "", bray_between),
+         soil_type = if_else(lib_volume == "Small-scale", "", soil_type),
+         lib_volume = if_else(lib_volume == "Small-scale", "2 x 5 µL", "2 x 25 µL")) %>%
+  # Relocate columns
+  relocate(lib_conc, .after = NumReads)
+
+
+names <- tibble(
+  old_names = colnames(mean_sd_table),
+  new_names = c("Soil type", "Protocol", "Libraries", "Number of reads", "Library Conc.\n[ng/µL]", "Shannon\nDiversity", "Bray-Curtis\nVariation", "Bray-Curtis Variation\nBetween protocols"))
+
+final_table <- mean_sd_table %>%
+  rename_at(vars(names$old_names), ~ names$new_names)
+
+hjustification_matrix <- as.vector(matrix(c(0, 0, 1, 1, 1, 1, 1, 1), ncol = ncol(mean_sd_table), nrow = nrow(mean_sd_table), byrow = TRUE))
+
+xjustification_matrix <- as.vector(matrix(c(0.1, 0.1, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9), ncol = ncol(mean_sd_table), nrow = nrow(mean_sd_table), byrow = TRUE))
+
+alpha_table <- final_table %>%
+  ggtexttable(rows = NULL, theme = ttheme(colnames.style = colnames_style(fill = "white"), tbody.style = tbody_style(fill = "white", hjust = hjustification_matrix, x = xjustification_matrix))) %>%
+  tab_add_hline(at.row = 1:2, row.side = "top", linewidth = 2) %>%
+  tab_add_hline(at.row = seq(4, 10, 2), row.side = "top", linewidth = 1)
+
+alpha_table
+
+ggsave(plot = alpha_table, filename = "figures/table_amplicons.png", device = "png", height = 13, width = 16)
+```
+
+## Heatmap - amplicons
+```{r heatmap}
+#tmp <- dat.types.sub3000.amp %>%
+#  amp_subset_samples(soil_type == "Sand-Clay")
+
+# Find all genera in amplicon data
+heatmap.amplicon_genus <- dat.types.sub3000.amp %>%
+  amp_heatmap(group_by = "seq_id", 
+              min_abundance = 0.001,
+              tax_show = 100000,
+              tax_aggregate = "Genus", 
+              normalise = FALSE,
+              showRemainingTaxa = FALSE, 
+              plot_values = TRUE,
+              textmap = TRUE) %>%
+  rownames_to_column(var = "Genus") %>%
+  mutate(across(Genus, ~ str_replace_all(., "^.*ASV.*$", "Unclassified"))) %>%
+  group_by(Genus) %>%
+  summarise(across(everything(), ~ sum(.))) %>%
+  ungroup() %>%
+  column_to_rownames(var = "Genus")
+
+genus.text.amp <- heatmap.amplicon_genus %>%
+  mutate(total = rowSums(.)) %>%
+  filter(!total == 0) %>%
+  select(total) %>%
+  arrange(desc(total)) %>%
+  row.names(.)
+
+genus.text.renamed <- gsub("Burkholderia-Caballeronia-Paraburkholderia", "BCP", genus.text.amp)
+
+# Load new genus ampvis object
+ampvis.sub_genus <- amp_load(otutable = heatmap.amplicon_genus,
+                             metadata = metadata.amplicon)
+
+plot.heatmap_genus <- ampvis.sub_genus %>%
+  amp_heatmap(group_by = "lib_volume", 
+              min_abundance = 0.01,
+              facet_by = "soil_type",
+              tax_aggregate = "OTU",
+              normalise = TRUE,
+              tax_show = genus.text.amp[2:51], 
+              order_y_by = rev(genus.text.amp[c(2:51)]),
+              showRemainingTaxa = FALSE, 
+              plot_na = TRUE,
+              plot_values = FALSE,
+              plot_values_size = 3,
+              round = 2,
+              color_vector = c(colors[5], "white", colors[3]),
+              plot_legendbreaks = c(0.01, 0.1, 1, 3, 10),
+              plot_colorscale = "log10") +
+  scale_x_discrete(limits = c("Small-scale", "Full-scale"), labels = c("2 x 5 µL", "2 x 25 µL")) +
+  scale_y_discrete(labels = rev(c(genus.text.renamed[c(2:51)]))) +
+  labs(x = "", y = "", title = "Heatmap aggregated at the genus level across data type") +
+  articletheme +
+  guides(fill = guide_colorbar(title.position = "right"))
+
+leg.plot_heat <- cowplot::get_legend(plot.heatmap_genus)
+
+plot.heatmap_genus.final <- plot.heatmap_genus + theme(legend.position = "none")
+
+plot.heatmap_genus.final
+
+#dat.types.sub3000.amp %>%
+#  amp_heatmap(group_by = "lib_volume", 
+#              min_abundance = 0.01,
+#              facet_by = "soil_type",
+#              tax_aggregate = "Genus",
+#              normalise = TRUE,
+#              tax_show = 50, 
+#              #order_y_by = 50,
+#              showRemainingTaxa = TRUE, 
+#              plot_na = TRUE,
+#              plot_values = TRUE,
+#              plot_values_size = 3,
+#              round = 2,
+#              color_vector = c(colors[5], "white", colors[3]),
+#              plot_colorscale = "log10",
+#              plot_legendbreaks = c(0.01, 1, 50)) +
+#  scale_x_discrete(limits = c("Small-scale", "Full-scale"), labels = c("2 x 5 µL", "2 x 25 µL")) +
+#  labs(x = "", y = "", title = "Heatmap aggregated at the genus level across data type") +
+#  articletheme +
+#  theme(legend.position = "bottom") +
+#  guides(fill = guide_colorbar(title.position = "right"))
+
+ggsave(plot = plot.heatmap_genus, filename = "figures/heatmap_amplicons.png", device = "png", height = 13, width = 16)
+```
+
+## Ordination - amplicons
+```{r ordination}
+soil <- unique(dat.types.sub3000.amp$metadata$soil_type)
+
+plot_soil_ord <- function(soil) {
+  plotAmpliconOrdinationSoil(dat.types.sub3000.amp, soil, ord_type = "RDA") +
+    scale_color_manual(values = c(colors[5], colors[3])) +
+    scale_fill_manual(values = c(colors[5], colors[3]))
+}
+
+plot_list <- map(soil, plot_soil_ord)
+
+ggleg <- plot_list[[1]] + theme(legend.position = "right")
+
+leg <- list(get_legend(ggleg))
+
+plot_list2 <- append(plot_list, leg)
+
+p <- ggarrange(plotlist = plot_list2, nrow = 2, ncol = ceiling(length(plot_list) / 2), labels = toupper(letters[1:5]))
+
+p
+
+ggsave(plot = p, filename = "figures/RDA_faceted_amplicons.png", device = "png", height = 13, width = 16)
+```
+
+
+## Rel abundance correlation plot
+# Next chunk merges replicates and sample type. It needs to be one plot per soil type
+```{r differential relative abundance}
+soil <- unique(dat.types.sub3000.amp$metadata$soil_type)
+
+deseq_results <- tibble(soil = soil) %>%
+  mutate(deseq = map(.x = soil, .f = ~ deseq_function(.x, dat.types.sub3000.amp)))
+
+deseq_results_dataframe <- rlist::list.rbind(deseq_results$deseq) %>%
+  mutate(pval_signif = if_else(padj < 0.05, TRUE, FALSE),
+         fc_signif = if_else(abs(log2FoldChange) > 1, TRUE, FALSE),)
+
+dat_types_filtered_0.1 <- dat.types.sub3000.amp %>%
+  filter_otus(0.1)
+
+otu <- dat_types_filtered_0.1[["abund"]]
+
+ProtocolDifferentialAbundance <- combine_otu_w_metadata(metadata = dat.types.sub3000.amp$metadata, otu = otu) %>%
+  summarise_triplicates() %>%
+  calculate_relative_abundance() %>%
+  filter_double_zeros() %>%
+  left_join(deseq_results_dataframe) %>%
+  mutate(bias = if_else(log2FoldChange < 0 & pval_signif, "More abundant with 2 x 25 µL", 
+                        if_else(pval_signif & log2FoldChange > 0, "More abundant with 2 x 5 µL", "Equally detected")),
+         max_abundance = pmax(`Small-scale`, `Full-scale`)) %>%
+  filter(!is.na(bias))
+
+plot_list <- map(.x = soil, ~ plotDiffRelabund_amp(ProtocolDifferentialAbundance, .x)) 
+
+ggleg <- plot_list[[1]] + theme(legend.position = "right") 
+
+leg <- list(get_legend(ggleg))
+
+leg.plot_diff <- cowplot::get_legend(ggleg)
+
+plot_diff <- plot_list[[1]] + theme(legend.position = "none")
+
+plot_list2 <- append(plot_list, leg)
+
+p <- ggarrange(plotlist = plot_list2, nrow = 2, ncol = ceiling(length(plot_list) / 2), labels = toupper(letters[1:5]))
+
+p
+
+ggsave(plot = p, filename = "figures/differential_abundance_faceted_amplicons.png", device = "png", height = 13, width = 16)
+```
+
+Note on p-values set to NA: some values in the results table can be set to NA for one of the following reasons:
+
+* If within a row, all samples have zero counts, the baseMean column will be zero, and the log2 fold change estimates, p value and adjusted p value will all be set to NA.
+* If a row contains a sample with an extreme count outlier then the p value and adjusted p value will be set to NA. These outlier counts are detected by Cook’s distance. Customization of this outlier filtering and description of functionality for replacement of outlier counts and refitting is described below
+* If a row is filtered by automatic independent filtering, for having a low mean normalized count, then only the adjusted p value will be set to NA. Description and customization of independent filtering is described below
+`NAs can be omitted by setting independentFiltering = FALSE, cooksCutoff = FALSE`
+
+
+# PERMANOVA test for overall difference in observed communities based on protocol
+```{r statistical testing}
+## Overall comparison
+# Betadispersion - analysis of multivariate homogeneity of group dispersions (variances)
+community <- dat.types.sub3000.amp %>%
+  filter_otus(0.01)
+
+community_0.01 <- t(community[["abund"]])
+
+dis <- vegan::vegdist(community_0.01)
+
+groups <- rarefied_alphadiversity %>%
+  mutate(group = str_c(soil_type, lib_volume, sep = " ")) %>%
+  pull(lib_volume) %>%
+  as.factor(.)
+
+mod <- vegan::betadisper(dis, groups)
+mod
+
+anova(mod)
+
+plot(mod, ellipse = TRUE, hull = FALSE, conf = 0.90) # 90% data ellipse
+
+# PERMANOVA 
+perm <- with(rarefied_alphadiversity, permute::how(nperm = 9999))
+set.seed(123)
+permanova.protocol <- vegan::adonis2(community_0.01 ~ lib_volume, method = "bray", data = rarefied_alphadiversity, permutations = perm)
+
+permanova.protocol %>%
+  rownames_to_column("Variable") %>%
+  mutate(across(3:5, ~round(., digits = 3))) %>%
+  gridExtra::tableGrob(rows = NULL) %>%
+  gridExtra::grid.arrange(.)
+
+## Stratified
+# Betadispersion - analysis of multivariate homogeneity of group dispersions (variances)
+groups.stratified <- rarefied_alphadiversity %>%
+  mutate(group = str_c(soil_type, lib_volume, sep = " ")) %>%
+  pull(group) %>%
+  as.factor(.)
+
+mod.stratified <- vegan::betadisper(dis, groups.stratified)
+mod.stratified
+
+anova(mod.stratified)
+
+plot(mod.stratified, ellipse = TRUE, hull = FALSE, conf = 0.90) # 90% data ellipse
+
+set.seed(123)
+parmanova.stratified <- with(rarefied_alphadiversity, adonis2(community_0.01 ~ lib_volume, data = rarefied_alphadiversity, permutations = perm, strata = soil_type))
+
+parmanova.stratified %>%
+  rownames_to_column("Variable") %>%
+  mutate(across(3:5, ~round(., digits = 3))) %>%
+  gridExtra::tableGrob(rows = NULL) %>%
+  gridExtra::grid.arrange(.)
+
+# Perform for a single group
+
+# Betadispersion - analysis of multivariate homogeneity of group dispersions (variances)
+rarefied_alphadiversity_sub <- rarefied_alphadiversity %>%
+  filter(soil_type == "Beach Sand")
+
+community_sub <- community %>%
+  amp_subset_samples(seq_id %in% rarefied_alphadiversity_sub[, "seq_id"]) %>%
+  filter_otus(0.01)
+
+community_sub_0.01 <- t(community_sub[["abund"]])
+
+dis_sub <- vegan::vegdist(community_sub_0.01)
+
+groups_sub <- rarefied_alphadiversity_sub %>%
+  mutate(group = str_c(soil_type, lib_volume, sep = " ")) %>%
+  pull(lib_volume) %>%
+  as.factor(.)
+
+mod_sub <- vegan::betadisper(dis_sub, groups_sub)
+mod_sub
+
+anova(mod_sub)
+
+plot(mod_sub, ellipse = TRUE, hull = FALSE, conf = 0.90) # 90% data ellipse
+
+# PERMANOVA
+permanova.protocol_sub <- vegan::adonis2(community_sub_0.01 ~ lib_volume, method = "bray", data = rarefied_alphadiversity_sub, permutations = perm)
+
+permanova.protocol_sub %>%
+  rownames_to_column("Variable") %>%
+  mutate(across(3:5, ~round(., digits = 3))) %>%
+  gridExtra::tableGrob(rows = NULL) %>%
+  gridExtra::grid.arrange(.)
+```
+
+
+## Final plot
+
+```{r final plot}
+# Create combined plot
+gg1 <- ggarrange(plot.heatmap_genus.final, labels = c("A"))
+
+gg2 <- ggarrange(plot_diff, labels = c("B"))
+
+gg3 <- ggarrange(leg.plot_heat, leg.plot_diff, ncol = 2)
+
+gg4 <- ggarrange(gg2, gg3, ncol = 1)
+
+gg_arranged <- ggarrange(gg1, gg4, ncol = 2, nrow = 1, widths = c(2, 1))
+
+gg_arranged
+
+ggsave(plot = gg_arranged, filename = "figures/combined_plot_amplicons.png", device = "png", height = 13, width = 16)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
