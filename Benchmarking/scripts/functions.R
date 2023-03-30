@@ -16,7 +16,7 @@ plotAmpliconOrdinationSoil <- function(df, soil_filter, ord_type = "CA", envvect
             sample_colorframe = "kit",
             #envfit_numeric_arrows_scale = 0.2,
             #envfit_arrowcolor = "#4bbbe1",
-            species_nlabels = 5,
+            species_nlabels = 10,
             species_label_taxonomy = "Phylum",
             species_plot = T
         ) +
