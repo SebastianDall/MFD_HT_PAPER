@@ -1,0 +1,226 @@
+---
+title: "Lab optimization"
+author: "TBNJ"
+date: "2023-04-22"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+knitr::opts_chunk$set(
+  echo    = F,
+  # fig.pos = "H",
+  message = FALSE,
+  warning = FALSE
+)
+
+library(here)
+setwd(here("Lab_optimization"))
+
+source(here("Bead_beating", "scripts/article_theme.R"))
+
+library(tidyverse)
+library(ggridges)
+library(patchwork)
+library(ggpubr)
+
+colors <- c("#C6DBEF", "#4292C6", "#08306B")
+colors_soil <- c("grey", "darkgoldenrod2", "royalblue4", "seagreen", "salmon")
+```
+
+## Filter Data
+
+
+```{r remove blanks and pcr controls}
+peaks.FS.LT <- read_csv("FastSpin-LT/FastSpin-LT_compactPeakTable.csv", col_names = TRUE, col_select = c(2:5,18:19)) %>%
+  dplyr::rename(Size = `Size [bp]`,
+                Protocol = `Sample Description`)
+
+peaks.PS.LT <- read_csv("PowerSoil-LT/PowerSoil-LT_compactPeakTable.csv", col_names = TRUE, col_select = c(2:5,18:19)) %>%
+  dplyr::rename(Size = `Size [bp]`,
+                Protocol = `Sample Description`)
+
+peaks.ZM.HT <- read_csv("ZymoMagbead-HT/ZymoMagbead-HT_compactPeakTable.csv", col_names = TRUE, col_select = c(2:5,18:19)) %>%
+  dplyr::rename(Size = `Size [bp]`,
+                Protocol = `Sample Description`)
+
+peaks.FS.HT <- read_csv("FastSpin-HT/FastSpin-HT_compactPeakTable.csv", col_names = TRUE, col_select = c(2:5,18:19)) %>%
+  dplyr::rename(Size = `Size [bp]`,
+                Protocol = `Sample Description`)
+
+peaks.PS.HT <- read_csv("PowerSoil-HT/PowerSoil-HT_compactPeakTable.csv", col_names = TRUE, col_select = c(2:5,18:19)) %>%
+  dplyr::rename(Size = `Size [bp]`,
+                Protocol = `Sample Description`)
+
+ladder1 <- peaks.FS.LT %>%
+  filter(Well == "A1")
+
+peaks1 <- peaks.FS.LT %>%
+  filter(!Well == "A1", Size > 99, !Size %in% c(257, 580)) %>%
+  mutate(across(Observations, ~if_else(is.na(.), "Peak", Observations)),
+         Protocol = "FastSpin-LT") %>%
+  select(-Peak, -Well) %>%
+  group_by(Observations) %>%
+  summarise(across(Size:Height, ~mean(.)))
+
+peaks2 <- peaks.PS.LT %>%
+  filter(!Well == "A1", Size > 99, !Size %in% c()) %>%
+  mutate(across(Observations, ~if_else(is.na(.), "Peak", Observations)),
+         Protocol = "PowerSoil-LT") %>%
+  select(-Peak, -Well) %>%
+  group_by(Observations) %>%
+  summarise(across(Size:Height, ~mean(.)))
+
+peaks3 <- peaks.ZM.HT %>%
+  filter(!Well == "A1", Size > 99, !Size %in% c()) %>%
+  mutate(across(Observations, ~if_else(is.na(.), "Peak", Observations)),
+         Protocol = "ZymoMagbead-HT") %>%
+  select(-Peak, -Well) %>%
+  group_by(Observations) %>%
+  summarise(across(Size:Height, ~mean(.)))
+
+peaks4 <- peaks.FS.HT %>%
+  filter(!Well == "A1", !Size %in% c(">60000"), !is.na(Size)) %>%
+  mutate(across(Observations, ~if_else(is.na(.), "Peak", Observations)),
+         Protocol = "FastSpin-HT",
+         across(Size:Height, ~as.numeric(.))) %>%
+  select(-Peak, -Well) %>%
+  group_by(Observations) %>%
+  summarise(across(Size:Height, ~mean(.)))
+
+peaks5 <- peaks.PS.HT %>%
+  filter(!Well == "A1", Size > 99, !Size %in% c()) %>%
+  mutate(across(Observations, ~if_else(is.na(.), "Peak", Observations)),
+         Protocol = "PowerSoil-Pro-HT") %>%
+  select(-Peak, -Well) %>%
+  group_by(Observations) %>%
+  summarise(across(Size:Height, ~mean(.)))
+
+# Spectra
+spectre_ratio1 <- read_csv("FastSpin-LT/FastSpin-LT_Electropherogram.csv") %>%
+  mutate(Size = seq(2, 1520, 2)) %>%
+  relocate(Size, .before = 1)
+
+spectre_ratio2 <- read_csv("PowerSoil-LT/PowerSoil-LT_Electropherogram.csv") %>%
+  mutate(Size = seq(2, 1520, 2)) %>%
+  relocate(Size, .before = 1)
+
+spectre_ratio3 <- read_csv("ZymoMagbead-HT/ZymoMagbead-HT_Electropherogram.csv") %>%
+  mutate(Size = seq(2, 1520, 2)) %>%
+  relocate(Size, .before = 1)
+
+spectre_ratio4 <- read_csv("FastSpin-HT/FastSpin-HT_Electropherogram.csv") %>%
+  mutate(Size = seq(2, 1520, 2)) %>%
+  relocate(Size, .before = 1)
+
+spectre_ratio5 <- read_csv("PowerSoil-HT/PowerSoil-HT_Electropherogram.csv") %>%
+  mutate(Size = seq(2, 1520, 2)) %>%
+  relocate(Size, .before = 1)
+
+conc <- data.frame(Conc = c(0.34, 0.09, 0.02, 0.16, 0.11, 12.64, 2.99, 2.91, 4.20, 1.08, 3.85, 2.82, 1.08, 1.75, 0.07, 1.99, 0.77, 0.71, 1.38, 0.41, 2.83, 1.09, 0.80, 1.25, 0.03),
+                   Protocol = c("FastSpin-LT", "PowerSoil-LT", "FastSpin-HT", "PowerSoil-Pro-HT", "ZymoMagbead-HT", "FastSpin-LT", "PowerSoil-LT", "FastSpin-HT", "PowerSoil-Pro-HT", "ZymoMagbead-HT", "FastSpin-LT", "PowerSoil-LT", "FastSpin-HT", "PowerSoil-Pro-HT", "ZymoMagbead-HT", "FastSpin-LT", "PowerSoil-LT", "FastSpin-HT", "PowerSoil-Pro-HT", "ZymoMagbead-HT", "FastSpin-LT", "PowerSoil-LT", "FastSpin-HT", "PowerSoil-Pro-HT", "ZymoMagbead-HT")) %>%
+  group_by(Protocol) %>%
+  summarise(across(everything(), ~sum(.)))
+#  group_by(Protocol) %>%
+#  summarise(across(Conc, ~round(mean(.), 2))) %>%
+#  add_row(Protocol = "Electronic Ladder", Conc = NA) %>%
+#  add_row(Protocol = "Tag. product", Conc = NA)
+
+#peak_stats <- peaks.FS.LT %>%
+  #rbind(peaks2) %>%
+  #mutate(Observations = if_else(is.na(Observations), as.character(Peak), Observations)) %>%
+  #mutate(across(Protocol, ~as.factor(.))) %>%
+  #group_by(Protocol, Observations) %>%
+  #filter(Protocol != "ladder") %>%
+  #summarise(across(Size:Height, ~round(mean(.), 0)), .groups = "drop")
+
+spectre_sum1 <- spectre_ratio1 %>%
+  pivot_longer(!Size, names_to = "Group", values_to = "Intensities") %>%
+  mutate(Protocol = if_else(str_detect(Group, "Ladder"), "Ladder", "FastSpin-LT")) %>%
+  relocate(Size, .after = Protocol) %>%
+  group_by(Protocol, Size) %>%
+  summarise(across(Intensities, ~mean(.)), .groups = "drop") %>%
+  mutate(across(Protocol, ~as.factor(.)),
+         across(where(is.numeric), ~round(., 2))) %>%
+  left_join(conc)
+  #left_join(peaks1)
+
+spectre_sum2 <- spectre_ratio2 %>%
+  pivot_longer(!Size, names_to = "Group", values_to = "Intensities") %>%
+  mutate(Protocol = if_else(str_detect(Group, "Ladder"), "Ladder", "PowerSoil-LT")) %>%
+  relocate(Size, .after = Protocol) %>%
+  group_by(Protocol, Size) %>%
+  summarise(across(Intensities, ~mean(.)), .groups = "drop") %>%
+  mutate(across(Protocol, ~as.factor(.)),
+         across(where(is.numeric), ~round(., 2))) %>%
+  left_join(conc)
+  #left_join(peaks2)
+
+spectre_sum3 <- spectre_ratio3 %>%
+  pivot_longer(!Size, names_to = "Group", values_to = "Intensities") %>%
+  mutate(Protocol = if_else(str_detect(Group, "Ladder"), "Ladder", "ZymoMagbead-HT")) %>%
+  relocate(Size, .after = Protocol) %>%
+  group_by(Protocol, Size) %>%
+  summarise(across(Intensities, ~mean(.)), .groups = "drop") %>%
+  mutate(across(Protocol, ~as.factor(.)),
+         across(where(is.numeric), ~round(., 2))) %>%
+  left_join(conc)
+  #left_join(peaks3)
+
+spectre_sum4 <- spectre_ratio4 %>%
+  pivot_longer(!Size, names_to = "Group", values_to = "Intensities") %>%
+  mutate(Protocol = if_else(str_detect(Group, "Ladder"), "Ladder", "FastSpin-HT")) %>%
+  relocate(Size, .after = Protocol) %>%
+  group_by(Protocol, Size) %>%
+  summarise(across(Intensities, ~mean(.)), .groups = "drop") %>%
+  mutate(across(Protocol, ~as.factor(.)),
+         across(where(is.numeric), ~round(., 2))) %>%
+  left_join(conc)
+  #left_join(peaks4)
+
+spectre_sum5 <- spectre_ratio5 %>%
+  pivot_longer(!Size, names_to = "Group", values_to = "Intensities") %>%
+  mutate(Protocol = if_else(str_detect(Group, "Ladder"), "Ladder", "PowerSoil-Pro-HT")) %>%
+  relocate(Size, .after = Protocol) %>%
+  group_by(Protocol, Size) %>%
+  summarise(across(Intensities, ~mean(.)), .groups = "drop") %>%
+  mutate(across(Protocol, ~as.factor(.)),
+         across(where(is.numeric), ~round(., 2))) %>%
+  left_join(conc)
+  #left_join(peaks5)
+
+spectre_sum <- rbind(spectre_sum1, spectre_sum2, spectre_sum3, spectre_sum4, spectre_sum5) %>%
+  group_by(Protocol, Size) %>%
+  summarise(across(everything(), ~mean(.)))
+
+ladder <- ladder1 %>% arrange(Size) %>% pull(Size)
+ladder_size <- c(316, 408, 484, 558, 632, 682, 722, 778, 826, 870, 932, 994, 1044, 1094)
+y_order <- spectre_sum %>% pull(Protocol) %>% unique(.)
+
+plot <- spectre_sum %>%
+  #filter(Protocol != "Ladder") %>%
+  ggplot(aes(x = Size, y = Protocol, height = Intensities, fill = Conc)) +
+  geom_density_ridges(stat = "identity", scale = 4, alpha = 0.7) +
+  scale_fill_gradient(low = colors[2], high = colors[3]) + 
+  scale_x_continuous(limits = c(225, 1200), breaks = ladder_size, labels = ladder) +
+  scale_y_discrete(limits = rev(c(y_order[c(3,2,1,4,5,6)]))) +
+  articletheme +
+  labs(title = "Average fragment size distribution from different soils across different DNA extraction kits",
+       x = "Size [bp]",
+       y = "",
+       tag = "",
+       fill = "Total yield [µg]") +
+  theme(legend.position = "right",
+        panel.border = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        axis.text.x = element_text(size = 18),
+        axis.text.y = element_text(size = 18),
+        axis.title = element_text(size = 24))
+
+plot
+
+ggsave(here("Lab_optimization", "figures", "genomic-DNA-fragmentation.png"), plot = plot, device = "png", height = 12, width = 19)
+```
+
+
+

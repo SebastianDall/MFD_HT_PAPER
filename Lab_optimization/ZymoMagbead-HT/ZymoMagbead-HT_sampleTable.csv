@@ -1,0 +1,17 @@
+Well,Sample Description,Conc. [ng/µl],Alert,Observations,Source,DIN,FileName
+A1,Ladder,76.6,,Ladder,,,gDNA - 2023-04-14 - 22.48.43.gDNA
+B1,ZymoMagbead-HT,2.45,!!,Sample concentration outside functional range for DIN and the assay,,,gDNA - 2023-04-14 - 22.48.43.gDNA
+C1,,4.13,!,Sample concentration outside functional range for DIN and the assay,,8.1,gDNA - 2023-04-14 - 22.48.43.gDNA
+D1,,2.24,!!,Sample concentration outside functional range for DIN and the assay,,,gDNA - 2023-04-14 - 22.48.43.gDNA
+E1,,1.34,!!,Sample concentration outside functional range for DIN and the assay,,,gDNA - 2023-04-14 - 22.48.43.gDNA
+F1,,2.03,!!,Sample concentration outside functional range for DIN and the assay,,,gDNA - 2023-04-14 - 22.48.43.gDNA
+G1,,1.80,!!,Sample concentration outside functional range for DIN and the assay,,,gDNA - 2023-04-14 - 22.48.43.gDNA
+H1,,10.8,,,,6.8,gDNA - 2023-04-14 - 22.48.43.gDNA
+A2,,9.61,!,Sample concentration outside recommended range,,6.7,gDNA - 2023-04-14 - 22.48.43.gDNA
+B2,,12.1,,,,6.9,gDNA - 2023-04-14 - 22.48.43.gDNA
+C2,,13.9,,,,7.6,gDNA - 2023-04-14 - 22.48.43.gDNA
+D2,,31.1,,,,7.0,gDNA - 2023-04-14 - 22.48.43.gDNA
+E2,,18.8,,,,7.0,gDNA - 2023-04-14 - 22.48.43.gDNA
+F2,,2.60,!!,Sample concentration outside functional range for DIN and the assay,,,gDNA - 2023-04-14 - 22.48.43.gDNA
+G2,,4.73,!,Sample concentration outside functional range for DIN and the assay,,7.6,gDNA - 2023-04-14 - 22.48.43.gDNA
+H2,,4.22,!,Sample concentration outside functional range for DIN and the assay,,7.6,gDNA - 2023-04-14 - 22.48.43.gDNA

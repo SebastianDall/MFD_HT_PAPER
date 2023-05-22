@@ -1,0 +1,17 @@
+Well,Sample Description,Conc. [ng/µl],Alert,Observations,Source,DIN,FileName
+A1,Ladder,71.9,,Ladder,,,gDNA - 2023-04-14 - 21.57.24.gDNA
+B1,Fastspin-LT,132,!,Sample concentration outside recommended range; Peak out of Sizing Range,,4.6,gDNA - 2023-04-14 - 21.57.24.gDNA
+C1,,115,!,Sample concentration outside recommended range,,4.8,gDNA - 2023-04-14 - 21.57.24.gDNA
+D1,,127,!,Sample concentration outside recommended range,,5.1,gDNA - 2023-04-14 - 21.57.24.gDNA
+E1,,109,!,Sample concentration outside recommended range,,5.0,gDNA - 2023-04-14 - 21.57.24.gDNA
+F1,,89.2,,,,5.4,gDNA - 2023-04-14 - 21.57.24.gDNA
+G1,,121,!,Sample concentration outside recommended range; Peak out of Sizing Range,,5.0,gDNA - 2023-04-14 - 21.57.24.gDNA
+H1,,127,!,Sample concentration outside recommended range,,4.8,gDNA - 2023-04-14 - 21.57.24.gDNA
+A2,,61.3,,,,5.3,gDNA - 2023-04-14 - 21.57.24.gDNA
+B2,,30.8,,,,5.3,gDNA - 2023-04-14 - 21.57.24.gDNA
+C2,,175,!,Sample concentration outside recommended range,,5.9,gDNA - 2023-04-14 - 21.57.24.gDNA
+D2,,172,!,Sample concentration outside recommended range,,5.7,gDNA - 2023-04-14 - 21.57.24.gDNA
+E2,,173,!,Sample concentration outside recommended range,,5.9,gDNA - 2023-04-14 - 21.57.24.gDNA
+F2,,24.9,,,,5.0,gDNA - 2023-04-14 - 21.57.24.gDNA
+G2,,13.5,,,,5.9,gDNA - 2023-04-14 - 21.57.24.gDNA
+H2,,21.4,,,,5.5,gDNA - 2023-04-14 - 21.57.24.gDNA

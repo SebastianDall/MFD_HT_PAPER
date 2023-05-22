@@ -37,24 +37,25 @@ source(here("Benchmarking", "scripts/functions.R"))
 source(here("Benchmarking", "scripts/article_theme.R"))
 
 colors <- c("grey", "darkgoldenrod2", "royalblue4", "seagreen", "salmon")
-kit_colors <- RColorBrewer::brewer.pal(5, "Dark2")
+#kit_colors <- RColorBrewer::brewer.pal(5, "Dark2")
 ```
 
 
 ## Filter Data
 
-> Sample MG200131-87 is a clear outlier in PCA space. Therefore it is removed. # NOT REMOVED!
+> Samples MQ200131-87 and MQ200131-66 are outliers in PCA space. Therefore they are removed.
 
 ```{r remove blanks and pcr controls}
 dat.types.amp <- ampvis.amplicon %>%
   amp_subset_samples(!is.na(project_id) & !soil_type %in% c("Blank", "Activated sludge")) %>%
-  amp_subset_samples(kit != "MIDAS HT")#, seq_name != "MG200131-87")
+  amp_subset_samples(kit != "MIDAS HT", !seq_name %in% c("MQ200131-66", "MQ200131-87"))
 
 # Create subsets
 dat.types.sub10000.amp <- dat.types.amp %>% amp_subset_samples(., minreads = 10000)
 
 rarefy <- min(colSums(dat.types.sub10000.amp[["abund"]]))
 
+set.seed(123)
 dat.types.sub10000.amp.ra <- dat.types.sub10000.amp %>%
   amp_subset_samples(., rarefy = rarefy)
 
@@ -71,12 +72,12 @@ We set a cutoff of at 10000 reads, and rarefy to the lowest number of reads in t
 >MIDAS was removed at this stage.
 
 ```{r}
-dat.types.sub10000.amp %>%
+amp.rarecurve <- dat.types.sub10000.amp %>%
   amp_rarecurve(color_by = "kit",
                 facet_by = "soil_type",
                 facet_scales = "free_x",
                 stepsize = 1000) +
-  scale_color_manual(values = c(kit_colors))
+  scale_color_manual(values = c(colors))
 
 bray_distance <- as.matrix(vegan::vegdist(t(dat.types.sub10000.amp.rel_0.1$abund))) %>%
     as.data.frame() %>%
@@ -95,7 +96,9 @@ metadata_renamed <- metadata %>%
 bray_with_metadata <- metadata %>%
   left_join(bray_distance) %>%
   pivot_longer(!seq_id:soil_type, names_to = "comparison", values_to = "value") %>%
-  left_join(metadata_renamed)
+  left_join(metadata_renamed) %>%
+  filter(value != 0) %>%
+  distinct(value, .keep_all = TRUE)
   
 bray_with_metadata_comparisons <- bray_with_metadata %>%
   filter(seq_id != comparison) %>%
@@ -104,8 +107,9 @@ bray_with_metadata_comparisons <- bray_with_metadata %>%
   group_by(soil_type, kit) %>%
   summarise(
     mean_bray = format(round(mean(value, na.rm = TRUE), 2), nsmall = 2),
-    sd_bray = format(round(sd(value, na.rm = TRUE), 2), nsmall = 2)
-  )
+    sd_bray = format(round(sd(value, na.rm = TRUE), 2), nsmall = 2)) %>%
+  ungroup() %>%
+  mutate(across(mean_bray:sd_bray, ~ as.numeric(.)))
 ```
 
 
@@ -115,9 +119,10 @@ tab_reads <- data.frame(num_reads = apply(dat.types.sub10000.amp$abund, 2, sum))
   rownames_to_column(var = "seq_id")
 
 lab_metadata <- metadata.amplicon %>%
-  select(seq_id, kit, soil_type, conc_qubit, `260/280`, `260/230`, lib_conc) %>%
+  select(seq_id, kit, soil_type, conc_qubit, `260/280`, `260/230`, integrity, lib_conc) %>%
   filter(kit != "MIDAS HT", !soil_type %in% c("Blank", "Activated sludge")) %>%
-  mutate(yield_ng = if_else(kit == "PowerSoil Pro HT", conc_qubit * 120, conc_qubit * 60))
+  mutate(yield_ng = if_else(kit == "PowerSoil Pro HT", conc_qubit * 120, conc_qubit * 60),
+         across(integrity, ~as.numeric(.)))
 
 rarefied_alphadiversity <- dat.types.sub10000.amp.ra %>%
   amp_alphadiv(
@@ -126,21 +131,16 @@ rarefied_alphadiversity <- dat.types.sub10000.amp.ra %>%
   ) %>%
   dplyr::rename(shannon = Shannon,
                 observed_asv = ObservedOTUs) %>%
-  select(
-    seq_id,
-    soil_type,
-    kit,
-    observed_asv,
-    shannon
-  ) %>%
+  select(seq_id, soil_type, kit, observed_asv, shannon) %>%
   left_join(tab_reads)
 
 # Join different data: Lab, Alpha, beta.
 combine_alpha_beta_with_metadata <- rarefied_alphadiversity %>%
-  left_join(lab_metadata) %>%
+  right_join(lab_metadata) %>%
   # Calculate failed libraries - FastSpin for sand worked however one sample was an outlier
   group_by(soil_type, kit) %>%
-  mutate(libs = sum(!is.na(shannon))) %>%
+  mutate(libs = sum(!is.na(shannon)),
+         across(integrity, ~as.numeric(.))) %>%
   # Calculate mean and sd for all variables
   summarise(
     across(where(is.numeric), .fns = list(mean = ~ mean(., na.rm = T), sd = ~ sd(., na.rm = T)), .names = "{.fn}_{.col}")
@@ -151,14 +151,18 @@ combine_alpha_beta_with_metadata <- rarefied_alphadiversity %>%
     libs = as.character(mean_libs),
     across(mean_num_reads:sd_num_reads, ~ format(round(., 0))),
     across(mean_observed_asv:sd_observed_asv, ~ format(round(., 0))),
-    across(where(is.numeric), ~ format(round(., 2), nsmall = 2)),
-    mean_yield_ng = format(round(as.numeric(mean_yield_ng))),
-    sd_yield_ng = format(round(as.numeric(sd_yield_ng)))) %>%
+    across(mean_lib_conc:sd_lib_conc, ~ format(round(., 2))),
+    across(mean_integrity:sd_integrity, ~ format(round(./1000, 2))),
+    mean_yield_µg = format(round(as.numeric(mean_yield_ng)/1000, 2)),
+    sd_yield_µg = format(round(as.numeric(sd_yield_ng)/1000, 2))) %>%
+  select(-mean_yield_ng, -sd_yield_ng) %>%
   # Add bray variation
   left_join(bray_with_metadata_comparisons) %>%
   # factor Kit
-  mutate(kit = factor(kit, levels = kit_levels, labels = kit_levels)) %>%
+  mutate(kit = factor(kit, levels = kit_levels, labels = kit_levels),
+         across(where(is.numeric), ~ format(round(., 2), nsmall = 2))) %>%
   arrange(soil_type, kit)
+
 ```
 
 
@@ -177,13 +181,13 @@ mean_sd_table_long <- combine_alpha_beta_with_metadata %>%
 
 mean_sd_table <- mean_sd_table_long %>%
   pivot_wider(names_from = mean, values_from = mean_sd) %>%
-  select(soil_type, kit, conc_qubit, yield_ng, `260/280`, `260/230`, libs, lib_conc, num_reads, observed_asv, shannon, bray) %>%
+  select(soil_type, kit, yield_µg, `260/280`, `260/230`, integrity, libs, lib_conc, num_reads, observed_asv, shannon, bray) %>%
   group_by(soil_type) %>%
   mutate_at(vars(soil_type), ~ replace(., duplicated(.), ""))
 
 names <- tibble(
   old_names = colnames(mean_sd_table),
-  new_names = c("Soil type", "Kit", "DNA ext conc. [ng/µL]", "DNA yield [ng]", "260/280", "260/230", "Libraries", "Library conc. [ng/µL]", "Number of reads", "Observed ASVs", "Shannon Diversity", "Bray-Curtis Variation") # "Site name", "Longitude Latitude", "Environment",
+  new_names = c("Soil type", "Extraction Kit", "DNA yield [µg]", "260/280", "260/230", "Integrity [kbp]", "Libraries", "Library conc. [ng/µL]", "Number of reads", "Observed ASVs", "Shannon Diversity", "Bray-Curtis Dissimilarity") # "Site name", "Longitude Latitude", "Environment",
 )
 
 final_table <- mean_sd_table %>%
@@ -206,77 +210,410 @@ writexl::write_xlsx(final_table, here("Benchmarking", "figures", "benchmark_over
 ```
 
 
-## Statistical tests - two sample t-test or Mann-Whitney(Wilcoxon) on shannon and bray distance
+## Statistical tests - ANOVA and Mann-Whitney
 ```{r}
 alpha.all <- rarefied_alphadiversity %>%
-  right_join(lab_metadata) 
-
-alpha.ht <- alpha.all %>%
-  filter(str_detect(kit, "HT"))
-
+  right_join(lab_metadata) %>%
+  arrange(shannon) %>%
+  mutate(shannon_rank = seq(1:length(shannon))) %>%
+  arrange(yield_ng) %>%
+  mutate(yield_ng_rank = seq(1:length(yield_ng))) %>%
+  arrange(`260/280`) %>%
+  mutate(`260/280_rank` = seq(1:length(`260/280`))) %>%
+  arrange(`260/230`) %>%
+  mutate(`260/230_rank` = seq(1:length(`260/230`))) %>%
+  arrange(integrity) %>%
+  mutate(integrity_rank = seq(1:length(integrity))) %>%
+  mutate(across(soil_type:kit, ~as.factor(.)))
+  
 comp.bray <- bray_with_metadata %>%
-  filter(value != 0) %>%
-  filter(soil_type == compared_soil, kit == compared_kit)
+  dplyr::rename(bray = value) %>%
+  filter(bray != 0) %>%
+  filter(soil_type == compared_soil, kit == compared_kit) %>%
+  arrange(bray) %>%
+  mutate(bray_rank = seq(1:length(bray))) %>%
+  mutate(across(c(kit,soil_type,compared_kit, compared_soil), ~as.factor(.)))
+
+# Test for normality
+shapiro.test(alpha.all$shannon)
+qqnorm(alpha.all$shannon)
+qqline(y = alpha.all$shannon)
+
+bartlett.test(shannon ~ kit, data = alpha.all)
+fligner.test(shannon ~ kit, data = alpha.all)
+car::leveneTest(shannon ~ kit, data = alpha.all)
+
+bartlett.test(shannon ~ soil_type, data = alpha.all)
+fligner.test(shannon ~ soil_type, data = alpha.all)
+car::leveneTest(shannon ~ soil_type, data = alpha.all)
+
+shapiro.test(alpha.all$yield_ng)
+qqnorm(alpha.all$yield_ng)
+qqline(y = alpha.all$yield_ng)
+
+bartlett.test(yield_ng ~ kit, data = alpha.all)
+fligner.test(yield_ng ~ kit, data = alpha.all)
+car::leveneTest(yield_ng ~ kit, data = alpha.all)
+
+bartlett.test(yield_ng ~ soil_type, data = alpha.all)
+fligner.test(yield_ng ~ soil_type, data = alpha.all)
+car::leveneTest(yield_ng ~ soil_type, data = alpha.all)
+
+shapiro.test(alpha.all$`260/280`)
+qqnorm(alpha.all$`260/280`)
+qqline(y = alpha.all$`260/280`)
+
+bartlett.test(`260/280` ~ kit, data = alpha.all)
+fligner.test(`260/280` ~ kit, data = alpha.all)
+car::leveneTest(`260/280` ~ kit, data = alpha.all)
+
+bartlett.test(`260/280` ~ soil_type, data = alpha.all)
+fligner.test(`260/280` ~ soil_type, data = alpha.all)
+car::leveneTest(`260/280` ~ soil_type, data = alpha.all)
+
+shapiro.test(alpha.all$`260/230`)
+qqnorm(alpha.all$`260/230`)
+qqline(y = alpha.all$`260/230`)
+
+bartlett.test(`260/230` ~ kit, data = alpha.all)
+fligner.test(`260/230` ~ kit, data = alpha.all)
+car::leveneTest(`260/230` ~ kit, data = alpha.all)
+
+bartlett.test(`260/230` ~ soil_type, data = alpha.all)
+fligner.test(`260/230` ~ soil_type, data = alpha.all)
+car::leveneTest(`260/230` ~ soil_type, data = alpha.all)
+
+shapiro.test(alpha.all$integrity)
+qqnorm(alpha.all$integrity)
+qqline(y = alpha.all$integrity)
+
+bartlett.test(integrity ~ kit, data = alpha.all)
+fligner.test(integrity ~ kit, data = alpha.all)
+car::leveneTest(integrity ~ kit, data = alpha.all)
+
+bartlett.test(integrity ~ soil_type, data = alpha.all)
+fligner.test(integrity ~ soil_type, data = alpha.all)
+car::leveneTest(integrity ~ soil_type, data = alpha.all)
+
+shapiro.test(comp.bray$bray)
+qqnorm(comp.bray$bray)
+qqline(y = comp.bray$bray)
+
+bartlett.test(bray ~ kit, data = comp.bray)
+fligner.test(bray ~ kit, data = comp.bray)
+car::leveneTest(bray ~ kit, data = comp.bray)
+
+bartlett.test(bray ~ soil_type, data = comp.bray)
+fligner.test(bray ~ soil_type, data = comp.bray)
+car::leveneTest(bray ~ soil_type, data = comp.bray)
 
 # ANOVA yield
-anova(lm(yield_ng ~ kit * soil_type, data = alpha.ht)) %>%
+aov.yield <- lm(yield_ng ~ kit * soil_type, data = alpha.all)
+
+aov.yield %>%
+  anova(.) %>%
   data.frame() %>%
   rownames_to_column("Variable") %>%
   mutate(R2 = Sum.Sq / sum(Sum.Sq) * 100) %>%
-  mutate(across(R2, ~ round(., digits = 2))) %>%
-  mutate(pval = ifelse(Pr..F. < 0.001, "<0.001", round(Pr..F., 2))) %>%
+  mutate(across(R2, ~ as.character(round(., digits = 1)))) %>%
+  mutate(pval = ifelse(Pr..F. < 0.001, "< 0.001", round(Pr..F., 2))) %>%
   select(Variable, R2, pval) %>%
   gridExtra::tableGrob(rows = NULL) %>%
   gridExtra::grid.arrange(.)
 
-# ANOVA shannon
-anova(lm(shannon ~ kit * soil_type, data = alpha.ht)) %>%
+TukeyHSD(aov(aov.yield))$kit
+TukeyHSD(aov(aov.yield))$soil_type
+TukeyHSD(aov(aov.yield))$`kit:soil_type`
+
+data.yield <- alpha.all %>% filter(!is.na(yield_ng)) %>% pull(yield_ng)
+residuals.yield <- resid(aov.yield)
+df.yield <- cbind(data.yield, residuals.yield) %>% as.data.frame(.)
+
+ggplot(aes(x = data.yield,
+           y = residuals.yield),
+       data = df.yield) +
+  geom_point() +
+  geom_hline(yintercept = 0)
+
+aov.yield.ranks <- lm(yield_ng_rank ~ kit * soil_type, data = alpha.all)
+
+aov.yield.ranks %>%
+  anova(.) %>%
   data.frame() %>%
   rownames_to_column("Variable") %>%
   mutate(R2 = Sum.Sq / sum(Sum.Sq) * 100) %>%
-  mutate(across(R2, ~ round(., digits = 2))) %>%
-  mutate(pval = ifelse(Pr..F. < 0.001, "<0.001", round(Pr..F., 2))) %>%
+  mutate(across(R2, ~ as.character(round(., digits = 1)))) %>%
+  mutate(pval = ifelse(Pr..F. < 0.001, "< 0.001", round(Pr..F., 2))) %>%
   select(Variable, R2, pval) %>%
   gridExtra::tableGrob(rows = NULL) %>%
   gridExtra::grid.arrange(.)
 
-# ANOVA bray
-anova(lm(value ~ kit * soil_type, data = comp.bray)) %>%
-  data.frame() %>%
-  rownames_to_column("Variable") %>%
-  mutate(R2 = Sum.Sq / sum(Sum.Sq) * 100) %>%
-  mutate(across(R2, ~ round(., digits = 2))) %>%
-  mutate(pval = ifelse(Pr..F. < 0.001, "<0.001", round(Pr..F., 2))) %>%
-  select(Variable, R2, pval) %>%
-  gridExtra::tableGrob(rows = NULL) %>%
-  gridExtra::grid.arrange(.)
+TukeyHSD(aov(aov.yield.ranks))$kit
+TukeyHSD(aov(aov.yield.ranks))$soil_type
+TukeyHSD(aov(aov.yield.ranks))$`kit:soil_type`
 
+data.yield.rank <- alpha.all %>% filter(!is.na(yield_ng_rank)) %>% pull(yield_ng_rank)
+residuals.yield.rank <- resid(aov.yield.ranks)
+df.yield.rank <- cbind(data.yield.rank, residuals.yield.rank) %>% as.data.frame(.)
 
-yield.FS_HT <- alpha.all %>% filter(kit == "FastSpin HT") %>% pull(yield_ng)
+ggplot(aes(x = data.yield.rank,
+           y = residuals.yield.rank),
+       data = df.yield.rank) +
+  geom_point() +
+  geom_hline(yintercept = 0)
 
-yield.ZM_HT <- alpha.all %>% filter(kit == "ZymoMagbead HT") %>% pull(yield_ng)
-
-yield.PS_HT <- alpha.all %>% filter(kit == "PowerSoil Pro HT") %>% pull(yield_ng)
-
-test.yield.FS_PS <- wilcox.test(yield.FS_HT, yield.PS_HT, alternative = "less")
-test.yield.ZM_PS <- wilcox.test(yield.ZM_HT, yield.PS_HT, alternative = "less")
-test.yield.FS_ZM <- wilcox.test(yield.FS_HT, yield.ZM_HT, alternative = "less")
-
-p.yield <- c(test.yield.FS_PS$p.value, test.yield.ZM_PS$p.value, test.yield.FS_ZM$p.value)
-p.adj_yield <- p.adjust(p.yield, method = "bonferroni")
-p.adj_yield
-
+# Non-parametric test for differences in purity
 ratio1.PS_LT <- alpha.all %>% filter(kit == "PowerSoil LT") %>% pull(`260/280`)
+
 ratio1.PS_HT <- alpha.all %>% filter(kit == "PowerSoil Pro HT") %>% pull(`260/280`)
+
 ratio2.PS_LT <- alpha.all %>% filter(kit == "PowerSoil LT") %>% pull(`260/230`)
+
 ratio2.PS_HT <- alpha.all %>% filter(kit == "PowerSoil Pro HT") %>% pull(`260/230`)
 
 test.ratio1 <- wilcox.test(ratio1.PS_LT, ratio1.PS_HT, alternative = "less")
-test.ratio2 <- wilcox.test(ratio2.PS_LT, ratio2.PS_HT, alternative = "less")
+test.ratio1$p.value
+# Add small jitter due to ties
+d1 = ratio1.PS_LT-ratio1.PS_HT
+j = runif(15, -.01, .01)
+dj1 = d1+j; wilcox.test(dj1)$p.val
+j = runif(15, -.01, .01)
+dj1 = d1+j; wilcox.test(dj1)$p.val
+j = runif(15, -.01, .01)
+dj1 = d1+j; wilcox.test(dj1)$p.val
+j = runif(15, -.01, .01)
+dj1 = d1+j; wilcox.test(dj1)$p.val
+j = runif(15, -.01, .01)
+dj1 = d1+j; wilcox.test(dj1)$p.val
 
-p.ratio <- c(test.ratio1$p.value, test.ratio2$p.value)
-p.adj_ratio <- p.adjust(p.ratio, method = "bonferroni")
+test.ratio2 <- wilcox.test(ratio2.PS_LT, ratio2.PS_HT, alternative = "less")
+test.ratio2$p.value
+# Add small jitter due to ties
+d2 = ratio2.PS_LT-ratio2.PS_HT
+j = runif(15, -.01, .01)
+dj2 = d2+j; wilcox.test(dj2)$p.val
+j = runif(15, -.01, .01)
+dj2 = d2+j; wilcox.test(dj2)$p.val
+j = runif(15, -.01, .01)
+dj2 = d2+j; wilcox.test(dj2)$p.val
+j = runif(15, -.01, .01)
+dj2 = d2+j; wilcox.test(dj2)$p.val
+j = runif(15, -.01, .01)
+dj2 = d2+j; wilcox.test(dj2)$p.val
+
+p.adj_ratio <- p.adjust(c(test.ratio1$p.value, test.ratio2$p.value), method = "bonferroni")
 p.adj_ratio
+
+# ANOVA integrity
+aov.integrity <- lm(integrity ~ kit * soil_type, data = alpha.all)
+
+aov.integrity %>%
+  anova(.) %>%
+  data.frame() %>%
+  rownames_to_column("Variable") %>%
+  mutate(R2 = Sum.Sq / sum(Sum.Sq) * 100) %>%
+  mutate(across(R2, ~ as.character(round(., digits = 1)))) %>%
+  mutate(pval = ifelse(Pr..F. < 0.001, "< 0.001", round(Pr..F., 2))) %>%
+  select(Variable, R2, pval) %>%
+  gridExtra::tableGrob(rows = NULL) %>%
+  gridExtra::grid.arrange(.)
+
+TukeyHSD(aov(aov.integrity))$kit
+TukeyHSD(aov(aov.integrity))$soil_type
+TukeyHSD(aov(aov.integrity))$`kit:soil_type`
+
+data.integrity <- alpha.all %>% filter(!is.na(integrity)) %>% pull(integrity)
+residuals.integrity <- resid(aov.integrity)
+df.integrity <- cbind(data.integrity, residuals.integrity) %>% as.data.frame(.)
+
+ggplot(aes(x = data.integrity,
+           y = residuals.integrity),
+       data = df.integrity) +
+  geom_point() +
+  geom_hline(yintercept = 0)
+
+aov.integrity.ranks <- lm(integrity_rank ~ kit * soil_type, data = alpha.all)
+
+aov.integrity.ranks %>%
+  anova(.) %>%
+  data.frame() %>%
+  rownames_to_column("Variable") %>%
+  mutate(R2 = Sum.Sq / sum(Sum.Sq) * 100) %>%
+  mutate(across(R2, ~ as.character(round(., digits = 1)))) %>%
+  mutate(pval = ifelse(Pr..F. < 0.001, "< 0.001", round(Pr..F., 2))) %>%
+  select(Variable, R2, pval) %>%
+  gridExtra::tableGrob(rows = NULL) %>%
+  gridExtra::grid.arrange(.)
+
+TukeyHSD(aov(aov.integrity.ranks))$kit
+TukeyHSD(aov(aov.integrity.ranks))$soil_type
+TukeyHSD(aov(aov.integrity.ranks))$`kit:soil_type`
+
+plot(TukeyHSD(aov(aov.integrity.ranks))$kit, col="black", cex.axis=0.75)
+
+data.integrity.rank <- alpha.all %>% filter(!is.na(integrity_rank)) %>% pull(integrity_rank)
+residuals.integrity.rank <- resid(aov.integrity.ranks)
+df.integrity.rank <- cbind(data.integrity.rank, residuals.integrity.rank) %>% as.data.frame(.)
+
+ggplot(aes(x = data.integrity.rank,
+           y = residuals.integrity.rank),
+       data = df.integrity.rank) +
+  geom_point() +
+  geom_hline(yintercept = 0)
+
+# Non-parametric test for differences in integrity
+integrity.FS_LT <- alpha.all %>% filter(kit == "FastSpin LT") %>% pull(integrity)
+integrity.PS_LT <- alpha.all %>% filter(kit == "PowerSoil LT") %>% pull(integrity)
+integrity.FS_HT <- alpha.all %>% filter(kit == "FastSpin HT") %>% pull(integrity)
+integrity.PS_HT <- alpha.all %>% filter(kit == "PowerSoil Pro HT") %>% pull(integrity)
+integrity.ZM_HT <- alpha.all %>% filter(kit == "ZymoMagbead HT") %>% pull(integrity)
+
+shapiro.test(integrity.FS_LT)
+qqnorm(integrity.FS_LT)
+qqline(integrity.FS_LT)
+
+shapiro.test(integrity.PS_LT)
+qqnorm(integrity.PS_LT)
+qqline(integrity.PS_LT)
+
+shapiro.test(integrity.FS_HT)
+qqnorm(integrity.FS_HT)
+qqline(integrity.FS_HT)
+
+shapiro.test(integrity.PS_HT)
+qqnorm(integrity.PS_HT)
+qqline(integrity.PS_HT)
+
+shapiro.test(integrity.ZM_HT)
+qqnorm(integrity.ZM_HT)
+qqline(integrity.ZM_HT)
+
+median.integrity <- c(median(integrity.FS_LT), median(integrity.PS_LT), median(integrity.FS_HT), median(integrity.PS_HT), median(integrity.ZM_HT))
+round(median.integrity/1000, 1)
+
+mean.integrity <- c(mean(integrity.FS_LT), mean(integrity.PS_LT), mean(integrity.FS_HT), mean(integrity.PS_HT), mean(integrity.ZM_HT))
+round(mean.integrity/1000, 1)
+
+sd.integrity <- c(sd(integrity.FS_LT), sd(integrity.PS_LT), sd(integrity.FS_HT), sd(integrity.PS_HT), sd(integrity.ZM_HT))
+round(sd.integrity/1000, 1)
+
+test.integrity <- wilcox.test(integrity.PS_HT, integrity.PS_LT, alternative = "less")
+test.integrity$p.value
+test.ratio1$p.value
+# Add small jitter due to ties
+d3 = integrity.PS_HT-integrity.PS_LT
+j = runif(15, -.01, .01)
+dj3 = d3+j; wilcox.test(dj3)$p.val
+j = runif(15, -.01, .01)
+dj3 = d3+j; wilcox.test(dj3)$p.val
+j = runif(15, -.01, .01)
+dj3 = d3+j; wilcox.test(dj3)$p.val
+j = runif(15, -.01, .01)
+dj3 = d3+j; wilcox.test(dj3)$p.val
+j = runif(15, -.01, .01)
+dj3 = d3+j; wilcox.test(dj3)$p.val
+
+# ANOVA shannon
+aov.shannon <- lm(shannon ~ kit * soil_type, data = alpha.all)
+
+aov.shannon %>%
+  anova(.) %>%
+  data.frame() %>%
+  rownames_to_column("Variable") %>%
+  mutate(R2 = Sum.Sq / sum(Sum.Sq) * 100) %>%
+  mutate(across(R2, ~ as.character(round(., digits = 1)))) %>%
+  mutate(pval = ifelse(Pr..F. < 0.001, "< 0.001", round(Pr..F., 2))) %>%
+  select(Variable, R2, pval) %>%
+  gridExtra::tableGrob(rows = NULL) %>%
+  gridExtra::grid.arrange(.)
+
+TukeyHSD(aov(aov.shannon))$kit
+
+data.shannon <- alpha.all %>% filter(!is.na(shannon)) %>% pull(shannon)
+residuals.shannon <- resid(aov.shannon)
+df.shannon <- cbind(data.shannon, residuals.shannon) %>% as.data.frame(.)
+
+ggplot(aes(x = data.shannon,
+           y = residuals.shannon),
+       data = df.shannon) +
+  geom_point() +
+  geom_hline(yintercept = 0)
+
+aov.shannon.ranks <- lm(shannon_rank ~ kit * soil_type, data = alpha.all)
+
+aov.shannon.ranks %>%
+  anova(.) %>%
+  data.frame() %>%
+  rownames_to_column("Variable") %>%
+  mutate(R2 = Sum.Sq / sum(Sum.Sq) * 100) %>%
+  mutate(across(R2, ~ as.character(round(., digits = 1)))) %>%
+  mutate(pval = ifelse(Pr..F. < 0.001, "< 0.001", round(Pr..F., 2))) %>%
+  select(Variable, R2, pval) %>%
+  gridExtra::tableGrob(rows = NULL) %>%
+  gridExtra::grid.arrange(.)
+
+TukeyHSD(aov(aov.shannon.ranks))$kit
+
+data.shannon.rank <- alpha.all %>% filter(!is.na(shannon_rank)) %>% pull(shannon_rank)
+residuals.shannon.rank <- resid(aov.shannon.ranks)
+df.shannon.rank <- cbind(data.shannon.rank, residuals.shannon.rank) %>% as.data.frame(.)
+
+ggplot(aes(x = data.shannon.rank,
+           y = residuals.shannon.rank),
+       data = df.shannon.rank) +
+  geom_point() +
+  geom_hline(yintercept = 0)
+
+# ANOVA bray
+aov.bray <- lm(bray ~ kit * soil_type, data = comp.bray)
+
+aov.bray %>%
+  anova(.) %>%
+  data.frame() %>%
+  rownames_to_column("Variable") %>%
+  mutate(R2 = Sum.Sq / sum(Sum.Sq) * 100) %>%
+  mutate(across(R2, ~ as.character(round(., digits = 1)))) %>%
+  mutate(pval = ifelse(Pr..F. < 0.001, "< 0.001", round(Pr..F., 2))) %>%
+  select(Variable, R2, pval) %>%
+  gridExtra::tableGrob(rows = NULL) %>%
+  gridExtra::grid.arrange(.)
+
+TukeyHSD(aov(aov.bray))$kit
+
+data.bray <- comp.bray %>% filter(!is.na(bray)) %>% pull(bray)
+residuals.bray <- resid(aov.bray)
+df.bray <- cbind(data.bray, residuals.bray) %>% as.data.frame(.)
+
+ggplot(aes(x = data.bray,
+           y = residuals.bray),
+       data = df.bray) +
+  geom_point() +
+  geom_hline(yintercept = 0)
+
+aov.bray.ranks <- lm(bray_rank ~ kit * soil_type, data = comp.bray)
+
+aov.bray.ranks %>%
+  anova(.) %>%
+  data.frame() %>%
+  rownames_to_column("Variable") %>%
+  mutate(R2 = Sum.Sq / sum(Sum.Sq) * 100) %>%
+  mutate(across(R2, ~ as.character(round(., digits = 1)))) %>%
+  mutate(pval = ifelse(Pr..F. < 0.001, "< 0.001", round(Pr..F., 2))) %>%
+  select(Variable, R2, pval) %>%
+  gridExtra::tableGrob(rows = NULL) %>%
+  gridExtra::grid.arrange(.)
+
+TukeyHSD(aov(aov.bray.ranks))$kit
+
+data.bray.rank <- comp.bray %>% filter(!is.na(bray_rank)) %>% pull(bray_rank)
+residuals.bray.rank <- resid(aov.bray.ranks)
+df.bray.rank <- cbind(data.bray.rank, residuals.bray.rank) %>% as.data.frame(.)
+
+ggplot(aes(x = data.bray.rank,
+           y = residuals.bray.rank),
+       data = df.bray.rank) +
+  geom_point() +
+  geom_hline(yintercept = 0)
 ```
 
 
@@ -306,7 +643,7 @@ phylum.text.amp <- heatmap.amplicon_phylum %>%
   arrange(desc(total)) %>%
   row.names(.)
 
-phylum.text.renamed <- gsub("SAR324_cladeMarine_group_B", "SAR324", phylum.text.amp)
+phylum.text.renamed <- gsub("SAR324_cladeMarine_group_B", "\\*SAR324", phylum.text.amp)
 
 # Load new genus ampvis object
 ampvis.sub_phylum <- amp_load(otutable = heatmap.amplicon_phylum,
@@ -314,26 +651,31 @@ ampvis.sub_phylum <- amp_load(otutable = heatmap.amplicon_phylum,
 
 plot.heatmap_phylum <- ampvis.sub_phylum %>%
   amp_heatmap(group_by = "kit", 
-              min_abundance = 0.01,
+              min_abundance = 0.1,
               facet_by = "soil_type",
               tax_aggregate = "OTU",
               normalise = TRUE,
-              tax_show = phylum.text.amp[c(1:14, 16:26)], 
-              order_y_by = rev(phylum.text.amp[c(1:14, 16:26)]),
+              tax_show = phylum.text.amp[c(1:13, 15:26)], 
+              order_y_by = rev(phylum.text.amp[c(1:13, 15:26)]),
               showRemainingTaxa = FALSE, 
               plot_na = TRUE,
               plot_values = FALSE,
               plot_values_size = 3,
               round = 2,
-              color_vector = c(colors[5], "white", colors[3]),
+              color_vector = c("white", colors[3]),
               plot_legendbreaks = c(0.01, 0.1, 1, 10, 30),
               plot_colorscale = "log10") +
-  scale_y_discrete(labels = rev(c(phylum.text.renamed[c(1:14, 16:26)]))) +
-  labs(x = "", y = "", title = "Heatmap aggregated at the phylum level across extraction kits") +
-  articletheme +
-  guides(fill = guide_colorbar(title.position = "top"))
+  scale_y_discrete(labels = rev(c(phylum.text.renamed[c(1:13, 15:26)]))) +
+  scale_x_discrete(labels = kit_levels) +
+  labs(x = "", 
+       y = "", 
+       tag = "A",
+       title = "Heatmap aggregated at the phylum level across DNA extraction kits") +
+  articletheme  
+  #theme(plot.margin = unit(c(0, 1, 0, 0), "cm"))
+  
 
-leg.plot_heat <- cowplot::get_legend(plot.heatmap_phylum)
+#leg.plot_heat <- cowplot::get_legend(plot.heatmap_phylum)
 
 plot.heatmap_phylum.final <- plot.heatmap_phylum + theme(legend.position = "none")
 
@@ -342,102 +684,51 @@ plot.heatmap_phylum
 ggsave(here("Benchmarking", "figures", "heatmap_benchmarking.png"), plot = plot.heatmap_phylum, device = "png", height = 12, width = 19)
 ```
 
-
-## Ordinations - faceted by soil types
-```{r ordination}
-soil <- unique(dat.types.sub10000.amp$metadata$soil_type)
-
-plot_soil_ord <- function(soil) {
-  plotAmpliconOrdinationSoil(dat.types.sub10000.amp, soil, ord_type = "PCA") +
-    scale_color_manual(values = c(kit_colors)) +
-    scale_fill_manual(values = c(kit_colors))
-}
-
-plot_list <- map(soil, plot_soil_ord)
-
-ggleg <- plot_list[[1]] + theme(legend.position = "right")
-
-leg <- list(get_legend(ggleg))
-
-leg.plot_ord <- cowplot::get_legend(ggleg)
-
-plot_ord <- plot_list[[4]] + 
-  coord_equal() +
-  labs(fill = "Extraction kit",
-       color = "Extraction kit") +
-  theme(legend.position = "right")
-
-leg.plot_ord <- cowplot::get_legend(plot_ord)
-
-plot_ord_final <- plot_ord + theme(legend.position = "none")
-
-plot_list2 <- append(plot_list, leg)
-
-p.ord <- ggarrange(plotlist = plot_list2, nrow = 2, ncol = ceiling(length(plot_list) / 2), labels = toupper(letters[1:5]))
-
-p.ord
-
-ggsave(here("Benchmarking", "figures", "PCA_faceted_benchmarking.png"), plot = p.ord, device = "png", height = 12, width = 19)
-```
-
-
-## Ordination combined
-```{r}
-plot.ordinate <- dat.types.sub10000.amp %>%
-  amp_ordinate(filter_species = 0.1,
-               transform = "hellinger",
-               distmeasure = "bray",
-               sample_shape_by = "kit",
-               #sample_colorframe = "soil_type",
-               species_nlabels = 10,
-               species_label_taxonomy = "Phylum",
-               species_plot = T) +
-  scale_color_manual(values = colors) +
-  scale_fill_manual(values = colors) +
-  labs(title = "PCA of microbial diversity",
-       fill = "Sample type",
-       shape = "Extraction kit") +
-  ggforce::geom_mark_ellipse(aes(fill = soil_type, group = soil_type), alpha = 0.5, color = "black") +
-  coord_equal() +
-  articletheme
-
-plot.ordinate
-
-#The plot with a zoom
-plot.insert <- plot.ordinate +
-  ylim (0.54, 0.57) +
-  xlim (0.19, 0.22) +
-  theme(plot.title = element_blank(),
-        axis.title.x = element_blank(),
-        axis.title.y = element_blank(),
-        legend.position = "none") +
-  theme(axis.text.x = element_blank(),
-        axis.text.y = element_blank())
-
-plot.insert
-
-plot.ordinate.insert <- plot.ordinate + 
-  #geom_segment(aes(x = 0.19, y = 0.57, xend = -0.3, yend = 0.6), color = "black", linetype = "dashed") +
-  geom_segment(aes(x = 0.22, y = 0.57, xend = 0.1, yend = 0.6), color = "black", linetype = "dashed") +
-  #geom_segment(aes(x = 0.19, y = 0.54, xend = -0.3, yend = 0.25), color = "black", linetype = "dashed") +
-  geom_segment(aes(x = 0.22, y = 0.54, xend = 0.1, yend = 0.25), color = "black", linetype = "dashed") +
-  annotation_custom(ggplotGrob(plot.insert), xmin = -0.3, xmax = 0.1, ymin = 0.25, ymax = 0.6) +
-  geom_rect(aes(xmin = 0.19, xmax = 0.22, ymin = 0.54, ymax = 0.57), color='black', alpha=0) +
-  geom_rect(aes(xmin = -0.3, xmax = 0.1, ymin = 0.25, ymax = 0.6), color = "black", linetype = "dashed", alpha = 0)
-
-plot.ordinate.insert
-
-leg.plot_ord.insert <- cowplot::get_legend(plot.ordinate.insert)
-
-plot.ordinate.insert_final <- plot.ordinate.insert + theme(legend.position = "none")
-
-ggsave(here("Benchmarking", "figures", "PCA_ordination_insert.png"), plot = plot.ordinate.insert, device = "png", height = 12, width = 19)
-```
-
-
 # PERMANOVA test for overall difference in observed communities based on kit
 ```{r statistical testing}
 ## Overall comparison
+soil <- unique(dat.types.sub10000.amp$metadata$soil_type) %>% sort(.)
+
+permanova.list <- list()
+      
+for (i in 1:length(soil)) {
+  
+  community <- dat.types.sub10000.amp.rel_0.1 %>%
+    amp_subset_samples(soil_type == soil[i])
+  
+  community_0.1 <- t(community[["abund"]])
+  
+  meta <- community[["metadata"]] %>%
+    filter(soil_type == soil[i])
+  
+  dis <- vegan::vegdist(community_0.1)
+  
+  groups.stratified <- meta %>%
+    mutate(group = str_c(soil_type, kit, sep = " ")) %>%
+    pull(group) %>%
+    as.factor(.)
+  
+ permanova <- adonis2(community_0.1 ~ kit, type = "bray", data = meta, permutations = 9999) %>%
+   as.data.frame() %>%
+   rownames_to_column("Variable") %>%
+   mutate(across(R2, ~ as.character(round(. * 100, digits = 1)))) %>%
+   mutate(pval = ifelse(`Pr(>F)` < 0.001, "< 0.001", round(`Pr(>F)`, 2))) %>%
+   select(Variable, R2, pval)
+ 
+ permanova.list[[i]] <- permanova
+ 
+ names(permanova.list) <- soil[i]
+}
+  
+names(permanova.list) <- soil
+
+perm.results <- as.numeric(c(permanova.list[[1]][1,2], permanova.list[[2]][1,2], permanova.list[[3]][1,2], permanova.list[[4]][1,2], permanova.list[[5]][1,2]))
+
+shapiro.test(perm.results)
+mean(perm.results)
+sd(perm.results)
+
+# Statified PERMANOVA
 # Betadispersion - analysis of multivariate homogeneity of group dispersions (variances)
 community <- dat.types.sub10000.amp.rel_0.1
 
@@ -462,36 +753,246 @@ plot(mod.stratified, ellipse = TRUE, hull = FALSE, conf = 0.90) # 90% data ellip
 perm.strat <- with(meta, permute::how(nperm = 9999, blocks = soil_type))
 
 set.seed(123)
-permanova.stratified <- adonis2(community_0.1 ~ kit * soil_type, type = "bray", data = meta, permutations = perm.strat)
+permanova.stratified <- adonis2(community_0.1 ~ kit*soil_type, type = "bray", data = meta, permutations = 9999)
 
 permanova.stratified %>%
   data.frame() %>%
   rownames_to_column("Variable") %>%
-  mutate(across(R2, ~ round(., digits = 2))) %>%
-  mutate(pval = ifelse(Pr..F. < 0.001, "<0.001", round(Pr..F., 2))) %>%
+  mutate(across(R2, ~ as.character(round(. * 100, digits = 1)))) %>%
+  mutate(pval = ifelse(Pr..F. < 0.001, "< 0.001", round(Pr..F., 2))) %>%
   select(Variable, R2, pval) %>%
   gridExtra::tableGrob(rows = NULL) %>%
   gridExtra::grid.arrange(.)
+
+write_csv(bray_distance, here("Benchmarking", "figures", "2023-03-04_bray-distance.csv"))
+write_csv(comp.bray, here("Benchmarking", "figures", "2023-03-04_bray-comparisons.csv"))
+```
+
+## Ordination combined
+```{r}
+plot.ordinate <- dat.types.sub10000.amp %>%
+  amp_ordinate(filter_species = 0.1,
+               transform = "hellinger",
+               distmeasure = "bray",
+               sample_shape_by = "kit",
+               #sample_colorframe = "soil_type",
+               species_nlabels = 10,
+               species_label_taxonomy = "Phylum",
+               species_plot = T) +
+  scale_color_manual(values = colors[c(1,3,4,5,2)]) +
+  scale_fill_manual(values = colors[c(1,3,4,5,2)]) +
+  scale_shape_manual(values = c(22,21,15:17), labels = kit_levels) +
+  labs(title = "All samples: PCA of microbial diversity",
+       fill = "Soil type",
+       shape = "Extraction kit",
+       tag = "B",
+       subtitle = paste0("**PERMANOVA:**", 
+                         "<br>Extraction kit: Variance explained = ","2.8 %,", " p-value < 0.001",
+                         "<br>Soil type: Variance explained = ","90.6 %,", " p-value < 0.001",
+                         "<br>Interaction: Variance explained = ","4.5 %,", " p-value < 0.001")) +
+  ggforce::geom_mark_ellipse(aes(fill = soil_type, group = soil_type), alpha = 0.5, color = "black") +
+  coord_cartesian(xlim = c(-0.5, 0.5), ylim = c(-0.4, 0.6)) +
+  articlethemex0 + 
+  theme(plot.subtitle = ggtext::element_markdown())
+
+plot.ordinate
+
+#The plot with a zoom
+plot.insert <- plot.ordinate +
+  coord_cartesian(ylim = c(0.5425, 0.56), xlim = c(0.185, 0.21)) +
+  theme(plot.title = element_blank(),
+        plot.subtitle = element_blank(),
+        axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title = element_blank(),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        legend.position = "none",
+        axis.ticks = element_blank(),
+        plot.margin = unit(c(0, 0, 0, 0), "cm"),
+        plot.tag = element_blank())
+
+plot.insert$layers[[3]] <- NULL
+
+plot.insert 
+
+plot.ordinate.insert <- plot.ordinate + 
+  #geom_segment(aes(x = 0.19, y = 0.57, xend = -0.3, yend = 0.6), color = "black", linetype = "dashed") +
+  geom_segment(aes(x = 0.21, y = 0.56, xend = -0.1, yend = 0.625), color = "black", linetype = "dashed") +
+  #geom_segment(aes(x = 0.19, y = 0.54, xend = -0.3, yend = 0.25), color = "black", linetype = "dashed") +
+  geom_segment(aes(x = 0.21, y = 0.5425, xend = -0.1, yend = 0.25), color = "black", linetype = "dashed") +
+  annotation_custom(ggplotGrob(plot.insert), xmin = -0.5, xmax = -0.1, ymin = 0.25, ymax = 0.625) +
+  geom_rect(aes(xmin = 0.185, xmax = 0.21, ymin = 0.5425, ymax = 0.56), color='black', alpha = 0) #+
+  #geom_rect(aes(xmin = -0.275, xmax = 0.075, ymin = 0.25, ymax = 0.6), color = "black", linetype = "dashed", alpha = 0)
+
+plot.ordinate.insert
+
+leg.plot.ord_shape <- cowplot::get_legend(plot.ordinate.insert + guides(fill = "none"))
+
+leg.plot.ord_fill <- cowplot::get_legend(plot.ordinate.insert + guides(shape = "none"))
+
+plot.ordinate.insert_final <- plot.ordinate.insert + theme(legend.position = "none")
+
+ggsave(here("Benchmarking", "figures", "PCA_ordination_insert.png"), plot = plot.ordinate.insert, device = "png", height = 12, width = 19)
+```
+
+
+
+## Ordinations - faceted by soil types
+```{r ordination}
+soil <- unique(dat.types.sub10000.amp$metadata$soil_type) %>% sort(.) %>% as.factor(.)
+
+plot_ord1 <- dat.types.sub10000.amp %>%
+  amp_subset_samples(soil_type == soil[1]) %>%
+  amp_ordinate(
+    filter_species = 0.1,
+    sample_shape_by = "kit",
+    type = "PCA",
+    transform = "hellinger",
+    distmeasure = "bray",
+    species_nlabels = 10,
+    species_label_taxonomy = "Phylum",
+    species_plot = T) +
+  ggforce::geom_mark_ellipse(aes(fill = soil_type, group = kit), alpha = 0.5, color = "black") +
+  scale_fill_manual(values = c(rep(colors[1], 5))) +
+  scale_shape_manual(values = c(22,21,15:17), labels = kit_levels) +
+  labs(title = paste0(soil[1], ": ", "PCA of microbial diversity"),
+       tag = "A",
+       subtitle = paste0("**PERMANOVA:**", "<br>Extraction kit: Variance explained = ", permanova.list[[1]][1,2], " %,", " p-value ", permanova.list[[1]][1,3])) +
+  coord_cartesian(xlim = c(-0.5, 0.5), ylim = c(-0.5, 0.5)) +
+  articlethemex0 +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 0, hjust = 0, vjust = 0),
+        plot.subtitle = ggtext::element_markdown())
+  
+plot_ord2 <- dat.types.sub10000.amp %>%
+  amp_subset_samples(soil_type == soil[2]) %>%
+  amp_ordinate(
+    filter_species = 0.1,
+    sample_shape_by = "kit",
+    type = "PCA",
+    transform = "hellinger",
+    distmeasure = "bray",
+    species_nlabels = 10,
+    species_label_taxonomy = "Phylum",
+    species_plot = T) +
+  ggforce::geom_mark_ellipse(aes(fill = soil_type, group = kit), alpha = 0.5, color = "black") +
+  scale_fill_manual(values = c(rep(colors[3], 5))) +
+  scale_shape_manual(values = c(22,21,15:17), labels = kit_levels) +
+  labs(title = paste0(soil[2], ": ", "PCA of microbial diversity"),
+       tag = "B",
+       subtitle = paste0("**PERMANOVA:**", "<br>Extraction kit: Variance explained = ", permanova.list[[2]][1,2], " %,", " p-value ", permanova.list[[2]][1,3])) +
+  coord_cartesian(xlim = c(-0.5, 0.5), ylim = c(-0.5, 0.5)) +
+  articlethemex0 +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 0, hjust = 0, vjust = 0),
+        plot.subtitle = ggtext::element_markdown())
+
+plot_ord3 <- dat.types.sub10000.amp %>%
+  amp_subset_samples(soil_type == soil[3]) %>%
+  amp_ordinate(
+    filter_species = 0.1,
+    sample_shape_by = "kit",
+    type = "PCA",
+    transform = "hellinger",
+    distmeasure = "bray",
+    species_nlabels = 10,
+    species_label_taxonomy = "Phylum",
+    species_plot = T) +
+  ggforce::geom_mark_ellipse(aes(fill = soil_type, group = kit), alpha = 0.5, color = "black") +
+  scale_fill_manual(values = c(rep(colors[4], 5))) +
+  scale_shape_manual(values = c(22,21,15:17), labels = kit_levels) +
+  labs(title = paste0(soil[3], ": ", "PCA of microbial diversity"),
+       tag = "C",
+       subtitle = paste0("**PERMANOVA:**", "<br>Extraction kit: Variance explained = ", permanova.list[[3]][1,2], " %,", " p-value ", permanova.list[[3]][1,3])) +
+  articlethemex0 +
+  coord_cartesian(xlim = c(-0.25, 0.75), ylim = c(-0.5, 0.5)) +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 0, hjust = 0, vjust = 0),
+        plot.subtitle = ggtext::element_markdown())
+
+plot_ord4 <- dat.types.sub10000.amp %>%
+  amp_subset_samples(soil_type == soil[4]) %>%
+  amp_ordinate(
+    filter_species = 0.1,
+    sample_shape_by = "kit",
+    type = "PCA",
+    transform = "hellinger",
+    distmeasure = "bray",
+    species_nlabels = 10,
+    species_label_taxonomy = "Phylum",
+    species_plot = T) +
+  ggforce::geom_mark_ellipse(aes(fill = soil_type, group = kit), alpha = 0.5, color = "black") +
+  scale_fill_manual(values = c(rep(colors[5], 5))) +
+  scale_shape_manual(values = c(22,21,15:17), labels = kit_levels) +
+  labs(title = paste0(soil[4], ": ", "PCA of microbial diversity"),
+       tag = "D",
+       subtitle = paste0("**PERMANOVA:**", "<br>Extraction kit: Variance explained = ", permanova.list[[4]][1,2], " %,", " p-value ", permanova.list[[4]][1,3])) +
+  coord_cartesian(xlim = c(-0.5, 0.5), ylim = c(-0.5, 0.5)) +
+  articlethemex0 +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 0, hjust = 0, vjust = 0),
+        plot.subtitle = ggtext::element_markdown())
+
+plot_ord5 <- dat.types.sub10000.amp %>%
+  amp_subset_samples(soil_type == soil[5]) %>%
+  amp_ordinate(
+    filter_species = 0.1,
+    sample_shape_by = "kit",
+    type = "PCA",
+    transform = "hellinger",
+    distmeasure = "bray",
+    species_nlabels = 10,
+    species_label_taxonomy = "Phylum",
+    species_plot = T) +
+  ggforce::geom_mark_ellipse(aes(fill = soil_type, group = kit), alpha = 0.5, color = "black") +
+  scale_fill_manual(values = c(rep(colors[2], 5))) +
+  scale_shape_manual(values = c(22,21,15:17), labels = kit_levels) +
+  labs(title = paste0(soil[5], ": ", "PCA of microbial diversity"),
+       tag = "E",
+       subtitle = paste0("**PERMANOVA:**", "<br>Extraction kit: Variance explained = ", permanova.list[[5]][1,2], " %,", " p-value ", permanova.list[[5]][1,3])) +
+  coord_cartesian(xlim = c(-0.5, 0.5), ylim = c(-0.5, 0.5)) +
+  articlethemex0 +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 0, hjust = 0, vjust = 0),
+        plot.subtitle = ggtext::element_markdown())
+
+#leg.plot_ord <- cowplot::get_legend(plot_ord)
+
+plot_ord_leg <- ggarrange(leg.plot.ord_fill, leg.plot.ord_shape, nrow = 1, align = "hv")
+
+plot.ord <- ggarrange(plot_ord1, plot_ord2, plot_ord3, plot_ord4, plot_ord5, plot_ord_leg, nrow = 2, ncol = 3)
+
+plot.ord
+
+plot_ord_final <- plot_ord2 +
+  labs(tag = "C") +
+  theme(legend.position = "none")
+
+ggsave(here("Benchmarking", "figures", "PCA_faceted_benchmarking.png"), plot = plot.ord, device = "png", height = 12, width = 19)
 ```
 
 ## Final plot
 ```{r final plot}
 # Create combined plot
-gg1 <- ggarrange(plot.heatmap_phylum.final, labels = c("A"))
+plot <- ggarrange(plot.ordinate.insert_final, plot_ord_final, ncol = 1, nrow = 2)
 
-gg2 <- ggarrange(plot.ordinate.insert_final, plot_ord_final, labels = c("B", "C"), ncol = 1)
+plot
 
-gg3 <- ggarrange(leg.plot_heat, leg.plot_ord, ncol = 1)
+leg.heat <- cowplot::get_legend(plot.heatmap_phylum)
+leg.ord <- cowplot::get_legend(plot.ordinate.insert)
 
-gg4 <- ggarrange(gg3, leg.plot_ord.insert, ncol = 1)
+leg.comb <- cowplot::plot_grid(leg.heat, leg.ord, ncol = 1, align = "v", nrow = 2, rel_heights = c(1, 1))
 
-gg_arranged <- ggarrange(gg1, gg2, gg4, ncol = 3, nrow = 1, widths = c(2, 1, 0.5))
+leg.comb
+
+gg_arranged <- ggarrange(plot.heatmap_phylum.final, plot, leg.comb, ncol = 3, nrow = 1, widths = c(2, 1, 0.5))
 
 gg_arranged
 
 ggsave(here("Benchmarking", "figures", "combined_plot_benchmarking.png"), plot = gg_arranged, device = "png", height = 12, width = 19)
 ```
-
 
 
 

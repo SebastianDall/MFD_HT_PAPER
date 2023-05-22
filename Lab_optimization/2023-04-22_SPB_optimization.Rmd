@@ -1,0 +1,168 @@
+---
+title: "Lab optimization"
+author: "TBNJ"
+date: "2023-04-22"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+knitr::opts_chunk$set(
+  echo    = F,
+  # fig.pos = "H",
+  message = FALSE,
+  warning = FALSE
+)
+
+library(here)
+setwd(here("Lab_optimization"))
+
+source(here("Bead_beating", "scripts/article_theme.R"))
+
+library(tidyverse)
+library(ggridges)
+library(patchwork)
+library(ggpubr)
+
+colors <- c("#C6DBEF", "#4292C6", "#08306B")
+colors_soil <- c("grey", "darkgoldenrod2", "royalblue4", "seagreen", "salmon")
+```
+
+## Filter Data
+
+
+```{r remove blanks and pcr controls}
+peaks <- read_csv("200925 size selection test metagenomes-HSD1000/200925 size selection test metagenomes-HSD1000_compactPeakTable.csv", col_names = TRUE, col_select = c(2:5,18:19)) %>%
+  dplyr::rename(Size = `Size [bp]`,
+                Protocol = `Sample Description`)
+
+peaks2 <- read_csv("200929 16-6 test of meta-genomes-HSD1000/200929 16-6 test of meta-genomes-HSD1000_compactPeakTable.csv", col_names = TRUE, col_select = c(2:5,18:19)) %>%
+  dplyr::rename(Size = `Size [bp]`,
+                Protocol = `Sample Description`) %>%
+  filter(!Protocol %in% c("Electronic Ladder"))
+  #filter(!Protocol %in% c("Electronic Ladder", "tag product"))
+
+spectre_ratio1 <- read_csv("200925 size selection test metagenomes-HSD1000/200925 size selection test metagenomes-HSD1000_Electropherogram.csv") %>%
+  mutate(Size = seq(2, 1520, 2)) %>%
+  relocate(Size, .before = 1)
+
+spectre_ratio_tag <- read_csv("200929 16-6 test of meta-genomes-HSD1000/200929 16-6 test of meta-genomes-HSD1000_Electropherogram.csv") %>%
+  mutate(Size = seq(2, 1520, 2)) %>%
+  relocate(Size, .before = 1)
+
+spectre_ratio2 <- spectre_ratio_tag %>%
+  select(3:6) %>%
+  mutate(across(4, ~./5))
+
+spectre_tag <- read_csv("200930 tagmentation test-HSD1000/200930 tagmentation test-HSD1000_Electropherogram.csv") %>%
+  mutate(Size = seq(2, 1520, 2)) %>%
+  relocate(Size, .before = 1)
+
+spectre_tag2 <- spectre_ratio_tag %>%
+  select(6)
+
+conc <- readxl::read_excel("Concentration_size.xlsx") %>%
+  group_by(Protocol) %>%
+  summarise(across(Conc, ~round(mean(.), 2))) %>%
+  add_row(Protocol = "Electronic Ladder", Conc = NA) %>%
+  add_row(Protocol = "Tag. product", Conc = NA)
+
+peak_stats <- peaks %>%
+  rbind(peaks2) %>%
+  mutate(Observations = if_else(is.na(Observations), as.character(Peak), Observations)) %>%
+  mutate(across(Protocol, ~as.factor(.))) %>%
+  group_by(Protocol, Observations) %>%
+  filter(Protocol != "ladder") %>%
+  summarise(across(Size:Height, ~round(mean(.), 0)), .groups = "drop")
+
+peak.table <- peak_stats %>%
+  filter(!Observations %in% c("Lower Marker", "Upper Marker"), Protocol != "Electronic Ladder") %>%
+  group_by(Protocol) %>%
+  filter(Height == max(Height)) %>%
+  select(Protocol, Size) %>%
+  dplyr::rename(Peak = Size)
+
+spectre_sum <- spectre_ratio1 %>%
+  cbind(spectre_ratio2) %>%
+  pivot_longer(!Size, names_to = "Group", values_to = "Intensities") %>%
+  separate_wider_delim(Group, delim = ": ", names = c("Well", "Protocol")) %>%
+  relocate(Size, .after = Protocol) %>%
+  group_by(Protocol, Size) %>%
+  summarise(across(Intensities, ~mean(.)), .groups = "drop") %>%
+  filter(Protocol != "ladder") %>%
+  mutate(across(Protocol, ~as.factor(.)),
+         across(where(is.numeric), ~round(., 2))) %>%
+  left_join(conc) %>%
+  left_join(peak.table)
+  #mutate(Protocol = if_else(is.na(Peak), Protocol, paste0(Protocol, ", Peak = ", Peak, " bp ")))
+
+ladder <- peak_stats %>% filter(Protocol == "Electronic Ladder") %>% arrange(Size) %>% pull(Size)
+ladder_size <- c(216, 436, 616, 774, 878, 958, 1028, 1146, 1238, 1304)
+y_order <- spectre_sum %>% pull(Protocol) %>% unique(.)
+
+plot <- spectre_sum %>%
+  #filter(Protocol != "Ladder") %>%
+  ggplot(aes(x = Size, y = Protocol, height = Intensities, fill = Conc)) +
+  geom_density_ridges(stat = "identity", scale = 4, alpha = 0.7) +
+  scale_fill_gradient(low = colors[2], high = colors[3]) + 
+  scale_x_continuous(limits = c(100, 1400), breaks = ladder_size, labels = ladder) +
+  scale_y_discrete(limits = rev(c(y_order[c(11,12,10:8,7,1,6:5,4:2)]))) +
+  articletheme +
+  labs(title = "Fragment size distribution at different SPB ratios",
+       x = "Size [bp]",
+       y = "",
+       tag = "",
+       fill = "Library Concentration [ng/µL]") +
+  theme(legend.position = "right",
+        panel.border = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        axis.text.x = element_text(size = 18),
+        axis.text.y = element_text(size = 18),
+        axis.title = element_text(size = 24))
+
+plot
+
+ggsave(here("Lab_optimization", "figures", "bead_ratios.png"), plot = plot, device = "png", height = 12, width = 19)
+```
+
+
+```{r}
+qubit <- readxl::read_excel("Dilution_EXP_fastSpin_DNA.xlsx") %>%
+  pivot_longer(!Theoretical_concentration, names_to = "Soil_type", values_to = "Concentration")
+
+qubit_plot <- qubit %>%
+  ggplot(aes(x = Theoretical_concentration, y = Concentration, color = Soil_type)) +
+  ggpmisc::stat_poly_line(formula = y ~ poly(x, 2, raw = TRUE), se = FALSE, linetype = 2) +
+  ggpmisc::stat_poly_eq(formula = y ~ poly(x, 2, raw = TRUE), ggpmisc::use_label(c("eq", "adj.R2", "p", "n")), size = 6) +
+  geom_point(aes(size = 2)) +
+  scale_color_manual(values = c(colors_soil, "black")) +
+  scale_x_continuous(limits = c(0, 100), breaks = seq(0, 100, 10)) +
+  scale_y_continuous(limits = c(0, 150), breaks = seq(0, 150, 10)) +
+  scale_size(guide = "none") +
+  labs(title = "Measured concentration vs. Theoretical concentration",
+       x = "Theoretical concentration [ng/µL]",
+       y = "Measured concentration [ng/µL]",
+       tag = "A",
+       color = "Soil type",
+       size = "") +
+  articlethemex0 +
+  theme()
+
+qubit_plot
+
+standard <- qubit %>% filter(Soil_type == "Qubit Standard")
+AS <- qubit %>% filter(Soil_type == "Activated Sludge")
+
+lm.standard <- lm(Concentration ~ Theoretical_concentration, data = standard)
+summary(lm.standard)
+lm.as <- lm(Concentration ~ Theoretical_concentration, data = AS)
+summary(lm.as)
+
+ggsave(here("Lab_optimization", "figures", "qubit_plot.png"), plot = qubit_plot, device = "png", height = 12, width = 19)
+```
+
+
+
+
+
+

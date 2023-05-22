@@ -35,7 +35,7 @@ plotDiffRelabund_amp <- function(df, filter_soil_type) {
     filter(soil_type == filter_soil_type)
   
   gg <- df_sub %>%
-    ggplot(aes(x = `Full-scale`, y = `Small-scale`, color = bias)) +
+    ggplot(aes(x = `Full-scale`, y = `Small-scale`, color = Bias)) +
     geom_point(size = 4, alpha = 0.5, position = position_jitter()) +
     coord_cartesian(xlim = c(0, max(df_sub$max_abundance)), ylim = c(0, max(df_sub$max_abundance))) +
     scale_color_manual(values = c("grey", colors[5], colors[3]), 
@@ -66,7 +66,7 @@ plotDiffRelabund_meta <- function(df, filter_soil_type) {
     filter(soil_type == filter_soil_type)
   
   gg <- df_sub %>%
-    ggplot(aes(x = `Full-scale`, y = `Small-scale`, color = bias)) +
+    ggplot(aes(x = `Full-scale`, y = `Small-scale`, color = Bias)) +
     geom_point(size = 4, alpha = 0.5, position = position_jitter()) +
     coord_cartesian(xlim = c(0, max(df_sub$max_abundance)), ylim = c(0, max(df_sub$max_abundance))) +
     scale_color_manual(values = c("grey", colors[5], colors[3]), 
@@ -96,7 +96,7 @@ plotDiffRelabund2 <- function(df, filter_soil_type) {
   
   gg <- df %>%
     filter(soil_type == filter_soil_type) %>%
-    ggplot(aes(x = `Amplicon`, y = `Metagenome`, color = bias)) +
+    ggplot(aes(x = `Amplicon`, y = `Metagenome`, color = Bias)) +
     geom_point(size = 4, alpha = 0.5, position = position_jitter()) +
     scale_color_manual(values = c("grey", colors[5], colors[3]), 
                        limits = c("Equally detected",

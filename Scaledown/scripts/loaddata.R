@@ -10,6 +10,7 @@ metadata.metagenome <- read_csv("../Metadata/2023-03-13_combined-metadata.csv") 
   mutate(across(seq_id, ~str_replace(., "Plate1-PCR-POS-F1", "MFD004-PCR-POS-F"))) %>%
   mutate(across(seq_id, ~str_replace(., "Plate1-PCR-NEG-S1", "MFD004-PCR-NEG-S"))) %>%
   mutate(across(seq_id, ~str_replace(., "Plate1-PCR-POS-S1", "MFD004-PCR-POS-S"))) %>%
+  mutate(across(lib_volume, ~as.factor(.))) %>%
   select(seq_id, everything())
 
 # Load full Metadata and filter for amplicon scale-down test
@@ -21,6 +22,7 @@ metadata.amplicon <- read_csv("../Metadata/2023-03-13_combined-metadata.csv") %>
   mutate(across(seq_id, ~str_replace(., "Plate1-PCR-POS-F1", "MFD004-PCR-POS-F"))) %>%
   mutate(across(seq_id, ~str_replace(., "Plate1-PCR-NEG-S1", "MFD004-PCR-NEG-S"))) %>%
   mutate(across(seq_id, ~str_replace(., "Plate1-PCR-POS-S1", "MFD004-PCR-POS-S"))) %>%
+  mutate(across(lib_volume, ~as.factor(.))) %>%
   select(seq_id, everything())
 
 # Load metagenome phylotable - has both counts and taxonomy

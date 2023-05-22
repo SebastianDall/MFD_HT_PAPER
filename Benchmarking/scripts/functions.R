@@ -8,12 +8,13 @@ plotAmpliconOrdinationSoil <- function(df, soil_filter, ord_type = "CA", envvect
         amp_subset_samples(soil_type == soil_filter) %>%
         amp_ordinate(
             filter_species = 0.1,
+            sample_shape_by = "kit",
             type = ord_type,
             constrain = "kit",
             transform = "hellinger",
             distmeasure = "bray",
             #envfit_numeric = envvector,
-            sample_colorframe = "kit",
+            #sample_colorframe = "kit",
             #envfit_numeric_arrows_scale = 0.2,
             #envfit_arrowcolor = "#4bbbe1",
             species_nlabels = 10,
