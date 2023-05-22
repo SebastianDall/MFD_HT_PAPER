@@ -24,7 +24,7 @@ The data is available at ...
 
 ### R packages
 
-The requirede R packages are specified in the `renv.lock` file. To install them, run the following code in R:
+Data analysis was done with R (4.2) and RStudio (2023.03.0+386). The requirede R packages are specified in the `renv.lock` file. To install them, run the following code:
 
 ```r
 install.packages("renv")
