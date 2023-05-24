@@ -9,89 +9,89 @@ FileName,Well,Sample Description,Peak,Size [bp],Calibrated Conc. [pg/µl],Assigne
 200925 size selection test metagenomes.HSD1000,A0,Electronic Ladder,7,700,286,,,629,660,795,12.19,1.145,11.27,22.9,20.9,24.5,271.68,
 200925 size selection test metagenomes.HSD1000,A0,Electronic Ladder,8,1000,309,,,476,929,1261,13.15,1.236,12.17,16.7,14.4,18.2,269.684,
 200925 size selection test metagenomes.HSD1000,A0,Electronic Ladder,,1500,250,250,,256,1348,1772,,1,,12.2,9.8,13.6,221.126,Upper Marker
-200925 size selection test metagenomes.HSD1000,A1,9/3.0,,25,422,,,26000,19,31,,1.687,,86.4,83.1,90.2,165.518,Lower Marker
-200925 size selection test metagenomes.HSD1000,A1,9/3.0,1,413,1410,,,5260,295,575,100,5.649,72.21,36.3,29.2,42.6,210.075,
-200925 size selection test metagenomes.HSD1000,A1,9/3.0,,1500,250,250,,256,1353,1761,,1,,13.9,11.6,15.2,268.834,Upper Marker
-200925 size selection test metagenomes.HSD1000,B1,9/3.0,,25,408,,,25100,19,31,,1.632,,90.7,87.2,94.1,153.05,Lower Marker
-200925 size selection test metagenomes.HSD1000,B1,9/3.0,1,434,1540,,,5450,310,587,100,6.145,73.96,37.2,30.4,43.9,205.035,
-200925 size selection test metagenomes.HSD1000,B1,9/3.0,,1500,250,250,,256,1348,1749,,1,,14.8,12.5,16.2,243.96,Upper Marker
-200925 size selection test metagenomes.HSD1000,C1,9/3.0,,25,398,,,24500,19,30,,1.592,,90.4,87.1,93.8,210.928,Lower Marker
-200925 size selection test metagenomes.HSD1000,C1,9/3.0,1,440,686,,,2400,316,454,100,2.743,40.24,36.4,35.7,43.1,230.625,
-200925 size selection test metagenomes.HSD1000,C1,9/3.0,,1500,250,250,,256,1349,1738,,1,,14.2,12,15.6,323.466,Upper Marker
-200925 size selection test metagenomes.HSD1000,D1,9/2.5,,25,408,,,25100,20,30,,1.632,,91.1,87.6,94.4,203.135,Lower Marker
-200925 size selection test metagenomes.HSD1000,D1,9/2.5,1,464,1200,,,3980,342,642,100,4.799,77.27,35.6,27.9,42.1,206.036,
-200925 size selection test metagenomes.HSD1000,D1,9/2.5,,1500,250,250,,256,1360,1726,,1,,14.5,12.4,15.8,323.899,Upper Marker
-200925 size selection test metagenomes.HSD1000,E1,9/2.5,,25,411,,,25300,19,31,,1.643,,87.7,84.3,91.7,452.387,Lower Marker
-200925 size selection test metagenomes.HSD1000,E1,9/2.5,,1500,250,250,,256,1327,1738,,1,,11.7,9.4,13.3,735.305,Upper Marker
-200925 size selection test metagenomes.HSD1000,F1,9/2.5,,25,418,,,25700,19,30,,1.671,,88.7,85.5,92.4,206.212,Lower Marker
-200925 size selection test metagenomes.HSD1000,F1,9/2.5,1,469,1160,,,3800,341,632,100,4.634,75.28,34.3,27.4,40.9,211.971,
-200925 size selection test metagenomes.HSD1000,F1,9/2.5,,1500,250,250,,256,1357,1742,,1,,13.9,11.7,15.2,335.087,Upper Marker
-200925 size selection test metagenomes.HSD1000,A2,9/2.0,,25,451,,,27700,19,31,,1.802,,87.3,83.8,91.2,292.728,Lower Marker
-200925 size selection test metagenomes.HSD1000,A2,9/2.0,1,512,778,,,2340,380,681,98.48,3.113,74.44,31.2,24.4,37.6,203.262,
-200925 size selection test metagenomes.HSD1000,A2,9/2.0,2,1191,12,,,15.5,987,1246,1.52,0.048,1.15,15.7,15.2,17.7,16.244,
-200925 size selection test metagenomes.HSD1000,A2,9/2.0,,1500,250,250,,256,1334,1732,,1,,12.9,10.8,14.4,469.88,Upper Marker
-200925 size selection test metagenomes.HSD1000,B2,9/2.0,,25,447,,,27500,19,31,,1.787,,86.1,82.6,89.8,263.456,Lower Marker
-200925 size selection test metagenomes.HSD1000,B2,9/2.0,1,504,934,,,2850,365,684,100,3.737,77.59,31.1,23.9,37.9,219.941,
-200925 size selection test metagenomes.HSD1000,B2,9/2.0,,1500,250,250,,256,1343,1758,,1,,12.7,10.4,14.1,433.319,Upper Marker
-200925 size selection test metagenomes.HSD1000,C2,9/2.0,,25,391,,,24100,19,31,,1.565,,88.9,85.5,92.4,208.443,Lower Marker
-200925 size selection test metagenomes.HSD1000,C2,9/2.0,1,494,582,,,1810,484,658,100,2.327,41.71,33.2,26.5,33.7,202.109,
-200925 size selection test metagenomes.HSD1000,C2,9/2.0,,1500,250,250,,256,1357,1752,,1,,14,11.7,15.3,332.198,Upper Marker
-200925 size selection test metagenomes.HSD1000,D2,8/3.0,,25,363,,,22400,20,31,,1.453,,90.9,87.3,94.2,197.412,Lower Marker
-200925 size selection test metagenomes.HSD1000,D2,8/3.0,1,591,475,,,1230,579,843,100,1.898,39.95,29.7,22.2,30.3,147.137,
-200925 size selection test metagenomes.HSD1000,D2,8/3.0,,1500,250,250,,256,1371,1747,,1,,14.2,11.9,15.4,329.713,Upper Marker
-200925 size selection test metagenomes.HSD1000,E2,8/3.0,,25,373,,,23000,19,30,,1.493,,89.7,86.4,93.2,200.911,Lower Marker
-200925 size selection test metagenomes.HSD1000,E2,8/3.0,1,561,154,,,422,541,586,100,0.616,12.06,30.8,29.7,31.6,159.487,
-200925 size selection test metagenomes.HSD1000,E2,8/3.0,,1500,250,250,,256,1380,1761,,1,,14.2,11.8,15.3,336.375,Upper Marker
-200925 size selection test metagenomes.HSD1000,F2,8/3.0,,25,380,,,23400,19,30,,1.521,,89.8,86.5,93.4,232.077,Lower Marker
-200925 size selection test metagenomes.HSD1000,F2,8/3.0,1,559,439,,,1210,416,581,100,1.758,37.86,31,30.1,37.5,163.269,
-200925 size selection test metagenomes.HSD1000,F2,8/3.0,,1500,250,250,,256,1369,1750,,1,,14.3,12,15.5,392.926,Upper Marker
-200925 size selection test metagenomes.HSD1000,A3,8/2.5,,25,399,,,24600,19,30,,1.596,,88.8,85.5,92.4,297.243,Lower Marker
-200925 size selection test metagenomes.HSD1000,A3,8/2.5,1,643,249,,,595,492,656,100,0.994,32.85,26.4,25.9,32.7,124.408,
-200925 size selection test metagenomes.HSD1000,A3,8/2.5,,1500,250,250,,256,1359,1750,,1,,13.2,10.9,14.5,467.257,Upper Marker
-200925 size selection test metagenomes.HSD1000,B3,8/2.5,,25,389,,,24000,19,30,,1.557,,88.6,85.3,92.3,256.259,Lower Marker
-200925 size selection test metagenomes.HSD1000,B3,8/2.5,1,641,360,,,863,611,917,100,1.439,39.14,26.7,19.8,27.9,133.361,
-200925 size selection test metagenomes.HSD1000,B3,8/2.5,,1500,250,250,,256,1369,1763,,1,,13.5,11.1,14.7,406.989,Upper Marker
-200925 size selection test metagenomes.HSD1000,C3,8/2.5,,25,429,,,26400,19,31,,1.716,,86.8,83.4,90.8,339.41,Lower Marker
-200925 size selection test metagenomes.HSD1000,C3,8/2.5,1,653,88.4,,,208,632,680,100,0.354,12.26,25.1,24,25.9,144.519,
-200925 size selection test metagenomes.HSD1000,C3,8/2.5,,1500,250,250,,256,1367,1754,,1,,12.5,10.2,13.7,537.098,Upper Marker
-200925 size selection test metagenomes.HSD1000,D3,8/2.0,,25,436,,,26800,18,31,,1.744,,83.9,80.3,87.7,397.675,Lower Marker
-200925 size selection test metagenomes.HSD1000,D3,8/2.0,1,800,99.8,,,192,775,1022,100,0.399,24.92,20.1,15.9,20.6,88.974,
-200925 size selection test metagenomes.HSD1000,D3,8/2.0,,1500,250,250,,256,1329,1773,,1,,11.7,9.2,13.2,595.114,Upper Marker
-200925 size selection test metagenomes.HSD1000,E3,8/2.0,,25,383,,,23600,19,30,,1.533,,86.4,83.1,90.1,359.246,Lower Marker
-200925 size selection test metagenomes.HSD1000,E3,8/2.0,1,736,37.7,,,78.9,712,770,42.68,0.151,6.86,21.9,21.2,22.4,101.972,
-200925 size selection test metagenomes.HSD1000,E3,8/2.0,2,1125,50.7,,,69.3,1059,1368,57.32,0.203,9.21,15.3,13.1,15.9,68.385,
-200925 size selection test metagenomes.HSD1000,E3,8/2.0,,1500,250,250,,256,1368,1754,,1,,11.9,9.5,13.1,579.92,Upper Marker
-200925 size selection test metagenomes.HSD1000,F3,8/2.0,,25,370,,,22800,19,31,,1.481,,89.4,85.9,93,339.915,Lower Marker
-200925 size selection test metagenomes.HSD1000,F3,8/2.0,1,788,36.6,,,71.4,732,802,100,0.146,9.13,21.7,21.4,22.9,81.459,
-200925 size selection test metagenomes.HSD1000,F3,8/2.0,,1500,250,250,,256,1361,1746,,1,,12.5,10.2,13.8,557.625,Upper Marker
-200925 size selection test metagenomes.HSD1000,A4,7/3.0,,25,396,,,24400,19,31,,1.586,,86.7,83.3,90.6,237.454,Lower Marker
-200925 size selection test metagenomes.HSD1000,A4,7/3.0,1,74,7.06,,,147,67,81,2.2,0.028,0.98,66.1,64.5,67.8,9.576,
-200925 size selection test metagenomes.HSD1000,A4,7/3.0,2,184,20.9,,,174,166,193,6.51,0.084,2.89,50.9,49.9,52.9,27.62,
-200925 size selection test metagenomes.HSD1000,A4,7/3.0,3,701,293,,,642,563,972,91.28,1.171,40.54,24.2,18.7,29.6,75.472,
-200925 size selection test metagenomes.HSD1000,A4,7/3.0,,1500,250,250,,256,1365,1748,,1,,13.7,11.5,14.9,427.312,Upper Marker
-200925 size selection test metagenomes.HSD1000,B4,7/3.0,,25,371,,,22900,19,31,,1.485,,89.1,85.7,92.7,339.892,Lower Marker
-200925 size selection test metagenomes.HSD1000,B4,7/3.0,1,817,68.9,,,130,770,903,100,0.276,15.9,21.4,19.6,22.4,82.027,
-200925 size selection test metagenomes.HSD1000,B4,7/3.0,,1500,250,250,,256,1371,1748,,1,,12.9,10.6,14.1,545.463,Upper Marker
-200925 size selection test metagenomes.HSD1000,C4,7/3.0,,25,399,,,24600,19,30,,1.597,,87.5,84.4,91.3,211.029,Lower Marker
-200925 size selection test metagenomes.HSD1000,C4,7/3.0,1,464,1100,,,3640,334,613,100,4.392,64.3,33.9,27.6,40.6,210.081,
-200925 size selection test metagenomes.HSD1000,C4,7/3.0,,1500,250,250,,256,1367,1744,,1,,13.5,11.3,14.7,340.757,Upper Marker
-200925 size selection test metagenomes.HSD1000,D4,7/2.5,,25,372,,,22900,19,31,,1.488,,86.8,83.3,90.6,383.276,Lower Marker
-200925 size selection test metagenomes.HSD1000,D4,7/2.5,1,1150,27.1,,,36.3,1029,1205,100,0.108,9.41,14.9,14.4,16,67.154,
-200925 size selection test metagenomes.HSD1000,D4,7/2.5,,1500,250,250,,256,1336,1752,,1,,11.7,9.3,13.2,639.236,Upper Marker
-200925 size selection test metagenomes.HSD1000,E4,7/2.5,,25,441,,,27100,18,31,,1.763,,84.7,81.2,88.8,417.271,Lower Marker
-200925 size selection test metagenomes.HSD1000,E4,7/2.5,1,339,8.84,,,40.1,324,345,6.61,0.035,2.01,38.1,37.8,38.9,30.675,
-200925 size selection test metagenomes.HSD1000,E4,7/2.5,2,795,125,,,241,627,855,93.39,0.499,28.39,20.2,19,25,92.73,
-200925 size selection test metagenomes.HSD1000,E4,7/2.5,,1500,250,250,,256,1354,1747,,1,,11.6,9.3,12.9,683.001,Upper Marker
-200925 size selection test metagenomes.HSD1000,F4,7/2.5,,25,457,,,28100,18,31,,1.827,,84,80.4,88,449.714,Lower Marker
-200925 size selection test metagenomes.HSD1000,F4,7/2.5,1,1139,55,,,74.3,1015,1365,100,0.22,16.75,14.4,12.4,15.5,78.749,
-200925 size selection test metagenomes.HSD1000,F4,7/2.5,,1500,250,250,,256,1365,1760,,1,,11.2,8.8,12.4,709.29,Upper Marker
-200925 size selection test metagenomes.HSD1000,A5,7/2.0,,25,392,,,24100,19,31,,1.568,,85.7,82.3,89.5,457.623,Lower Marker
-200925 size selection test metagenomes.HSD1000,A5,7/2.0,,1500,250,250,,256,1335,1754,,1,,11.2,8.8,12.7,731.239,Upper Marker
-200925 size selection test metagenomes.HSD1000,B5,7/2.0,,25,381,,,23400,19,31,,1.522,,88.1,84.7,92,431.91,Lower Marker
-200925 size selection test metagenomes.HSD1000,B5,7/2.0,,1500,250,250,,256,1338,1758,,1,,11.8,9.3,13.3,702.59,Upper Marker
-200925 size selection test metagenomes.HSD1000,C5,7/2.0,,25,428,,,26300,18,31,,1.711,,85.8,82.4,89.9,501.495,Lower Marker
-200925 size selection test metagenomes.HSD1000,C5,7/2.0,1,1204,49.8,,,63.7,955,1335,100,0.199,32.69,13.6,12.4,16.4,74.44,
-200925 size selection test metagenomes.HSD1000,C5,7/2.0,,1500,250,250,,256,1335,1752,,1,,10.9,8.5,12.4,813.59,Upper Marker
+200925 size selection test metagenomes.HSD1000,A1,9/3.0-1,,25,422,,,26000,19,31,,1.687,,86.4,83.1,90.2,165.518,Lower Marker
+200925 size selection test metagenomes.HSD1000,A1,9/3.0-1,1,413,1410,,,5260,295,575,100,5.649,72.21,36.3,29.2,42.6,210.075,
+200925 size selection test metagenomes.HSD1000,A1,9/3.0-1,,1500,250,250,,256,1353,1761,,1,,13.9,11.6,15.2,268.834,Upper Marker
+200925 size selection test metagenomes.HSD1000,B1,9/3.0-2,,25,408,,,25100,19,31,,1.632,,90.7,87.2,94.1,153.05,Lower Marker
+200925 size selection test metagenomes.HSD1000,B1,9/3.0-2,1,434,1540,,,5450,310,587,100,6.145,73.96,37.2,30.4,43.9,205.035,
+200925 size selection test metagenomes.HSD1000,B1,9/3.0-2,,1500,250,250,,256,1348,1749,,1,,14.8,12.5,16.2,243.96,Upper Marker
+200925 size selection test metagenomes.HSD1000,C1,9/3.0-3,,25,398,,,24500,19,30,,1.592,,90.4,87.1,93.8,210.928,Lower Marker
+200925 size selection test metagenomes.HSD1000,C1,9/3.0-3,1,440,686,,,2400,316,454,100,2.743,40.24,36.4,35.7,43.1,230.625,
+200925 size selection test metagenomes.HSD1000,C1,9/3.0-3,,1500,250,250,,256,1349,1738,,1,,14.2,12,15.6,323.466,Upper Marker
+200925 size selection test metagenomes.HSD1000,D1,9/2.5-1,,25,408,,,25100,20,30,,1.632,,91.1,87.6,94.4,203.135,Lower Marker
+200925 size selection test metagenomes.HSD1000,D1,9/2.5-1,1,464,1200,,,3980,342,642,100,4.799,77.27,35.6,27.9,42.1,206.036,
+200925 size selection test metagenomes.HSD1000,D1,9/2.5-1,,1500,250,250,,256,1360,1726,,1,,14.5,12.4,15.8,323.899,Upper Marker
+200925 size selection test metagenomes.HSD1000,E1,7/3.0-1,,25,411,,,25300,19,31,,1.643,,87.7,84.3,91.7,452.387,Lower Marker
+200925 size selection test metagenomes.HSD1000,E1,7/3.0-1,,1500,250,250,,256,1327,1738,,1,,11.7,9.4,13.3,735.305,Upper Marker
+200925 size selection test metagenomes.HSD1000,F1,9/2.5-2,,25,418,,,25700,19,30,,1.671,,88.7,85.5,92.4,206.212,Lower Marker
+200925 size selection test metagenomes.HSD1000,F1,9/2.5-2,1,469,1160,,,3800,341,632,100,4.634,75.28,34.3,27.4,40.9,211.971,
+200925 size selection test metagenomes.HSD1000,F1,9/2.5-2,,1500,250,250,,256,1357,1742,,1,,13.9,11.7,15.2,335.087,Upper Marker
+200925 size selection test metagenomes.HSD1000,A2,9/2.0-1,,25,451,,,27700,19,31,,1.802,,87.3,83.8,91.2,292.728,Lower Marker
+200925 size selection test metagenomes.HSD1000,A2,9/2.0-1,1,512,778,,,2340,380,681,98.48,3.113,74.44,31.2,24.4,37.6,203.262,
+200925 size selection test metagenomes.HSD1000,A2,9/2.0-1,2,1191,12,,,15.5,987,1246,1.52,0.048,1.15,15.7,15.2,17.7,16.244,
+200925 size selection test metagenomes.HSD1000,A2,9/2.0-1,,1500,250,250,,256,1334,1732,,1,,12.9,10.8,14.4,469.88,Upper Marker
+200925 size selection test metagenomes.HSD1000,B2,9/2.0-2,,25,447,,,27500,19,31,,1.787,,86.1,82.6,89.8,263.456,Lower Marker
+200925 size selection test metagenomes.HSD1000,B2,9/2.0-2,1,504,934,,,2850,365,684,100,3.737,77.59,31.1,23.9,37.9,219.941,
+200925 size selection test metagenomes.HSD1000,B2,9/2.0-2,,1500,250,250,,256,1343,1758,,1,,12.7,10.4,14.1,433.319,Upper Marker
+200925 size selection test metagenomes.HSD1000,C2,9/2.0-3,,25,391,,,24100,19,31,,1.565,,88.9,85.5,92.4,208.443,Lower Marker
+200925 size selection test metagenomes.HSD1000,C2,9/2.0-3,1,494,582,,,1810,484,658,100,2.327,41.71,33.2,26.5,33.7,202.109,
+200925 size selection test metagenomes.HSD1000,C2,9/2.0-3,,1500,250,250,,256,1357,1752,,1,,14,11.7,15.3,332.198,Upper Marker
+200925 size selection test metagenomes.HSD1000,D2,8/3.0-1,,25,363,,,22400,20,31,,1.453,,90.9,87.3,94.2,197.412,Lower Marker
+200925 size selection test metagenomes.HSD1000,D2,8/3.0-1,1,591,475,,,1230,579,843,100,1.898,39.95,29.7,22.2,30.3,147.137,
+200925 size selection test metagenomes.HSD1000,D2,8/3.0-1,,1500,250,250,,256,1371,1747,,1,,14.2,11.9,15.4,329.713,Upper Marker
+200925 size selection test metagenomes.HSD1000,E2,8/3.0-2,,25,373,,,23000,19,30,,1.493,,89.7,86.4,93.2,200.911,Lower Marker
+200925 size selection test metagenomes.HSD1000,E2,8/3.0-2,1,561,154,,,422,541,586,100,0.616,12.06,30.8,29.7,31.6,159.487,
+200925 size selection test metagenomes.HSD1000,E2,8/3.0-2,,1500,250,250,,256,1380,1761,,1,,14.2,11.8,15.3,336.375,Upper Marker
+200925 size selection test metagenomes.HSD1000,F2,8/3.0-3,,25,380,,,23400,19,30,,1.521,,89.8,86.5,93.4,232.077,Lower Marker
+200925 size selection test metagenomes.HSD1000,F2,8/3.0-3,1,559,439,,,1210,416,581,100,1.758,37.86,31,30.1,37.5,163.269,
+200925 size selection test metagenomes.HSD1000,F2,8/3.0-3,,1500,250,250,,256,1369,1750,,1,,14.3,12,15.5,392.926,Upper Marker
+200925 size selection test metagenomes.HSD1000,A3,8/2.5-1,,25,399,,,24600,19,30,,1.596,,88.8,85.5,92.4,297.243,Lower Marker
+200925 size selection test metagenomes.HSD1000,A3,8/2.5-1,1,643,249,,,595,492,656,100,0.994,32.85,26.4,25.9,32.7,124.408,
+200925 size selection test metagenomes.HSD1000,A3,8/2.5-1,,1500,250,250,,256,1359,1750,,1,,13.2,10.9,14.5,467.257,Upper Marker
+200925 size selection test metagenomes.HSD1000,B3,8/2.5-2,,25,389,,,24000,19,30,,1.557,,88.6,85.3,92.3,256.259,Lower Marker
+200925 size selection test metagenomes.HSD1000,B3,8/2.5-2,1,641,360,,,863,611,917,100,1.439,39.14,26.7,19.8,27.9,133.361,
+200925 size selection test metagenomes.HSD1000,B3,8/2.5-2,,1500,250,250,,256,1369,1763,,1,,13.5,11.1,14.7,406.989,Upper Marker
+200925 size selection test metagenomes.HSD1000,C3,8/2.5-3,,25,429,,,26400,19,31,,1.716,,86.8,83.4,90.8,339.41,Lower Marker
+200925 size selection test metagenomes.HSD1000,C3,8/2.5-3,1,653,88.4,,,208,632,680,100,0.354,12.26,25.1,24,25.9,144.519,
+200925 size selection test metagenomes.HSD1000,C3,8/2.5-3,,1500,250,250,,256,1367,1754,,1,,12.5,10.2,13.7,537.098,Upper Marker
+200925 size selection test metagenomes.HSD1000,D3,8/2.0-1,,25,436,,,26800,18,31,,1.744,,83.9,80.3,87.7,397.675,Lower Marker
+200925 size selection test metagenomes.HSD1000,D3,8/2.0-1,1,800,99.8,,,192,775,1022,100,0.399,24.92,20.1,15.9,20.6,88.974,
+200925 size selection test metagenomes.HSD1000,D3,8/2.0-1,,1500,250,250,,256,1329,1773,,1,,11.7,9.2,13.2,595.114,Upper Marker
+200925 size selection test metagenomes.HSD1000,E3,8/2.0-2,,25,383,,,23600,19,30,,1.533,,86.4,83.1,90.1,359.246,Lower Marker
+200925 size selection test metagenomes.HSD1000,E3,8/2.0-2,1,736,37.7,,,78.9,712,770,42.68,0.151,6.86,21.9,21.2,22.4,101.972,
+200925 size selection test metagenomes.HSD1000,E3,8/2.0-2,2,1125,50.7,,,69.3,1059,1368,57.32,0.203,9.21,15.3,13.1,15.9,68.385,
+200925 size selection test metagenomes.HSD1000,E3,8/2.0-2,,1500,250,250,,256,1368,1754,,1,,11.9,9.5,13.1,579.92,Upper Marker
+200925 size selection test metagenomes.HSD1000,F3,8/2.0-3,,25,370,,,22800,19,31,,1.481,,89.4,85.9,93,339.915,Lower Marker
+200925 size selection test metagenomes.HSD1000,F3,8/2.0-4,1,788,36.6,,,71.4,732,802,100,0.146,9.13,21.7,21.4,22.9,81.459,
+200925 size selection test metagenomes.HSD1000,F3,8/2.0-4,,1500,250,250,,256,1361,1746,,1,,12.5,10.2,13.8,557.625,Upper Marker
+200925 size selection test metagenomes.HSD1000,A4,7/3.0-2,,25,396,,,24400,19,31,,1.586,,86.7,83.3,90.6,237.454,Lower Marker
+200925 size selection test metagenomes.HSD1000,A4,7/3.0-2,1,74,7.06,,,147,67,81,2.2,0.028,0.98,66.1,64.5,67.8,9.576,
+200925 size selection test metagenomes.HSD1000,A4,7/3.0-2,2,184,20.9,,,174,166,193,6.51,0.084,2.89,50.9,49.9,52.9,27.62,
+200925 size selection test metagenomes.HSD1000,A4,7/3.0-2,3,701,293,,,642,563,972,91.28,1.171,40.54,24.2,18.7,29.6,75.472,
+200925 size selection test metagenomes.HSD1000,A4,7/3.0-2,,1500,250,250,,256,1365,1748,,1,,13.7,11.5,14.9,427.312,Upper Marker
+200925 size selection test metagenomes.HSD1000,B4,7/3.0-3,,25,371,,,22900,19,31,,1.485,,89.1,85.7,92.7,339.892,Lower Marker
+200925 size selection test metagenomes.HSD1000,B4,7/3.0-3,1,817,68.9,,,130,770,903,100,0.276,15.9,21.4,19.6,22.4,82.027,
+200925 size selection test metagenomes.HSD1000,B4,7/3.0-3,,1500,250,250,,256,1371,1748,,1,,12.9,10.6,14.1,545.463,Upper Marker
+200925 size selection test metagenomes.HSD1000,C4,9/2.5-3,,25,399,,,24600,19,30,,1.597,,87.5,84.4,91.3,211.029,Lower Marker
+200925 size selection test metagenomes.HSD1000,C4,9/2.5-3,1,464,1100,,,3640,334,613,100,4.392,64.3,33.9,27.6,40.6,210.081,
+200925 size selection test metagenomes.HSD1000,C4,9/2.5-3,,1500,250,250,,256,1367,1744,,1,,13.5,11.3,14.7,340.757,Upper Marker
+200925 size selection test metagenomes.HSD1000,D4,7/2.5-1,,25,372,,,22900,19,31,,1.488,,86.8,83.3,90.6,383.276,Lower Marker
+200925 size selection test metagenomes.HSD1000,D4,7/2.5-1,1,1150,27.1,,,36.3,1029,1205,100,0.108,9.41,14.9,14.4,16,67.154,
+200925 size selection test metagenomes.HSD1000,D4,7/2.5-1,,1500,250,250,,256,1336,1752,,1,,11.7,9.3,13.2,639.236,Upper Marker
+200925 size selection test metagenomes.HSD1000,E4,7/2.5-2,,25,441,,,27100,18,31,,1.763,,84.7,81.2,88.8,417.271,Lower Marker
+200925 size selection test metagenomes.HSD1000,E4,7/2.5-2,1,339,8.84,,,40.1,324,345,6.61,0.035,2.01,38.1,37.8,38.9,30.675,
+200925 size selection test metagenomes.HSD1000,E4,7/2.5-2,2,795,125,,,241,627,855,93.39,0.499,28.39,20.2,19,25,92.73,
+200925 size selection test metagenomes.HSD1000,E4,7/2.5-2,,1500,250,250,,256,1354,1747,,1,,11.6,9.3,12.9,683.001,Upper Marker
+200925 size selection test metagenomes.HSD1000,F4,7/2.5-3,,25,457,,,28100,18,31,,1.827,,84,80.4,88,449.714,Lower Marker
+200925 size selection test metagenomes.HSD1000,F4,7/2.5-3,1,1139,55,,,74.3,1015,1365,100,0.22,16.75,14.4,12.4,15.5,78.749,
+200925 size selection test metagenomes.HSD1000,F4,7/2.5-3,,1500,250,250,,256,1365,1760,,1,,11.2,8.8,12.4,709.29,Upper Marker
+200925 size selection test metagenomes.HSD1000,A5,7/2.0-1,,25,392,,,24100,19,31,,1.568,,85.7,82.3,89.5,457.623,Lower Marker
+200925 size selection test metagenomes.HSD1000,A5,7/2.0-1,,1500,250,250,,256,1335,1754,,1,,11.2,8.8,12.7,731.239,Upper Marker
+200925 size selection test metagenomes.HSD1000,B5,7/2.0-2,,25,381,,,23400,19,31,,1.522,,88.1,84.7,92,431.91,Lower Marker
+200925 size selection test metagenomes.HSD1000,B5,7/2.0-2,,1500,250,250,,256,1338,1758,,1,,11.8,9.3,13.3,702.59,Upper Marker
+200925 size selection test metagenomes.HSD1000,C5,7/2.0-3,,25,428,,,26300,18,31,,1.711,,85.8,82.4,89.9,501.495,Lower Marker
+200925 size selection test metagenomes.HSD1000,C5,7/2.0-3,1,1204,49.8,,,63.7,955,1335,100,0.199,32.69,13.6,12.4,16.4,74.44,
+200925 size selection test metagenomes.HSD1000,C5,7/2.0-3,,1500,250,250,,256,1335,1752,,1,,10.9,8.5,12.4,813.59,Upper Marker
 200925 size selection test metagenomes.HSD1000,D5,ladder,,25,425,,,26100,19,31,,1.699,,86.8,83.4,90.7,214.135,Lower Marker
 200925 size selection test metagenomes.HSD1000,D5,ladder,1,49,171,,,5320,46,57,11.71,0.684,10.63,72.2,70.2,74.4,183.03,
 200925 size selection test metagenomes.HSD1000,D5,ladder,2,103,178,,,2650,94,122,12.16,0.711,11.05,59.4,57.4,61.2,239.552,

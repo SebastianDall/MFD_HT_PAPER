@@ -1,17 +1,17 @@
 Well,Sample Description,Conc. [ng/µl],Alert,Observations,Source,DIN,FileName
 A1,Ladder,68.4,,Ladder,,,gDNA - 2023-04-14 - 22.22.48.gDNA
-B1,PowerSoil-LT,58.9,,,,5.4,gDNA - 2023-04-14 - 22.22.48.gDNA
-C1,,63.1,,,,5.5,gDNA - 2023-04-14 - 22.22.48.gDNA
-D1,,57.4,,,,5.6,gDNA - 2023-04-14 - 22.22.48.gDNA
-E1,,18.7,,,,6.0,gDNA - 2023-04-14 - 22.22.48.gDNA
-F1,,19.4,,,,6.0,gDNA - 2023-04-14 - 22.22.48.gDNA
-G1,,22.5,,,,6.0,gDNA - 2023-04-14 - 22.22.48.gDNA
-H1,,14.5,,,,5.7,gDNA - 2023-04-14 - 22.22.48.gDNA
-A2,,13.2,,,,5.8,gDNA - 2023-04-14 - 22.22.48.gDNA
-B2,,14.1,,,,5.8,gDNA - 2023-04-14 - 22.22.48.gDNA
-C2,,58.7,,,,6.1,gDNA - 2023-04-14 - 22.22.48.gDNA
-D2,,62.0,,,,5.9,gDNA - 2023-04-14 - 22.22.48.gDNA
-E2,,50.5,,,,6.2,gDNA - 2023-04-14 - 22.22.48.gDNA
-F2,,2.00,!!,Sample concentration outside functional range for DIN and the assay,,,gDNA - 2023-04-14 - 22.22.48.gDNA
-G2,,1.40,!!,Sample concentration outside functional range for DIN and the assay,,,gDNA - 2023-04-14 - 22.22.48.gDNA
-H2,,3.79,!,Sample concentration outside functional range for DIN and the assay,,5.7,gDNA - 2023-04-14 - 22.22.48.gDNA
+B1,PowerSoil-LT-Organic-1,58.9,,,,5.4,gDNA - 2023-04-14 - 22.22.48.gDNA
+C1,PowerSoil-LT-Organic-2,63.1,,,,5.5,gDNA - 2023-04-14 - 22.22.48.gDNA
+D1,PowerSoil-LT-Organic-3,57.4,,,,5.6,gDNA - 2023-04-14 - 22.22.48.gDNA
+E1,PowerSoil-LT-Sand-Clay-1,18.7,,,,6,gDNA - 2023-04-14 - 22.22.48.gDNA
+F1,PowerSoil-LT-Sand-Clay-2,19.4,,,,6,gDNA - 2023-04-14 - 22.22.48.gDNA
+G1,PowerSoil-LT-Sand-Clay-3,22.5,,,,6,gDNA - 2023-04-14 - 22.22.48.gDNA
+H1,PowerSoil-LT-Sand-1,14.5,,,,5.7,gDNA - 2023-04-14 - 22.22.48.gDNA
+A2,PowerSoil-LT-Sand-2,13.2,,,,5.8,gDNA - 2023-04-14 - 22.22.48.gDNA
+B2,PowerSoil-LT-Sand-3,14.1,,,,5.8,gDNA - 2023-04-14 - 22.22.48.gDNA
+C2,PowerSoil-LT-Clay-1,58.7,,,,6.1,gDNA - 2023-04-14 - 22.22.48.gDNA
+D2,PowerSoil-LT-Clay-2,62,,,,5.9,gDNA - 2023-04-14 - 22.22.48.gDNA
+E2,PowerSoil-LT-Clay-3,50.5,,,,6.2,gDNA - 2023-04-14 - 22.22.48.gDNA
+F2,PowerSoil-LT-Beach-Sand-1,2,!!,Sample concentration outside functional range for DIN and the assay,,,gDNA - 2023-04-14 - 22.22.48.gDNA
+G2,PowerSoil-LT-Beach-Sand-2,1.4,!!,Sample concentration outside functional range for DIN and the assay,,,gDNA - 2023-04-14 - 22.22.48.gDNA
+H2,PowerSoil-LT-Beach-Sand-3,3.79,!,Sample concentration outside functional range for DIN and the assay,,5.7,gDNA - 2023-04-14 - 22.22.48.gDNA

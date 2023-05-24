@@ -34,72 +34,67 @@ colors_soil <- c("grey", "darkgoldenrod2", "royalblue4", "seagreen", "salmon")
 ```{r remove blanks and pcr controls}
 peaks.FS.LT <- read_csv("FastSpin-LT/FastSpin-LT_compactPeakTable.csv", col_names = TRUE, col_select = c(2:5,18:19)) %>%
   dplyr::rename(Size = `Size [bp]`,
-                Protocol = `Sample Description`)
+                Sample = `Sample Description`)
 
 peaks.PS.LT <- read_csv("PowerSoil-LT/PowerSoil-LT_compactPeakTable.csv", col_names = TRUE, col_select = c(2:5,18:19)) %>%
   dplyr::rename(Size = `Size [bp]`,
-                Protocol = `Sample Description`)
+                Sample = `Sample Description`)
 
 peaks.ZM.HT <- read_csv("ZymoMagbead-HT/ZymoMagbead-HT_compactPeakTable.csv", col_names = TRUE, col_select = c(2:5,18:19)) %>%
   dplyr::rename(Size = `Size [bp]`,
-                Protocol = `Sample Description`)
+                Sample = `Sample Description`)
 
 peaks.FS.HT <- read_csv("FastSpin-HT/FastSpin-HT_compactPeakTable.csv", col_names = TRUE, col_select = c(2:5,18:19)) %>%
   dplyr::rename(Size = `Size [bp]`,
-                Protocol = `Sample Description`)
+                Sample = `Sample Description`)
 
 peaks.PS.HT <- read_csv("PowerSoil-HT/PowerSoil-HT_compactPeakTable.csv", col_names = TRUE, col_select = c(2:5,18:19)) %>%
   dplyr::rename(Size = `Size [bp]`,
-                Protocol = `Sample Description`)
+                Sample = `Sample Description`)
 
 ladder1 <- peaks.FS.LT %>%
   filter(Well == "A1")
 
 peaks1 <- peaks.FS.LT %>%
   filter(!Well == "A1", Size > 99, !Size %in% c(257, 580)) %>%
-  mutate(across(Observations, ~if_else(is.na(.), "Peak", Observations)),
-         Protocol = "FastSpin-LT") %>%
   select(-Peak, -Well) %>%
-  group_by(Observations) %>%
-  summarise(across(Size:Height, ~mean(.)))
+  dplyr::rename(Peak = Size) %>%
+  mutate(Soil_type = str_remove(Sample, "FastSpin-LT-"),
+         across(Soil_type, ~str_remove(., "-[^-]$")))
 
 peaks2 <- peaks.PS.LT %>%
   filter(!Well == "A1", Size > 99, !Size %in% c()) %>%
-  mutate(across(Observations, ~if_else(is.na(.), "Peak", Observations)),
-         Protocol = "PowerSoil-LT") %>%
   select(-Peak, -Well) %>%
-  group_by(Observations) %>%
-  summarise(across(Size:Height, ~mean(.)))
+  dplyr::rename(Peak = Size) %>%
+  mutate(Soil_type = str_remove(Sample, "PowerSoil-LT-"),
+         across(Soil_type, ~str_remove(., "-[^-]$")))
 
 peaks3 <- peaks.ZM.HT %>%
-  filter(!Well == "A1", Size > 99, !Size %in% c()) %>%
-  mutate(across(Observations, ~if_else(is.na(.), "Peak", Observations)),
-         Protocol = "ZymoMagbead-HT") %>%
+  filter(!Well == "A1", Size > 99, !Size %in% c(1356)) %>%
   select(-Peak, -Well) %>%
-  group_by(Observations) %>%
-  summarise(across(Size:Height, ~mean(.)))
+  dplyr::rename(Peak = Size) %>%
+  mutate(Soil_type = str_remove(Sample, "ZymoMagbead-HT-"),
+         across(Soil_type, ~str_remove(., "-[^-]$")))
 
 peaks4 <- peaks.FS.HT %>%
   filter(!Well == "A1", !Size %in% c(">60000"), !is.na(Size)) %>%
-  mutate(across(Observations, ~if_else(is.na(.), "Peak", Observations)),
-         Protocol = "FastSpin-HT",
-         across(Size:Height, ~as.numeric(.))) %>%
   select(-Peak, -Well) %>%
-  group_by(Observations) %>%
-  summarise(across(Size:Height, ~mean(.)))
+  dplyr::rename(Peak = Size) %>%
+  mutate(Soil_type = str_remove(Sample, "FastSpin-HT-"),
+         across(Soil_type, ~str_remove(., "-[^-]$")))
 
 peaks5 <- peaks.PS.HT %>%
   filter(!Well == "A1", Size > 99, !Size %in% c()) %>%
-  mutate(across(Observations, ~if_else(is.na(.), "Peak", Observations)),
-         Protocol = "PowerSoil-Pro-HT") %>%
   select(-Peak, -Well) %>%
-  group_by(Observations) %>%
-  summarise(across(Size:Height, ~mean(.)))
+  dplyr::rename(Peak = Size) %>%
+  mutate(Soil_type = str_remove(Sample, "PowerSoil-HT-"),
+         across(Soil_type, ~str_remove(., "-[^-]$")))
 
 # Spectra
 spectre_ratio1 <- read_csv("FastSpin-LT/FastSpin-LT_Electropherogram.csv") %>%
   mutate(Size = seq(2, 1520, 2)) %>%
   relocate(Size, .before = 1)
+  #mutate(across(2:17, ~./3))
 
 spectre_ratio2 <- read_csv("PowerSoil-LT/PowerSoil-LT_Electropherogram.csv") %>%
   mutate(Size = seq(2, 1520, 2)) %>%
@@ -118,9 +113,9 @@ spectre_ratio5 <- read_csv("PowerSoil-HT/PowerSoil-HT_Electropherogram.csv") %>%
   relocate(Size, .before = 1)
 
 conc <- data.frame(Conc = c(0.34, 0.09, 0.02, 0.16, 0.11, 12.64, 2.99, 2.91, 4.20, 1.08, 3.85, 2.82, 1.08, 1.75, 0.07, 1.99, 0.77, 0.71, 1.38, 0.41, 2.83, 1.09, 0.80, 1.25, 0.03),
-                   Protocol = c("FastSpin-LT", "PowerSoil-LT", "FastSpin-HT", "PowerSoil-Pro-HT", "ZymoMagbead-HT", "FastSpin-LT", "PowerSoil-LT", "FastSpin-HT", "PowerSoil-Pro-HT", "ZymoMagbead-HT", "FastSpin-LT", "PowerSoil-LT", "FastSpin-HT", "PowerSoil-Pro-HT", "ZymoMagbead-HT", "FastSpin-LT", "PowerSoil-LT", "FastSpin-HT", "PowerSoil-Pro-HT", "ZymoMagbead-HT", "FastSpin-LT", "PowerSoil-LT", "FastSpin-HT", "PowerSoil-Pro-HT", "ZymoMagbead-HT")) %>%
-  group_by(Protocol) %>%
-  summarise(across(everything(), ~sum(.)))
+                   Protocol = c("FastSpin-LT", "PowerSoil-LT", "FastSpin-HT", "PowerSoil-Pro-HT", "ZymoMagbead-HT", "FastSpin-LT", "PowerSoil-LT", "FastSpin-HT", "PowerSoil-Pro-HT", "ZymoMagbead-HT", "FastSpin-LT", "PowerSoil-LT", "FastSpin-HT", "PowerSoil-Pro-HT", "ZymoMagbead-HT", "FastSpin-LT", "PowerSoil-LT", "FastSpin-HT", "PowerSoil-Pro-HT", "ZymoMagbead-HT", "FastSpin-LT", "PowerSoil-LT", "FastSpin-HT", "PowerSoil-Pro-HT", "ZymoMagbead-HT"))
+  #group_by(Protocol) %>%
+  #summarise(across(everything(), ~sum(.)))
 #  group_by(Protocol) %>%
 #  summarise(across(Conc, ~round(mean(.), 2))) %>%
 #  add_row(Protocol = "Electronic Ladder", Conc = NA) %>%
@@ -135,76 +130,97 @@ conc <- data.frame(Conc = c(0.34, 0.09, 0.02, 0.16, 0.11, 12.64, 2.99, 2.91, 4.2
   #summarise(across(Size:Height, ~round(mean(.), 0)), .groups = "drop")
 
 spectre_sum1 <- spectre_ratio1 %>%
-  pivot_longer(!Size, names_to = "Group", values_to = "Intensities") %>%
-  mutate(Protocol = if_else(str_detect(Group, "Ladder"), "Ladder", "FastSpin-LT")) %>%
+  pivot_longer(!Size, names_to = "Sample", values_to = "Intensities") %>%
+  mutate(Protocol = if_else(str_detect(Sample, "Ladder"), "Ladder", "FastSpin-LT"),
+         across(Sample, ~str_extract(., "(?<=^....).*$"))) %>%
   relocate(Size, .after = Protocol) %>%
-  group_by(Protocol, Size) %>%
-  summarise(across(Intensities, ~mean(.)), .groups = "drop") %>%
+  #group_by(Protocol, Size) %>%
+  #summarise(across(Intensities, ~mean(.)), .groups = "drop") %>%
   mutate(across(Protocol, ~as.factor(.)),
          across(where(is.numeric), ~round(., 2))) %>%
-  left_join(conc)
-  #left_join(peaks1)
+  #left_join(conc)
+  left_join(peaks1, by = "Sample")
 
 spectre_sum2 <- spectre_ratio2 %>%
-  pivot_longer(!Size, names_to = "Group", values_to = "Intensities") %>%
-  mutate(Protocol = if_else(str_detect(Group, "Ladder"), "Ladder", "PowerSoil-LT")) %>%
+  pivot_longer(!Size, names_to = "Sample", values_to = "Intensities") %>%
+  mutate(Protocol = if_else(str_detect(Sample, "Ladder"), "Ladder", "PowerSoil-LT"),
+         across(Sample, ~str_extract(., "(?<=^....).*$"))) %>%
   relocate(Size, .after = Protocol) %>%
-  group_by(Protocol, Size) %>%
-  summarise(across(Intensities, ~mean(.)), .groups = "drop") %>%
+  #group_by(Protocol, Size) %>%
+  #summarise(across(Intensities, ~mean(.)), .groups = "drop") %>%
   mutate(across(Protocol, ~as.factor(.)),
          across(where(is.numeric), ~round(., 2))) %>%
-  left_join(conc)
-  #left_join(peaks2)
+  #left_join(conc)
+  left_join(peaks2, by = "Sample")
 
 spectre_sum3 <- spectre_ratio3 %>%
-  pivot_longer(!Size, names_to = "Group", values_to = "Intensities") %>%
-  mutate(Protocol = if_else(str_detect(Group, "Ladder"), "Ladder", "ZymoMagbead-HT")) %>%
+  pivot_longer(!Size, names_to = "Sample", values_to = "Intensities") %>%
+  mutate(Protocol = if_else(str_detect(Sample, "Ladder"), "Ladder", "ZymoMagbead-HT"),
+         across(Sample, ~str_extract(., "(?<=^....).*$"))) %>%
   relocate(Size, .after = Protocol) %>%
-  group_by(Protocol, Size) %>%
-  summarise(across(Intensities, ~mean(.)), .groups = "drop") %>%
+  #group_by(Protocol, Size) %>%
+  #summarise(across(Intensities, ~mean(.)), .groups = "drop") %>%
   mutate(across(Protocol, ~as.factor(.)),
          across(where(is.numeric), ~round(., 2))) %>%
-  left_join(conc)
-  #left_join(peaks3)
+  #left_join(conc)
+  left_join(peaks3, by = "Sample")
 
 spectre_sum4 <- spectre_ratio4 %>%
-  pivot_longer(!Size, names_to = "Group", values_to = "Intensities") %>%
-  mutate(Protocol = if_else(str_detect(Group, "Ladder"), "Ladder", "FastSpin-HT")) %>%
+  pivot_longer(!Size, names_to = "Sample", values_to = "Intensities") %>%
+  mutate(Protocol = if_else(str_detect(Sample, "Ladder"), "Ladder", "FastSpin-HT"),
+         across(Sample, ~str_extract(., "(?<=^....).*$"))) %>%
   relocate(Size, .after = Protocol) %>%
-  group_by(Protocol, Size) %>%
-  summarise(across(Intensities, ~mean(.)), .groups = "drop") %>%
+  #group_by(Protocol, Size) %>%
+  #summarise(across(Intensities, ~mean(.)), .groups = "drop") %>%
   mutate(across(Protocol, ~as.factor(.)),
          across(where(is.numeric), ~round(., 2))) %>%
-  left_join(conc)
-  #left_join(peaks4)
+  #left_join(conc)
+  left_join(peaks4, by = "Sample")
 
 spectre_sum5 <- spectre_ratio5 %>%
-  pivot_longer(!Size, names_to = "Group", values_to = "Intensities") %>%
-  mutate(Protocol = if_else(str_detect(Group, "Ladder"), "Ladder", "PowerSoil-Pro-HT")) %>%
+  pivot_longer(!Size, names_to = "Sample", values_to = "Intensities") %>%
+  mutate(Protocol = if_else(str_detect(Sample, "Ladder"), "Ladder", "PowerSoil-HT"),
+         across(Sample, ~str_extract(., "(?<=^....).*$"))) %>%
   relocate(Size, .after = Protocol) %>%
-  group_by(Protocol, Size) %>%
-  summarise(across(Intensities, ~mean(.)), .groups = "drop") %>%
+  #group_by(Protocol, Size) %>%
+  #summarise(across(Intensities, ~mean(.)), .groups = "drop") %>%
   mutate(across(Protocol, ~as.factor(.)),
          across(where(is.numeric), ~round(., 2))) %>%
-  left_join(conc)
-  #left_join(peaks5)
+  #left_join(conc)
+  left_join(peaks5, by = "Sample")
 
-spectre_sum <- rbind(spectre_sum1, spectre_sum2, spectre_sum3, spectre_sum4, spectre_sum5) %>%
-  group_by(Protocol, Size) %>%
-  summarise(across(everything(), ~mean(.)))
+spectre_sum <- rbind(spectre_sum1, spectre_sum2, spectre_sum3, spectre_sum4, spectre_sum5)
+  #group_by(Protocol, Size) %>%
+  #summarise(across(everything(), ~mean(.)))
+
+spectre_sum_ladder <- spectre_sum %>%
+  filter(Sample == "Ladder") %>%
+  group_by(Sample, Protocol, Size, .add = TRUE) %>%
+  summarise(across(Intensities, ~mean(.)), .groups = "keep") %>%
+  mutate(across(Intensities, ~.*3)) %>%
+  select(Sample, Intensities, Protocol, Size) %>%
+  mutate(Peak = NA,
+         Height = NA,
+         Observations = NA,
+         Soil_type = NA)
+
+spectre_sum_comb <- spectre_sum %>%
+  filter(!Sample == "Ladder") %>%
+  rbind(spectre_sum_ladder)
 
 ladder <- ladder1 %>% arrange(Size) %>% pull(Size)
 ladder_size <- c(316, 408, 484, 558, 632, 682, 722, 778, 826, 870, 932, 994, 1044, 1094)
-y_order <- spectre_sum %>% pull(Protocol) %>% unique(.)
+y_order <- spectre_sum_comb %>% pull(Protocol) %>% unique(.)
 
-plot <- spectre_sum %>%
+plot <- spectre_sum_comb %>%
   #filter(Protocol != "Ladder") %>%
-  ggplot(aes(x = Size, y = Protocol, height = Intensities, fill = Conc)) +
-  geom_density_ridges(stat = "identity", scale = 4, alpha = 0.7) +
-  scale_fill_gradient(low = colors[2], high = colors[3]) + 
+  ggplot(aes(x = Size, y = Protocol, height = Intensities, fill = Soil_type, group = Sample)) +
+  geom_density_ridges(stat = "identity", scale = 0.9, alpha = 0.2) +
+  scale_fill_manual(values = colors_soil[c(1,3,4,5,2)], limits = c("Beach-Sand", "Clay", "Organic", "Sand", "Sand-Clay")) +
   scale_x_continuous(limits = c(225, 1200), breaks = ladder_size, labels = ladder) +
-  scale_y_discrete(limits = rev(c(y_order[c(3,2,1,4,5,6)]))) +
+  scale_y_discrete(limits = y_order) +
   articletheme +
+  guides(fill = guide_legend(override.aes = list(alpha = 0.5))) +
   labs(title = "Average fragment size distribution from different soils across different DNA extraction kits",
        x = "Size [bp]",
        y = "",

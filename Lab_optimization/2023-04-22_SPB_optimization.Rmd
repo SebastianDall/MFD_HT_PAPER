@@ -34,12 +34,12 @@ colors_soil <- c("grey", "darkgoldenrod2", "royalblue4", "seagreen", "salmon")
 ```{r remove blanks and pcr controls}
 peaks <- read_csv("200925 size selection test metagenomes-HSD1000/200925 size selection test metagenomes-HSD1000_compactPeakTable.csv", col_names = TRUE, col_select = c(2:5,18:19)) %>%
   dplyr::rename(Size = `Size [bp]`,
-                Protocol = `Sample Description`)
+                Sample = `Sample Description`)
 
 peaks2 <- read_csv("200929 16-6 test of meta-genomes-HSD1000/200929 16-6 test of meta-genomes-HSD1000_compactPeakTable.csv", col_names = TRUE, col_select = c(2:5,18:19)) %>%
   dplyr::rename(Size = `Size [bp]`,
-                Protocol = `Sample Description`) %>%
-  filter(!Protocol %in% c("Electronic Ladder"))
+                Sample = `Sample Description`) %>%
+  filter(!Sample %in% c("Electronic Ladder"))
   #filter(!Protocol %in% c("Electronic Ladder", "tag product"))
 
 spectre_ratio1 <- read_csv("200925 size selection test metagenomes-HSD1000/200925 size selection test metagenomes-HSD1000_Electropherogram.csv") %>%
@@ -62,18 +62,22 @@ spectre_tag2 <- spectre_ratio_tag %>%
   select(6)
 
 conc <- readxl::read_excel("Concentration_size.xlsx") %>%
-  group_by(Protocol) %>%
+  mutate(Sample = Protocol,
+         across(Sample, ~str_remove(., "-."))) %>%
+  group_by(Sample) %>%
   summarise(across(Conc, ~round(mean(.), 2))) %>%
-  add_row(Protocol = "Electronic Ladder", Conc = NA) %>%
-  add_row(Protocol = "Tag. product", Conc = NA)
+  add_row(Sample = "Electronic Ladder", Conc = NA) %>%
+  add_row(Sample = "Tag. product", Conc = NA)
 
 peak_stats <- peaks %>%
   rbind(peaks2) %>%
   mutate(Observations = if_else(is.na(Observations), as.character(Peak), Observations)) %>%
+  mutate(Protocol = Sample,
+         across(Protocol, ~str_remove(., "-."))) %>%
   mutate(across(Protocol, ~as.factor(.))) %>%
   group_by(Protocol, Observations) %>%
-  filter(Protocol != "ladder") %>%
-  summarise(across(Size:Height, ~round(mean(.), 0)), .groups = "drop")
+  filter(Protocol != "Electronic ladder")
+  #summarise(across(Size:Height, ~round(mean(.), 0)), .groups = "drop")
 
 peak.table <- peak_stats %>%
   filter(!Observations %in% c("Lower Marker", "Upper Marker"), Protocol != "Electronic Ladder") %>%
@@ -87,13 +91,16 @@ spectre_sum <- spectre_ratio1 %>%
   pivot_longer(!Size, names_to = "Group", values_to = "Intensities") %>%
   separate_wider_delim(Group, delim = ": ", names = c("Well", "Protocol")) %>%
   relocate(Size, .after = Protocol) %>%
-  group_by(Protocol, Size) %>%
-  summarise(across(Intensities, ~mean(.)), .groups = "drop") %>%
+  #group_by(Protocol, Size) %>%
+  #summarise(across(Intensities, ~mean(.)), .groups = "drop") %>%
   filter(Protocol != "ladder") %>%
   mutate(across(Protocol, ~as.factor(.)),
          across(where(is.numeric), ~round(., 2))) %>%
-  left_join(conc) %>%
-  left_join(peak.table)
+  left_join(peak.table) %>%
+  mutate(Sample = Protocol,
+         across(Sample, ~str_remove(., "-."))) %>%
+  mutate(across(Sample, ~as.factor(.))) %>%
+  left_join(conc)
   #mutate(Protocol = if_else(is.na(Peak), Protocol, paste0(Protocol, ", Peak = ", Peak, " bp ")))
 
 ladder <- peak_stats %>% filter(Protocol == "Electronic Ladder") %>% arrange(Size) %>% pull(Size)
@@ -102,12 +109,13 @@ y_order <- spectre_sum %>% pull(Protocol) %>% unique(.)
 
 plot <- spectre_sum %>%
   #filter(Protocol != "Ladder") %>%
-  ggplot(aes(x = Size, y = Protocol, height = Intensities, fill = Conc)) +
-  geom_density_ridges(stat = "identity", scale = 4, alpha = 0.7) +
+  ggplot(aes(x = Size, y = Sample, height = Intensities, fill = Conc, group = Protocol)) +
+  geom_density_ridges(stat = "identity", scale = 4, alpha = 0.5) +
   scale_fill_gradient(low = colors[2], high = colors[3]) + 
   scale_x_continuous(limits = c(100, 1400), breaks = ladder_size, labels = ladder) +
-  scale_y_discrete(limits = rev(c(y_order[c(11,12,10:8,7,1,6:5,4:2)]))) +
+  #scale_y_discrete(limits = rev(c(y_order[c(11,12,10:8,7,1,6:5,4:2)]))) +
   articletheme +
+  guides(fill = guide_legend(override.aes = list(alpha = 0.5))) +
   labs(title = "Fragment size distribution at different SPB ratios",
        x = "Size [bp]",
        y = "",
