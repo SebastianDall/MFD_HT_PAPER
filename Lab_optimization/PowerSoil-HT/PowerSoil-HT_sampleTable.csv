@@ -1,17 +1,17 @@
 Well,Sample Description,Conc. [ng/µl],Alert,Observations,Source,DIN,FileName
 A1,Ladder,76,,Ladder,,,gDNA - 2023-04-14 - 23.14.42.gDNA
-B1,PowerSoil-HT-Organic-1,32.1,,,,5.6,gDNA - 2023-04-14 - 23.14.42.gDNA
-C1,PowerSoil-HT-Organic-2,27.9,,,,5.8,gDNA - 2023-04-14 - 23.14.42.gDNA
-D1,PowerSoil-HT-Organic-3,36.9,,,,5.7,gDNA - 2023-04-14 - 23.14.42.gDNA
-E1,PowerSoil-HT-Sand-Clay-1,79.4,,,,5.9,gDNA - 2023-04-14 - 23.14.42.gDNA
-F1,PowerSoil-HT-Sand-Clay-2,37.8,,,,5.9,gDNA - 2023-04-14 - 23.14.42.gDNA
-G1,PowerSoil-HT-Sand-Clay-3,21.3,,,,6.2,gDNA - 2023-04-14 - 23.14.42.gDNA
-H1,PowerSoil-HT-Sand-1,17,,,,5.6,gDNA - 2023-04-14 - 23.14.42.gDNA
-A2,PowerSoil-HT-Sand-2,13.5,,,,5.7,gDNA - 2023-04-14 - 23.14.42.gDNA
-B2,PowerSoil-HT-Sand-3,13.9,,,,5.7,gDNA - 2023-04-14 - 23.14.42.gDNA
-C2,PowerSoil-HT-Clay-1,126,!,Sample concentration outside recommended range,,5.9,gDNA - 2023-04-14 - 23.14.42.gDNA
-D2,PowerSoil-HT-Clay-2,120,!,Sample concentration outside recommended range,,6,gDNA - 2023-04-14 - 23.14.42.gDNA
-E2,PowerSoil-HT-Clay-3,0.668,!!,Sample concentration outside functional range for DIN and the assay,,,gDNA - 2023-04-14 - 23.14.42.gDNA
-F2,PowerSoil-HT-Beach-Sand-1,1.28,!!,Sample concentration outside functional range for DIN and the assay,,,gDNA - 2023-04-14 - 23.14.42.gDNA
-G2,PowerSoil-HT-Beach-Sand-2,1.45,!!,Sample concentration outside functional range for DIN and the assay,,,gDNA - 2023-04-14 - 23.14.42.gDNA
-H2,PowerSoil-HT-Beach-Sand-3,2.01,!!,Sample concentration outside functional range for DIN and the assay,,,gDNA - 2023-04-14 - 23.14.42.gDNA
+B1,PowerSoil-Pro-HT-Organic-1,32.1,,,,5.6,gDNA - 2023-04-14 - 23.14.42.gDNA
+C1,PowerSoil-Pro-HT-Organic-2,27.9,,,,5.8,gDNA - 2023-04-14 - 23.14.42.gDNA
+D1,PowerSoil-Pro-HT-Organic-3,36.9,,,,5.7,gDNA - 2023-04-14 - 23.14.42.gDNA
+E1,PowerSoil-Pro-HT-Sand-Clay-1,79.4,,,,5.9,gDNA - 2023-04-14 - 23.14.42.gDNA
+F1,PowerSoil-Pro-HT-Sand-Clay-2,37.8,,,,5.9,gDNA - 2023-04-14 - 23.14.42.gDNA
+G1,PowerSoil-Pro-HT-Sand-Clay-3,21.3,,,,6.2,gDNA - 2023-04-14 - 23.14.42.gDNA
+H1,PowerSoil-Pro-HT-Sand-1,17,,,,5.6,gDNA - 2023-04-14 - 23.14.42.gDNA
+A2,PowerSoil-Pro-HT-Sand-2,13.5,,,,5.7,gDNA - 2023-04-14 - 23.14.42.gDNA
+B2,PowerSoil-Pro-HT-Sand-3,13.9,,,,5.7,gDNA - 2023-04-14 - 23.14.42.gDNA
+C2,PowerSoil-Pro-HT-Clay-1,126,!,Sample concentration outside recommended range,,5.9,gDNA - 2023-04-14 - 23.14.42.gDNA
+D2,PowerSoil-Pro-HT-Clay-2,120,!,Sample concentration outside recommended range,,6,gDNA - 2023-04-14 - 23.14.42.gDNA
+E2,PowerSoil-Pro-HT-Clay-3,0.668,!!,Sample concentration outside functional range for DIN and the assay,,,gDNA - 2023-04-14 - 23.14.42.gDNA
+F2,PowerSoil-Pro-HT-Beach-Sand-1,1.28,!!,Sample concentration outside functional range for DIN and the assay,,,gDNA - 2023-04-14 - 23.14.42.gDNA
+G2,PowerSoil-Pro-HT-Beach-Sand-2,1.45,!!,Sample concentration outside functional range for DIN and the assay,,,gDNA - 2023-04-14 - 23.14.42.gDNA
+H2,PowerSoil-Pro-HT-Beach-Sand-3,2.01,!!,Sample concentration outside functional range for DIN and the assay,,,gDNA - 2023-04-14 - 23.14.42.gDNA

@@ -87,7 +87,7 @@ peaks5 <- peaks.PS.HT %>%
   filter(!Well == "A1", Size > 99, !Size %in% c()) %>%
   select(-Peak, -Well) %>%
   dplyr::rename(Peak = Size) %>%
-  mutate(Soil_type = str_remove(Sample, "PowerSoil-HT-"),
+  mutate(Soil_type = str_remove(Sample, "PowerSoil-Pro-HT-"),
          across(Soil_type, ~str_remove(., "-[^-]$")))
 
 # Spectra
@@ -179,7 +179,7 @@ spectre_sum4 <- spectre_ratio4 %>%
 
 spectre_sum5 <- spectre_ratio5 %>%
   pivot_longer(!Size, names_to = "Sample", values_to = "Intensities") %>%
-  mutate(Protocol = if_else(str_detect(Sample, "Ladder"), "Ladder", "PowerSoil-HT"),
+  mutate(Protocol = if_else(str_detect(Sample, "Ladder"), "Ladder", "PowerSoil-Pro-HT"),
          across(Sample, ~str_extract(., "(?<=^....).*$"))) %>%
   relocate(Size, .after = Protocol) %>%
   #group_by(Protocol, Size) %>%
