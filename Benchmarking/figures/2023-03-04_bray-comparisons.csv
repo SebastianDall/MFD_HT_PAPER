@@ -1,64 +1,64 @@
 seq_id,kit,soil_type,comparison,bray,compared_kit,compared_soil,bray_rank
-PowerSoil-LT-4-1,PowerSoil LT,Clay,PowerSoil-LT-4-2,0.08388319070359143,PowerSoil LT,Clay,1
-FastSpin-LT-4-2,FastSpin LT,Clay,FastSpin-LT-4-3,0.09331000892982604,FastSpin LT,Clay,2
-PowerSoil-Pro-HT-4-1,PowerSoil Pro HT,Clay,PowerSoil-Pro-HT-4-2,0.09439793631453489,PowerSoil Pro HT,Clay,3
-FastSpin-HT-5-2,FastSpin HT,Beach Sand,FastSpin-HT-5-3,0.09764236125425192,FastSpin HT,Beach Sand,4
-PowerSoil-Pro-HT-4-1,PowerSoil Pro HT,Clay,PowerSoil-Pro-HT-4-3,0.09863785735657175,PowerSoil Pro HT,Clay,5
-ZymoMagbead-HT-4-1,ZymoMagbead HT,Clay,ZymoMagbead-HT-4-2,0.09997762485996521,ZymoMagbead HT,Clay,6
-FastSpin-LT-5-2,FastSpin LT,Beach Sand,FastSpin-LT-5-3,0.10195843446126931,FastSpin LT,Beach Sand,7
-PowerSoil-LT-4-2,PowerSoil LT,Clay,PowerSoil-LT-4-3,0.10336238134603612,PowerSoil LT,Clay,8
-FastSpin-HT-5-1,FastSpin HT,Beach Sand,FastSpin-HT-5-3,0.10446631863694388,FastSpin HT,Beach Sand,9
-PowerSoil-Pro-HT-4-2,PowerSoil Pro HT,Clay,PowerSoil-Pro-HT-4-3,0.10615858390545463,PowerSoil Pro HT,Clay,10
-FastSpin-HT-2-2,FastSpin HT,Sand-Clay,FastSpin-HT-2-3,0.1065658062574129,FastSpin HT,Sand-Clay,11
-PowerSoil-LT-4-1,PowerSoil LT,Clay,PowerSoil-LT-4-3,0.10732406403055308,PowerSoil LT,Clay,12
-ZymoMagbead-HT-4-1,ZymoMagbead HT,Clay,ZymoMagbead-HT-4-3,0.10753021085750909,ZymoMagbead HT,Clay,13
-PowerSoil-LT-5-2,PowerSoil LT,Beach Sand,PowerSoil-LT-5-3,0.10813661991724964,PowerSoil LT,Beach Sand,14
-ZymoMagbead-HT-5-2,ZymoMagbead HT,Beach Sand,ZymoMagbead-HT-5-3,0.10920668896340244,ZymoMagbead HT,Beach Sand,15
-ZymoMagbead-HT-4-2,ZymoMagbead HT,Clay,ZymoMagbead-HT-4-3,0.10926195526992004,ZymoMagbead HT,Clay,16
-FastSpin-HT-5-1,FastSpin HT,Beach Sand,FastSpin-HT-5-2,0.11088060236720777,FastSpin HT,Beach Sand,17
-FastSpin-HT-4-1,FastSpin HT,Clay,FastSpin-HT-4-2,0.11121085339678907,FastSpin HT,Clay,18
-FastSpin-HT-4-2,FastSpin HT,Clay,FastSpin-HT-4-3,0.11264683203886927,FastSpin HT,Clay,19
-FastSpin-LT-2-2,FastSpin LT,Sand-Clay,FastSpin-LT-2-3,0.11556380194316469,FastSpin LT,Sand-Clay,20
-PowerSoil-LT-2-1,PowerSoil LT,Sand-Clay,PowerSoil-LT-2-3,0.11589474591023645,PowerSoil LT,Sand-Clay,21
-FastSpin-LT-5-1,FastSpin LT,Beach Sand,FastSpin-LT-5-3,0.11617441205159398,FastSpin LT,Beach Sand,22
-PowerSoil-Pro-HT-5-1,PowerSoil Pro HT,Beach Sand,PowerSoil-Pro-HT-5-2,0.11903196060716817,PowerSoil Pro HT,Beach Sand,23
-FastSpin-LT-2-1,FastSpin LT,Sand-Clay,FastSpin-LT-2-2,0.11988543229383536,FastSpin LT,Sand-Clay,24
-ZymoMagbead-HT-3-1,ZymoMagbead HT,Sand,ZymoMagbead-HT-3-2,0.12025909671387952,ZymoMagbead HT,Sand,25
-FastSpin-LT-2-1,FastSpin LT,Sand-Clay,FastSpin-LT-2-3,0.12200870704687927,FastSpin LT,Sand-Clay,26
-FastSpin-HT-2-1,FastSpin HT,Sand-Clay,FastSpin-HT-2-3,0.12204392710981017,FastSpin HT,Sand-Clay,27
-FastSpin-HT-2-1,FastSpin HT,Sand-Clay,FastSpin-HT-2-2,0.12212310854913745,FastSpin HT,Sand-Clay,28
-PowerSoil-LT-2-2,PowerSoil LT,Sand-Clay,PowerSoil-LT-2-3,0.12858977043790593,PowerSoil LT,Sand-Clay,29
-PowerSoil-LT-2-1,PowerSoil LT,Sand-Clay,PowerSoil-LT-2-2,0.12871488934922323,PowerSoil LT,Sand-Clay,30
-FastSpin-LT-5-1,FastSpin LT,Beach Sand,FastSpin-LT-5-2,0.13234668032848254,FastSpin LT,Beach Sand,31
-FastSpin-HT-3-1,FastSpin HT,Sand,FastSpin-HT-3-2,0.13425971291471323,FastSpin HT,Sand,32
-PowerSoil-LT-3-1,PowerSoil LT,Sand,PowerSoil-LT-3-3,0.13559340359661834,PowerSoil LT,Sand,33
-FastSpin-HT-4-1,FastSpin HT,Clay,FastSpin-HT-4-3,0.1377150177308893,FastSpin HT,Clay,34
-PowerSoil-LT-3-2,PowerSoil LT,Sand,PowerSoil-LT-3-3,0.13986481886684604,PowerSoil LT,Sand,35
-PowerSoil-Pro-HT-2-2,PowerSoil Pro HT,Sand-Clay,PowerSoil-Pro-HT-2-3,0.1443574564664471,PowerSoil Pro HT,Sand-Clay,36
-PowerSoil-Pro-HT-5-2,PowerSoil Pro HT,Beach Sand,PowerSoil-Pro-HT-5-3,0.1451112937970001,PowerSoil Pro HT,Beach Sand,37
-ZymoMagbead-HT-3-1,ZymoMagbead HT,Sand,ZymoMagbead-HT-3-3,0.14967742938735223,ZymoMagbead HT,Sand,38
-ZymoMagbead-HT-5-1,ZymoMagbead HT,Beach Sand,ZymoMagbead-HT-5-3,0.15018743355803835,ZymoMagbead HT,Beach Sand,39
-PowerSoil-Pro-HT-2-1,PowerSoil Pro HT,Sand-Clay,PowerSoil-Pro-HT-2-3,0.15709912655108715,PowerSoil Pro HT,Sand-Clay,40
-PowerSoil-LT-1-2,PowerSoil LT,Organic,PowerSoil-LT-1-3,0.15916391607063424,PowerSoil LT,Organic,41
-FastSpin-LT-3-1,FastSpin LT,Sand,FastSpin-LT-3-2,0.15929851895066685,FastSpin LT,Sand,42
-PowerSoil-Pro-HT-5-1,PowerSoil Pro HT,Beach Sand,PowerSoil-Pro-HT-5-3,0.15947879664128362,PowerSoil Pro HT,Beach Sand,43
-PowerSoil-LT-1-1,PowerSoil LT,Organic,PowerSoil-LT-1-2,0.15958103038737045,PowerSoil LT,Organic,44
-FastSpin-LT-3-2,FastSpin LT,Sand,FastSpin-LT-3-3,0.16009156103669459,FastSpin LT,Sand,45
-ZymoMagbead-HT-5-1,ZymoMagbead HT,Beach Sand,ZymoMagbead-HT-5-2,0.16203963050379572,ZymoMagbead HT,Beach Sand,46
-PowerSoil-Pro-HT-3-2,PowerSoil Pro HT,Sand,PowerSoil-Pro-HT-3-3,0.1629700838331967,PowerSoil Pro HT,Sand,47
-PowerSoil-LT-3-1,PowerSoil LT,Sand,PowerSoil-LT-3-2,0.1673479225517735,PowerSoil LT,Sand,48
-ZymoMagbead-HT-3-2,ZymoMagbead HT,Sand,ZymoMagbead-HT-3-3,0.16846835613292868,ZymoMagbead HT,Sand,49
-PowerSoil-Pro-HT-2-1,PowerSoil Pro HT,Sand-Clay,PowerSoil-Pro-HT-2-2,0.1716711803160438,PowerSoil Pro HT,Sand-Clay,50
-PowerSoil-LT-1-1,PowerSoil LT,Organic,PowerSoil-LT-1-3,0.1721840077391137,PowerSoil LT,Organic,51
-PowerSoil-Pro-HT-1-1,PowerSoil Pro HT,Organic,PowerSoil-Pro-HT-1-2,0.17992182485974945,PowerSoil Pro HT,Organic,52
-PowerSoil-Pro-HT-1-2,PowerSoil Pro HT,Organic,PowerSoil-Pro-HT-1-3,0.18292952376131738,PowerSoil Pro HT,Organic,53
-FastSpin-LT-3-1,FastSpin LT,Sand,FastSpin-LT-3-3,0.18411467393591877,FastSpin LT,Sand,54
-ZymoMagbead-HT-2-1,ZymoMagbead HT,Sand-Clay,ZymoMagbead-HT-2-2,0.19872909482159778,ZymoMagbead HT,Sand-Clay,55
-ZymoMagbead-HT-2-2,ZymoMagbead HT,Sand-Clay,ZymoMagbead-HT-2-3,0.20261555188214705,ZymoMagbead HT,Sand-Clay,56
-ZymoMagbead-HT-2-1,ZymoMagbead HT,Sand-Clay,ZymoMagbead-HT-2-3,0.2077735852122029,ZymoMagbead HT,Sand-Clay,57
-PowerSoil-LT-5-1,PowerSoil LT,Beach Sand,PowerSoil-LT-5-3,0.21359737577388774,PowerSoil LT,Beach Sand,58
-FastSpin-HT-1-1,FastSpin HT,Organic,FastSpin-HT-1-3,0.21396956209157633,FastSpin HT,Organic,59
-PowerSoil-Pro-HT-1-1,PowerSoil Pro HT,Organic,PowerSoil-Pro-HT-1-3,0.21791739979815586,PowerSoil Pro HT,Organic,60
-FastSpin-HT-1-2,FastSpin HT,Organic,FastSpin-HT-1-3,0.2372216153933415,FastSpin HT,Organic,61
-FastSpin-HT-1-1,FastSpin HT,Organic,FastSpin-HT-1-2,0.23747993678210969,FastSpin HT,Organic,62
-PowerSoil-LT-5-1,PowerSoil LT,Beach Sand,PowerSoil-LT-5-2,0.2400002815838468,PowerSoil LT,Beach Sand,63
+FastSpin-LT-4-2,FastSpin LT,Clay,FastSpin-LT-4-3,0.0674301641859508,FastSpin LT,Clay,1
+FastSpin-LT-5-2,FastSpin LT,Beach Sand,FastSpin-LT-5-3,0.07095442908786789,FastSpin LT,Beach Sand,2
+PowerSoil-Pro-HT-4-1,PowerSoil Pro HT,Clay,PowerSoil-Pro-HT-4-2,0.07195776084084048,PowerSoil Pro HT,Clay,3
+PowerSoil-Pro-HT-4-1,PowerSoil Pro HT,Clay,PowerSoil-Pro-HT-4-3,0.07304276082188958,PowerSoil Pro HT,Clay,4
+PowerSoil-LT-4-1,PowerSoil LT,Clay,PowerSoil-LT-4-2,0.0735660178858578,PowerSoil LT,Clay,5
+FastSpin-HT-5-1,FastSpin HT,Beach Sand,FastSpin-HT-5-3,0.0744350932923906,FastSpin HT,Beach Sand,6
+FastSpin-HT-5-2,FastSpin HT,Beach Sand,FastSpin-HT-5-3,0.07526777523423454,FastSpin HT,Beach Sand,7
+PowerSoil-Pro-HT-4-2,PowerSoil Pro HT,Clay,PowerSoil-Pro-HT-4-3,0.075999984914229185,PowerSoil Pro HT,Clay,8
+FastSpin-LT-2-2,FastSpin LT,Sand-Clay,FastSpin-LT-2-3,0.07610888463675848,FastSpin LT,Sand-Clay,9
+FastSpin-HT-2-2,FastSpin HT,Sand-Clay,FastSpin-HT-2-3,0.07669687405921173,FastSpin HT,Sand-Clay,10
+PowerSoil-LT-2-1,PowerSoil LT,Sand-Clay,PowerSoil-LT-2-3,0.07724812606935594,PowerSoil LT,Sand-Clay,11
+FastSpin-HT-4-1,FastSpin HT,Clay,FastSpin-HT-4-2,0.07754784577193351,FastSpin HT,Clay,12
+FastSpin-LT-2-1,FastSpin LT,Sand-Clay,FastSpin-LT-2-3,0.07831811282709496,FastSpin LT,Sand-Clay,13
+FastSpin-HT-5-1,FastSpin HT,Beach Sand,FastSpin-HT-5-2,0.07930614385304528,FastSpin HT,Beach Sand,14
+ZymoMagbead-HT-5-2,ZymoMagbead HT,Beach Sand,ZymoMagbead-HT-5-3,0.08055409617446534,ZymoMagbead HT,Beach Sand,15
+FastSpin-LT-2-1,FastSpin LT,Sand-Clay,FastSpin-LT-2-2,0.08277512843288146,FastSpin LT,Sand-Clay,16
+ZymoMagbead-HT-3-1,ZymoMagbead HT,Sand,ZymoMagbead-HT-3-2,0.08378556084839085,ZymoMagbead HT,Sand,17
+FastSpin-HT-2-1,FastSpin HT,Sand-Clay,FastSpin-HT-2-3,0.0839408320614507,FastSpin HT,Sand-Clay,18
+PowerSoil-LT-2-1,PowerSoil LT,Sand-Clay,PowerSoil-LT-2-2,0.08394572095358147,PowerSoil LT,Sand-Clay,19
+PowerSoil-Pro-HT-2-2,PowerSoil Pro HT,Sand-Clay,PowerSoil-Pro-HT-2-3,0.08518528210324515,PowerSoil Pro HT,Sand-Clay,20
+PowerSoil-LT-2-2,PowerSoil LT,Sand-Clay,PowerSoil-LT-2-3,0.08604575137739157,PowerSoil LT,Sand-Clay,21
+FastSpin-LT-5-1,FastSpin LT,Beach Sand,FastSpin-LT-5-3,0.08608617011293318,FastSpin LT,Beach Sand,22
+FastSpin-HT-2-1,FastSpin HT,Sand-Clay,FastSpin-HT-2-2,0.0869194498556972,FastSpin HT,Sand-Clay,23
+FastSpin-HT-3-1,FastSpin HT,Sand,FastSpin-HT-3-2,0.0882170069898469,FastSpin HT,Sand,24
+ZymoMagbead-HT-4-1,ZymoMagbead HT,Clay,ZymoMagbead-HT-4-2,0.08904628781484934,ZymoMagbead HT,Clay,25
+PowerSoil-LT-4-2,PowerSoil LT,Clay,PowerSoil-LT-4-3,0.09017280611533808,PowerSoil LT,Clay,26
+PowerSoil-LT-5-2,PowerSoil LT,Beach Sand,PowerSoil-LT-5-3,0.09046290288265943,PowerSoil LT,Beach Sand,27
+PowerSoil-LT-3-1,PowerSoil LT,Sand,PowerSoil-LT-3-3,0.09142609788951553,PowerSoil LT,Sand,28
+FastSpin-HT-4-2,FastSpin HT,Clay,FastSpin-HT-4-3,0.09156123680684562,FastSpin HT,Clay,29
+PowerSoil-LT-4-1,PowerSoil LT,Clay,PowerSoil-LT-4-3,0.09165600632494023,PowerSoil LT,Clay,30
+PowerSoil-Pro-HT-5-1,PowerSoil Pro HT,Beach Sand,PowerSoil-Pro-HT-5-2,0.09259786256845946,PowerSoil Pro HT,Beach Sand,31
+FastSpin-LT-5-1,FastSpin LT,Beach Sand,FastSpin-LT-5-2,0.09394449001699247,FastSpin LT,Beach Sand,32
+FastSpin-HT-4-1,FastSpin HT,Clay,FastSpin-HT-4-3,0.09412521192691178,FastSpin HT,Clay,33
+ZymoMagbead-HT-4-1,ZymoMagbead HT,Clay,ZymoMagbead-HT-4-3,0.094820890108617,ZymoMagbead HT,Clay,34
+PowerSoil-LT-3-2,PowerSoil LT,Sand,PowerSoil-LT-3-3,0.0956189187432864,PowerSoil LT,Sand,35
+ZymoMagbead-HT-4-2,ZymoMagbead HT,Clay,ZymoMagbead-HT-4-3,0.09590214492893938,ZymoMagbead HT,Clay,36
+ZymoMagbead-HT-5-1,ZymoMagbead HT,Beach Sand,ZymoMagbead-HT-5-3,0.09845940288684572,ZymoMagbead HT,Beach Sand,37
+ZymoMagbead-HT-3-1,ZymoMagbead HT,Sand,ZymoMagbead-HT-3-3,0.10032769160624425,ZymoMagbead HT,Sand,38
+FastSpin-LT-3-2,FastSpin LT,Sand,FastSpin-LT-3-3,0.10208189280228905,FastSpin LT,Sand,39
+PowerSoil-Pro-HT-2-1,PowerSoil Pro HT,Sand-Clay,PowerSoil-Pro-HT-2-3,0.10498410304151116,PowerSoil Pro HT,Sand-Clay,40
+FastSpin-LT-3-1,FastSpin LT,Sand,FastSpin-LT-3-2,0.10674885596591728,FastSpin LT,Sand,41
+PowerSoil-LT-3-1,PowerSoil LT,Sand,PowerSoil-LT-3-2,0.10744723101236434,PowerSoil LT,Sand,42
+PowerSoil-Pro-HT-5-2,PowerSoil Pro HT,Beach Sand,PowerSoil-Pro-HT-5-3,0.10881332488578395,PowerSoil Pro HT,Beach Sand,43
+ZymoMagbead-HT-3-2,ZymoMagbead HT,Sand,ZymoMagbead-HT-3-3,0.10892114279844438,ZymoMagbead HT,Sand,44
+ZymoMagbead-HT-5-1,ZymoMagbead HT,Beach Sand,ZymoMagbead-HT-5-2,0.11210019160143057,ZymoMagbead HT,Beach Sand,45
+PowerSoil-LT-5-1,PowerSoil LT,Beach Sand,PowerSoil-LT-5-3,0.1152875095326409,PowerSoil LT,Beach Sand,46
+PowerSoil-Pro-HT-2-1,PowerSoil Pro HT,Sand-Clay,PowerSoil-Pro-HT-2-2,0.11629296905510135,PowerSoil Pro HT,Sand-Clay,47
+PowerSoil-Pro-HT-5-1,PowerSoil Pro HT,Beach Sand,PowerSoil-Pro-HT-5-3,0.11753423681510432,PowerSoil Pro HT,Beach Sand,48
+FastSpin-LT-3-1,FastSpin LT,Sand,FastSpin-LT-3-3,0.12208138423396142,FastSpin LT,Sand,49
+PowerSoil-LT-1-2,PowerSoil LT,Organic,PowerSoil-LT-1-3,0.127986534369749,PowerSoil LT,Organic,50
+ZymoMagbead-HT-2-2,ZymoMagbead HT,Sand-Clay,ZymoMagbead-HT-2-3,0.12941694668474996,ZymoMagbead HT,Sand-Clay,51
+ZymoMagbead-HT-2-1,ZymoMagbead HT,Sand-Clay,ZymoMagbead-HT-2-2,0.13202737935707404,ZymoMagbead HT,Sand-Clay,52
+ZymoMagbead-HT-2-1,ZymoMagbead HT,Sand-Clay,ZymoMagbead-HT-2-3,0.13228047214553953,ZymoMagbead HT,Sand-Clay,53
+PowerSoil-Pro-HT-3-2,PowerSoil Pro HT,Sand,PowerSoil-Pro-HT-3-3,0.13379259663597462,PowerSoil Pro HT,Sand,54
+PowerSoil-LT-1-1,PowerSoil LT,Organic,PowerSoil-LT-1-3,0.1359967946042045,PowerSoil LT,Organic,55
+PowerSoil-LT-1-1,PowerSoil LT,Organic,PowerSoil-LT-1-2,0.13827397480302592,PowerSoil LT,Organic,56
+PowerSoil-LT-5-1,PowerSoil LT,Beach Sand,PowerSoil-LT-5-2,0.14196547999130643,PowerSoil LT,Beach Sand,57
+PowerSoil-Pro-HT-1-1,PowerSoil Pro HT,Organic,PowerSoil-Pro-HT-1-2,0.1490670283065031,PowerSoil Pro HT,Organic,58
+PowerSoil-Pro-HT-1-2,PowerSoil Pro HT,Organic,PowerSoil-Pro-HT-1-3,0.1514511046191099,PowerSoil Pro HT,Organic,59
+FastSpin-HT-1-1,FastSpin HT,Organic,FastSpin-HT-1-3,0.16467448461816014,FastSpin HT,Organic,60
+PowerSoil-Pro-HT-1-1,PowerSoil Pro HT,Organic,PowerSoil-Pro-HT-1-3,0.16625707841530382,PowerSoil Pro HT,Organic,61
+FastSpin-HT-1-2,FastSpin HT,Organic,FastSpin-HT-1-3,0.17916014156410753,FastSpin HT,Organic,62
+FastSpin-HT-1-1,FastSpin HT,Organic,FastSpin-HT-1-2,0.1865857550522763,FastSpin HT,Organic,63

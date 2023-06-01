@@ -79,9 +79,15 @@ amp.rarecurve <- dat.types.sub10000.amp %>%
                 stepsize = 1000) +
   scale_color_manual(values = c(colors))
 
-bray_distance <- as.matrix(vegan::vegdist(t(dat.types.sub10000.amp.rel_0.1$abund))) %>%
+tmp <- t(dat.types.sub10000.amp.rel_0.1$abund)
+
+bray_distance <- as.matrix(vegan::vegdist(vegan::decostand(tmp, method = "hellinger"))) %>%
     as.data.frame() %>%
     rownames_to_column("seq_id")
+
+#bray_distance <- as.matrix(vegan::vegdist(t(dat.types.sub10000.amp.rel_0.1$abund))) %>%
+#    as.data.frame() %>%
+#    rownames_to_column("seq_id")
   
 metadata <- dat.types.sub10000.amp.rel_0.1$metadata %>%
   select(seq_id, kit, soil_type)
