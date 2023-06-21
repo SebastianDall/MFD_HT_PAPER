@@ -1,7 +1,7 @@
 library(ggplot2)
 
+kit_levels <- c("FastSpin LT", "PowerSoil LT", "FastSpin HT", "PowerSoil Pro HT", "ZymoMagbead HT")
 rpm_levels <- c("1000", "1200", "1400", "1600", "1800")
-time_levels <- c("2", "4", "6")
 
 # theme
 articletheme <- theme_bw(base_size = 10) +

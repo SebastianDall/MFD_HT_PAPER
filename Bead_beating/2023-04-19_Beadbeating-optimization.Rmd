@@ -54,10 +54,8 @@ dat.types.sub3000.amp.ra <- dat.types.sub3000.amp %>%
 dat.types.sub3000.amp.ra.rel_0.1 <- dat.types.sub3000.amp.ra %>%
   amp_subset_samples(normalise = TRUE) %>%
   filter_otus(0.1)
-  
-dat.types.sub3000.amp.rel_0.1 <- dat.types.sub3000.amp %>%
-  amp_subset_samples(normalise = TRUE) %>%
-  filter_otus(0.1)
+
+soil <- unique(dat.types.sub3000.amp$metadata$soil_type) %>% sort(.) %>% as.factor(.)
 ```
 
 We set a cutoff of at 3000 reads, and rarefy to the lowest number of reads in the remaining dataset. Doing this we go from `r nrow(dat_types.amp$metadata)` to `r nrow(dat.types.sub3000.amp$metadata)` samples and create a rarified dataset as well.
@@ -79,7 +77,7 @@ bray_distance <- as.matrix(vegan::vegdist(vegan::decostand(tmp, method = "hellin
     as.data.frame() %>%
     rownames_to_column("seq_id")
   
-metadata <- dat.types.sub3000.amp.rel_0.1$metadata %>%
+metadata <- dat.types.sub3000.amp$metadata %>%
   select(seq_id, kit, protocol, soil_type)
 
 metadata_renamed <- metadata %>%
@@ -649,18 +647,18 @@ ggsave(here("Bead_beating", "figures", "heatmap_beadbeating.png"), plot = plot.h
 # PERMANOVA test for overall difference in observed communities based on kit
 ```{r statistical testing}
 ## Overall comparison
-soil <- unique(dat.types.sub3000.amp$metadata$soil_type) %>% sort(.) %>% as.character(.)
-
 permanova.list <- list()
       
 for (i in 1:length(soil)) {
   
-  community <- dat.types.sub3000.amp.rel_0.1 %>%
+  community_0.1 <- dat.types.sub3000.amp %>%
+    amp_subset_samples(normalise = TRUE) %>%
+    filter_otus(0.1) %>%
     amp_subset_samples(soil_type == soil[i])
   
-  community_0.1 <- t(community[["abund"]])
+  community_0.1 <- t(community_0.1[["abund"]])
   
-  meta <- community[["metadata"]] %>%
+  meta <- dat.types.sub3000.amp[["metadata"]] %>%
     filter(soil_type == soil[i])
   
   dis <- vegan::vegdist(community_0.1)
@@ -670,7 +668,7 @@ for (i in 1:length(soil)) {
     pull(group) %>%
     as.factor(.)
   
- permanova <- adonis2(community_0.1 ~ time_minutes * rpm, type = "bray", data = meta, permutations = 9999) %>%
+ permanova <- adonis2(community_0.1 ~ time_minutes * rpm, type = "bray", data = meta, permutations = 99999) %>%
    as.data.frame() %>%
    rownames_to_column("Variable") %>%
    mutate(across(R2, ~ as.character(round(. * 100, digits = 1)))) %>%
@@ -690,11 +688,13 @@ sd(perm.results)
 
 # Statified PERMANOVA
 # Betadispersion - analysis of multivariate homogeneity of group dispersions (variances)
-community <- dat.types.sub3000.amp.rel_0.1
+community_0.1 <- dat.types.sub3000.amp %>%
+  amp_subset_samples(normalise = TRUE) %>%
+  filter_otus(0.1)
 
-community_0.1 <- t(community[["abund"]])
+community_0.1 <- t(community_0.1[["abund"]])
 
-meta <- dat.types.sub3000.amp.rel_0.1[["metadata"]]
+meta <- dat.types.sub3000.amp[["metadata"]]
 
 dis <- vegan::vegdist(community_0.1)
 
@@ -713,7 +713,7 @@ plot(mod.stratified, ellipse = TRUE, hull = FALSE, conf = 0.90) # 90% data ellip
 perm.strat <- with(meta, permute::how(nperm = 9999, blocks = soil_type))
 
 set.seed(123)
-permanova.rpm <- adonis2(community_0.1 ~ rpm*soil_type, type = "bray", data = meta, permutations = 9999)
+permanova.rpm <- adonis2(community_0.1 ~ rpm*soil_type, type = "bray", data = meta, permutations = 99999)
 
 permanova.rpm %>%
   data.frame() %>%
@@ -725,7 +725,7 @@ permanova.rpm %>%
   gridExtra::grid.arrange(.)
 
 set.seed(123)
-permanova.time <- adonis2(community_0.1 ~ time_minutes*soil_type, type = "bray", data = meta, permutations = 9999)
+permanova.time <- adonis2(community_0.1 ~ time_minutes*soil_type, type = "bray", data = meta, permutations = 99999)
 
 permanova.time %>%
   data.frame() %>%
@@ -737,7 +737,7 @@ permanova.time %>%
   gridExtra::grid.arrange(.)
 
 set.seed(123)
-permanova.combined <- adonis2(community_0.1 ~ rpm*time_minutes*soil_type, type = "bray", data = meta, permutations = 9999)
+permanova.combined <- adonis2(community_0.1 ~ rpm*time_minutes*soil_type, type = "bray", data = meta, permutations = 99999)
 
 permanova.combined %>%
   data.frame() %>%
@@ -755,8 +755,6 @@ permanova.combined %>%
 
 ## Ordinations - faceted by soil types
 ```{r ordination}
-soil <- unique(dat.types.sub3000.amp$metadata$soil_type) %>% sort(.) %>% as.factor(.)
-
 plot.ordinate <- dat.types.sub3000.amp %>%
   amp_ordinate(
     filter_species = 0.1,
@@ -779,13 +777,12 @@ plot.ordinate <- dat.types.sub3000.amp %>%
        shape = "Bead beating intensity [RPM]",
        tag = "B",
        subtitle = paste0("**PERMANOVA:**", 
-                         "<br>Soil type: Variance explained = ","69.9 %,", " p-value < 0.001",
+                         "<br>Soil type: Variance explained = ","68.9 %,", " p-value < 0.001",
                          "<br>Intensity: Variance explained = ","2.3 %,", " p-value = 0.002",
-                         "<br>Time: Variance explained = ","1.1 %,", " p-value = 0.005")) +
+                         "<br>Time: Variance explained = ","1.3 %,", " p-value = 0.015")) +
   coord_cartesian(xlim = c(-0.5, 0.5), ylim = c(-0.5, 0.5)) +
   articlethemex0 +
   theme(legend.position = "right",
-        axis.text.x = element_text(angle = 0, hjust = 0, vjust = 0),
         plot.subtitle = ggtext::element_markdown())
 
 plot.ordinate
@@ -824,7 +821,6 @@ plot_ord1 <- dat.types.sub3000.amp %>%
   coord_cartesian(xlim = c(-0.9, 0.9), ylim = c(-0.9, 0.9)) +
   articlethemex0 +
   theme(legend.position = "none",
-        axis.text.x = element_text(angle = 0, hjust = 0, vjust = 0),
         plot.subtitle = ggtext::element_markdown())
   
 plot_ord2 <- dat.types.sub3000.amp %>%
@@ -853,7 +849,6 @@ plot_ord2 <- dat.types.sub3000.amp %>%
   coord_cartesian(xlim = c(-0.9, 0.9), ylim = c(-0.9, 0.9)) +
   articlethemex0 +
   theme(legend.position = "none",
-        axis.text.x = element_text(angle = 0, hjust = 0, vjust = 0),
         plot.subtitle = ggtext::element_markdown())
 
 plot_ord3 <- dat.types.sub3000.amp %>%
@@ -882,7 +877,6 @@ plot_ord3 <- dat.types.sub3000.amp %>%
   coord_cartesian(xlim = c(-0.9, 0.9), ylim = c(-0.9, 0.9)) +
   articlethemex0 +
   theme(legend.position = "none",
-        axis.text.x = element_text(angle = 0, hjust = 0, vjust = 0),
         plot.subtitle = ggtext::element_markdown())
 
 plot_ord_leg <- ggarrange(leg.plot.ord_color, leg.plot.ord_shape, nrow = 2, align = "hv")
@@ -910,8 +904,8 @@ deseq_results_dataframe_1800 <- rlist::list.rbind(deseq_results_1800$deseq) %>%
          fc_signif = if_else(abs(log2FoldChange) > 1, TRUE, FALSE),)
 
 dat_types_filtered_0.1_1800 <- dat.types.sub3000.amp %>%
-  amp_subset_samples(rpm == "1800", time_minutes %in% c("4", "6")) %>%
-  filter_otus(0.1)
+  amp_subset_samples(rpm == "1800", time_minutes %in% c("4", "6"), normalise = TRUE)
+  #filter_otus(0.1)
 
 otu_1800 <- dat_types_filtered_0.1_1800[["abund"]]
 
@@ -934,8 +928,8 @@ deseq_results_dataframe_1600 <- rlist::list.rbind(deseq_results_1600$deseq) %>%
          fc_signif = if_else(abs(log2FoldChange) > 1, TRUE, FALSE),)
 
 dat_types_filtered_0.1_1600 <- dat.types.sub3000.amp %>%
-  amp_subset_samples(rpm == "1600", time_minutes %in% c("4", "6")) %>%
-  filter_otus(0.1)
+  amp_subset_samples(rpm == "1600", time_minutes %in% c("4", "6"), normalise = TRUE)
+  #filter_otus(0.1)
 
 otu_1600 <- dat_types_filtered_0.1_1600[["abund"]]
 

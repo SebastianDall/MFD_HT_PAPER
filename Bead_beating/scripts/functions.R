@@ -1,4 +1,6 @@
 # Ordination function
+colors <- c("grey", "darkgoldenrod2", "royalblue4", "seagreen", "salmon")
+
 plotAmpliconOrdinationSoil <- function(df, soil_filter, ord_type = "CA", rel_ab_filter = 0.1) {
   df %>%
     amp_subset_samples(soil_type == soil_filter) %>%
@@ -33,19 +35,26 @@ plotDiffRelabund_scale <- function(df, filter_soil_type) {
   df_sub <- df %>%
     filter(soil_type == filter_soil_type)
   
-  gg <- df_sub %>%
-    ggplot(aes(x = `125`, y = `50`, color = Bias)) +
-    geom_point(size = 4, alpha = 0.5, position = position_jitter()) +
+  tmp <- df_sub %>%
+    filter(Bias == "Equally detected")
+  
+  tmp2 <- df_sub %>%
+    filter(!Bias == "Equally detected")
+  
+  gg <- ggplot() +
+    geom_point(data = tmp, aes(x = `125`, y = `50`, fill = Bias), alpha = 0.2, 
+               color = "black", size = 4, position = position_jitter(width = 0.001, height = 0.001), shape = 21) +
+    geom_point(data = tmp2, aes(x = `125`, y = `50`, fill = Bias), alpha = 0.8, 
+               color = "black", size = 4, position = position_jitter(width = 0.001, height = 0.001), shape = 21) +
     coord_cartesian(xlim = c(0, max(df_sub$max_abundance)), ylim = c(0, max(df_sub$max_abundance))) +
-    scale_color_manual(values = c("grey", colors[5], colors[3]), 
+    scale_fill_manual(values = c("grey", colors[5], colors[3]), 
                        limits = c("Equally detected",
                                   "More abundant with 125 mg", 
                                   "More abundant with 50 mg")) +
     geom_abline(linewidth = 0.5) +
-    articletheme +
+    articlethemex0 +
     theme(
       legend.position = "none",
-      axis.text.x = element_text(angle = 0)
     ) +
     labs(title = paste0(soiltypeTitle$soil_type[1]),
          x = "Average relative abundance within replicates [%], 125 mg",
@@ -63,20 +72,26 @@ plotDiffRelabund_rpm_1800 <- function(df, filter_soil_type) {
   df_sub <- df %>%
     filter(soil_type == filter_soil_type)
   
-  gg <- df_sub %>%
-    filter(soil_type == filter_soil_type) %>%
-    ggplot(aes(x = `4`, y = `6`, color = Bias)) +
-    geom_point(size = 4, alpha = 0.5, position = position_jitter()) +
+  tmp <- df_sub %>%
+    filter(Bias == "Equally detected")
+  
+  tmp2 <- df_sub %>%
+    filter(!Bias == "Equally detected")
+  
+  gg <- ggplot() +
+    geom_point(data = tmp, aes(x = `4`, y = `6`, fill = Bias), alpha = 0.2, 
+               color = "black", size = 4, position = position_jitter(width = 0.001, height = 0.001), shape = 21) +
+    geom_point(data = tmp2, aes(x = `4`, y = `6`, fill = Bias), alpha = 0.8, 
+               color = "black", size = 4, position = position_jitter(width = 0.001, height = 0.001), shape = 21) +
     coord_cartesian(xlim = c(0, max(df_sub$max_abundance)), ylim = c(0, max(df_sub$max_abundance))) +
-    scale_color_manual(values = c("grey", colors[5], colors[3]), 
+    scale_fill_manual(values = c("grey", colors[5], colors[3]), 
                        limits = c("Equally detected",
                                   "More abundant with 4 minutes", 
                                   "More abundant with 6 minutes")) +
     geom_abline(linewidth = 0.5) +
-    articletheme +
+    articlethemex0 +
     theme(
       legend.position = "none",
-      axis.text.x = element_text(angle = 0)
     ) +
     labs(
       x = "Relative Abundance [%], 4 minutes",
@@ -95,20 +110,27 @@ plotDiffRelabund_rpm_1600 <- function(df, filter_soil_type) {
   df_sub <- df %>%
     filter(soil_type == filter_soil_type)
   
-  gg <- df_sub %>%
-    filter(soil_type == filter_soil_type) %>%
-    ggplot(aes(x = `4`, y = `6`, color = Bias)) +
+  tmp <- df_sub %>%
+    filter(Bias == "Equally detected")
+  
+  tmp2 <- df_sub %>%
+    filter(!Bias == "Equally detected")
+  
+  gg <- ggplot() +
+    geom_point(data = tmp, aes(x = `4`, y = `6`, fill = Bias), alpha = 0.2, 
+               color = "black", size = 4, position = position_jitter(width = 0.001, height = 0.001), shape = 21) +
+    geom_point(data = tmp2, aes(x = `4`, y = `6`, fill = Bias), alpha = 0.8, 
+               color = "black", size = 4, position = position_jitter(width = 0.001, height = 0.001), shape = 21) +
     geom_point(size = 4, alpha = 0.5, position = position_jitter()) +
     coord_cartesian(xlim = c(0, max(df_sub$max_abundance)), ylim = c(0, max(df_sub$max_abundance))) +
-    scale_color_manual(values = c("grey", colors[5], colors[3]), 
+    scale_fill_manual(values = c("grey", colors[5], colors[3]), 
                        limits = c("Equally detected",
                                   "More abundant with 4 minutes", 
                                   "More abundant with 6 minutes")) +
     geom_abline(linewidth = 0.5) +
-    articletheme +
+    articlethemex0 +
     theme(
       legend.position = "none",
-      axis.text.x = element_text(angle = 0)
     ) +
     labs(
       x = "Relative Abundance [%], 4 minutes",
@@ -206,7 +228,7 @@ combine_otu_w_metadata_time <- function(metadata, otu) {
 summarise_triplicates_scale <- function(df) {
   df_summarised <- df %>%
     group_by(soil_type, sample_target, OTU) %>%
-    summarise(abund = round(mean(abund)))
+    summarise(abund = round(mean(abund), digits = 4))
   
   return(df_summarised)
 }
@@ -214,7 +236,7 @@ summarise_triplicates_scale <- function(df) {
 summarise_triplicates_time <- function(df) {
   df_summarised <- df %>%
     group_by(soil_type, time_minutes, OTU) %>%
-    summarise(abund = round(mean(abund)))
+    summarise(abund = round(mean(abund), digits = 4))
   
   return(df_summarised)
 }
