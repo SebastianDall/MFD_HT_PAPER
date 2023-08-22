@@ -884,7 +884,7 @@ plot.diff <- ggplot() +
                                "More abundant with 1 x 5 µL")) +
   geom_abline(linewidth = 0.5) +
   articlethemex0 +
-  labs(title = "All samples: Differential abundance of ASVs",
+  labs(title = "All samples: Differential abundance of taxonomic OTUs",
        x = "Average relative abundance within replicates [%], 1 x 50 µL",
        y = "Average relative abundance within replicates [%], 1 x 5 µL")
 

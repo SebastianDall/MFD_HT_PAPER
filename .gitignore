@@ -1,5 +1,6 @@
 # Data directories
 Amplicon_data/*.txt
+Benchmarking/data/*
 Amplicon_data/2022_10_21_run/*.txt
 !Amplicon_data/.gitkeep
 
