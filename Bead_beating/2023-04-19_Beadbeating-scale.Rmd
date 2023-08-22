@@ -950,6 +950,7 @@ p.diff <- ggarrange(plotlist = plot_list2, common.legend = TRUE, ncol = 3, nrow 
 p.diff
 
 ggsave(here("Bead_beating", "figures", "differential_abundance_faceted_scale.png"), plot = p.diff, device = "png", height = 12, width = 19)
+ggsave(here("Bead_beating", "figures", "pre_subfile2_Fig3.tif"), plot = p.diff, device = "tiff", height = 12, width = 19, dpi = 600)
 ```
 
 Note on p-values set to NA: some values in the results table can be set to NA for one of the following reasons:
@@ -980,6 +981,7 @@ gg_arranged <- ggarrange(p.final, leg.comb, ncol = 2, nrow = 1, widths = c(1, 0.
 gg_arranged
 
 ggsave(here("Bead_beating", "figures", "combined_plot_scale.png"), plot = gg_arranged, device = "png", height = 12, width = 20)
+ggsave(here("Bead_beating", "figures", "pre_subfile2_Fig2.tif"), plot = gg_arranged, device = "tiff", height = 12, width = 20, dpi = 600)
 ```
 
 

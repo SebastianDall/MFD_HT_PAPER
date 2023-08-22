@@ -990,6 +990,7 @@ plot_ord_final <- plot_ord2 +
   theme(legend.position = "none")
 
 ggsave(here("Benchmarking", "figures", "PCA_faceted_benchmarking.png"), plot = plot.ord, device = "png", height = 12, width = 19)
+ggsave(here("Benchmarking", "figures", "pre_S2Fig.tif"), plot = plot.ord, device = "tiff", height = 12, width = 19, dpi = 600)
 ```
 
 ## Final plot
@@ -1011,6 +1012,7 @@ gg_arranged <- ggarrange(plot.heatmap_phylum.final, plot, leg.comb, ncol = 3, nr
 gg_arranged
 
 ggsave(here("Benchmarking", "figures", "combined_plot_benchmarking.png"), plot = gg_arranged, device = "png", height = 12, width = 19)
+ggsave(here("Benchmarking", "figures", "pre_Fig2.tif"), plot = gg_arranged, device = "tiff", height = 12, width = 19, dpi = 600)
 ```
 
 

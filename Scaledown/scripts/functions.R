@@ -97,7 +97,7 @@ plotDiffRelabund_meta <- function(df, filter_soil_type) {
       legend.position = "none",
       axis.text.x = element_text(angle = 0)
     ) +
-    labs(title = paste0(soiltypeTitle$soil_type[1], ": Differential abundance of ASVs"),
+    labs(title = paste0(soiltypeTitle$soil_type[1], ": Differential abundance of taxonomic OTUs"),
          x = "Average relative abundance within replicates [%], 1 x 50 µL",
          y = "Average relative abundance within replicates [%], 1 x 5 µL"
     )

@@ -835,6 +835,7 @@ plot.ordinate.final <- plot.ordinate +
   theme(legend.position = "none")
 
 ggsave(here("Scaledown", "figures", "PCA_faceted_amplicons.png"), plot = plot.ord, device = "png", height = 12, width = 19)
+ggsave(here("Scaledown", "figures", "pre_S3Fig.tif"), plot = plot.ord, device = "tiff", height = 12, width = 19, dpi = 600)
 ```
 
 
@@ -908,6 +909,7 @@ p.diff <- ggarrange(plotlist = plot_list2, common.legend = TRUE, ncol = 3, nrow 
 p.diff
 
 ggsave(here("Scaledown", "figures", "differential_abundance_faceted_amplicons.png"), plot = p.diff, device = "png", height = 12, width = 19)
+ggsave(here("Scaledown", "figures", "pre_S5Fig.tif"), plot = p.diff, device = "tiff", height = 12, width = 19, dpi = 600)
 ```
 
 Note on p-values set to NA: some values in the results table can be set to NA for one of the following reasons:
@@ -939,6 +941,7 @@ gg_arranged <- ggarrange(plot.heatmap_genus.final, plot, leg.comb, ncol = 3, nro
 gg_arranged
 
 ggsave(here("Scaledown", "figures", "combined_plot_amplicons.png"), plot = gg_arranged, device = "png", height = 12, width = 20)
+ggsave(here("Scaledown", "figures", "pre_Fig3.tif"), plot = gg_arranged, device = "tiff", height = 12, width = 20, dpi = 600)
 ```
 
 

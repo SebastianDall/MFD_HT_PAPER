@@ -236,7 +236,46 @@ plot <- spectre_sum_comb %>%
 plot
 
 ggsave(here("Lab_optimization", "figures", "genomic-DNA-fragmentation.png"), plot = plot, device = "png", height = 12, width = 19)
+ggsave(here("Lab_optimization", "figures", "pre_S1Fig.tif"), plot = plot, device = "tiff", height = 12, width = 19, dpi = 600)
 ```
+
+
+```{r}
+qubit <- readxl::read_excel("Dilution_EXP_fastSpin_DNA.xlsx") %>%
+  pivot_longer(!Theoretical_concentration, names_to = "Soil_type", values_to = "Concentration")
+
+qubit_plot <- qubit %>%
+  ggplot(aes(x = Theoretical_concentration, y = Concentration, color = Soil_type)) +
+  ggpmisc::stat_poly_line(formula = y ~ poly(x, 2, raw = TRUE), se = FALSE, linetype = 2) +
+  ggpmisc::stat_poly_eq(formula = y ~ poly(x, 2, raw = TRUE), ggpmisc::use_label(c("eq", "adj.R2", "p", "n")), size = 6) +
+  geom_point(aes(size = 2)) +
+  scale_color_manual(values = c(colors_soil, "black")) +
+  scale_x_continuous(limits = c(0, 100), breaks = seq(0, 100, 10)) +
+  scale_y_continuous(limits = c(0, 150), breaks = seq(0, 150, 10)) +
+  scale_size(guide = "none") +
+  labs(title = "Measured concentration vs. Theoretical concentration",
+       x = "Theoretical concentration [ng/µL]",
+       y = "Measured concentration [ng/µL]",
+       tag = "A",
+       color = "Soil type",
+       size = "") +
+  articlethemex0 +
+  theme()
+
+qubit_plot
+
+standard <- qubit %>% filter(Soil_type == "Qubit Standard")
+AS <- qubit %>% filter(Soil_type == "Activated Sludge")
+
+lm.standard <- lm(Concentration ~ Theoretical_concentration, data = standard)
+summary(lm.standard)
+lm.as <- lm(Concentration ~ Theoretical_concentration, data = AS)
+summary(lm.as)
+
+ggsave(here("Lab_optimization", "figures", "qubit_plot.png"), plot = qubit_plot, device = "png", height = 12, width = 19)
+ggsave(here("Lab_optimization", "figures", "pre_subfile1_Fig1.tif"), plot = qubit_plot, device = "tiff", height = 12, width = 19, dpi = 600)
+```
+
 
 
 
