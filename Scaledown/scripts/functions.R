@@ -97,7 +97,7 @@ plotDiffRelabund_meta <- function(df, filter_soil_type) {
       legend.position = "none",
       axis.text.x = element_text(angle = 0)
     ) +
-    labs(title = paste0(soiltypeTitle$soil_type[1], ": Differential abundance of taxonomic OTUs"),
+    labs(title = paste0(soiltypeTitle$soil_type[1], ": Differential abundance of Genera"),
          x = "Average relative abundance within replicates [%], 1 x 50 µL",
          y = "Average relative abundance within replicates [%], 1 x 5 µL"
     )
@@ -246,7 +246,18 @@ calculate_relative_abundance2 <- function(df) {
 filter_double_zeros <- function(df) {
   df_filtered <- df %>%
     relocate(OTU, .before = lib_volume) %>%
-    pivot_wider(names_from = "lib_volume", values_from = "rel_abund") %>%
+    pivot_wider(names_from = "lib_volume", values_from = "abund") %>%
+    rowwise() %>%
+    filter(sum(`Full-scale`, `Small-scale`) > 0)
+  
+  
+  return(df_filtered)
+}
+
+filter_double_zeros_meta <- function(df) {
+  df_filtered <- df %>%
+    relocate(OTU, .before = lib_volume) %>%
+    pivot_wider(names_from = "lib_volume", values_from = "abund") %>%
     rowwise() %>%
     filter(sum(`Full-scale`, `Small-scale`) > 0)
   

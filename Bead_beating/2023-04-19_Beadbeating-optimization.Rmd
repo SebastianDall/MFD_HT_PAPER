@@ -911,7 +911,7 @@ otu_1800 <- dat_types_filtered_0.1_1800[["abund"]]
 
 ProtocolDifferentialAbundance_1800 <- combine_otu_w_metadata_time(metadata = dat.types.sub3000.amp$metadata, otu = otu_1800) %>%
   summarise_triplicates_time() %>%
-  calculate_relative_abundance_time() %>%
+  #calculate_relative_abundance_time() %>%
   filter_double_zeros_time() %>%
   left_join(deseq_results_dataframe_1800) %>%
   mutate(Bias = if_else(log2FoldChange < 0 & pval_signif, "More abundant with 4 minutes", 
@@ -935,7 +935,7 @@ otu_1600 <- dat_types_filtered_0.1_1600[["abund"]]
 
 ProtocolDifferentialAbundance_1600 <- combine_otu_w_metadata_time(metadata = dat.types.sub3000.amp$metadata, otu = otu_1600) %>%
   summarise_triplicates_time() %>%
-  calculate_relative_abundance_time() %>%
+  #calculate_relative_abundance_time() %>%
   filter_double_zeros_time() %>%
   left_join(deseq_results_dataframe_1600) %>%
   mutate(Bias = if_else(log2FoldChange < 0 & pval_signif, "More abundant with 4 minutes", 

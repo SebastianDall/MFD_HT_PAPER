@@ -12,7 +12,7 @@ metadata.amplicon <- read_csv("../Metadata/2023-03-13_combined-metadata.csv") %>
   select(seq_id, everything())
 
 # Load ASV taxonomy
-tax.amplicon <- read_delim("../Amplicon_data/sintax_out_trimmed.txt",
+tax.amplicon <- read_delim("../Amplicon_data/zotus.R1.sintax",
                            col_names = c("OTU", "Tax_string", "Strand", "Tax")) %>% 
   select(1, 4) %>%
   mutate(across(OTU, ~str_replace(., "Zotu", "ASV"))) %>%

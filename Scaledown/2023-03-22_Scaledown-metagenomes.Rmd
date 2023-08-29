@@ -41,39 +41,137 @@ dat.types.meta <- ampvis.metagenome %>%
 # Create subsets
 dat.types.sub3000.meta <- dat.types.meta %>% amp_subset_samples(., minreads = 3000)
 
+# Aggregate to genus levle
+textmap.metagenome_genus <- dat.types.sub3000.meta %>% 
+  #amp_subset_samples(normalise = TRUE) %>%
+  amp_heatmap(group_by = "seq_id", 
+              min_abundance = 0.001,
+              tax_show = 100000,
+              tax_aggregate = "Genus", 
+              normalise = FALSE,
+              showRemainingTaxa = FALSE, 
+              plot_values = TRUE,
+              textmap = TRUE) %>%
+  rownames_to_column(var = "Genus") %>%
+  mutate(across(Genus, ~ str_replace_all(., "^.*OTU.*$", "Unclassified"))) %>%
+  group_by(Genus) %>%
+  summarise(across(everything(), ~ sum(.))) %>%
+  ungroup() %>%
+  column_to_rownames(var = "Genus") %>%
+  filter(rowSums(across(where(is.numeric)))!=0)
+
+# Rename genera
+genus.text.meta <- textmap.metagenome_genus %>%
+  #filter(!str_detect(rownames(.), 'Unclassified')) %>%
+  mutate(total = rowSums(.)) %>%
+  filter(!total == 0) %>%
+  select(total) %>%
+  arrange(desc(total)) %>%
+  row.names(.)
+
+# Load new genus ampvis object
+#tax.meta <- dat.types.sub3000.meta$tax %>%
+#  filter(Genus %in% genus.text.meta) %>%
+#  select(Kingdom:Genus) %>%
+#  distinct() %>%
+#  mutate(Species = "",
+#         OTU = rownames(.))
+
+#otu.meta <- textmap.metagenome_genus %>%
+#  filter(!str_detect(rownames(.), 'Unclassified')) %>%
+#  rownames_to_column(var = "Genus") %>%
+#  left_join(tax.meta %>% select(Genus, OTU)) %>%
+#  select(-Genus) %>%
+#  column_to_rownames(var = "OTU")
+
+dat.types.genus.meta <- amp_load(otutable = textmap.metagenome_genus,
+                     metadata = metadata.metagenome)
+
+dat.types.genus.meta.rel <- amp_load(otutable = textmap.metagenome_genus,
+                     metadata = metadata.metagenome) %>%
+  #amp_subset_samples(normalise = TRUE)
+  amp_subset_taxa(tax_vector = c("Unclassified"), normalise = TRUE, remove = TRUE)
+
+
+# Rarefied datataset
 rarefy <- min(colSums(dat.types.sub3000.meta[["abund"]]))
 
 set.seed(123)
 dat.types.sub3000.meta.ra <- dat.types.sub3000.meta %>%
   amp_subset_samples(., rarefy = rarefy)
 
-dat.types.sub3000.meta.ra.rel_0.1 <- dat.types.sub3000.meta.ra %>%
-  amp_subset_samples(normalise = TRUE) %>%
-  filter_otus(0.1)
-
-dat.types.sub3000.meta.rel_0.1 <- dat.types.sub3000.meta %>%
-  amp_subset_samples(normalise = TRUE) %>%
-  filter_otus(0.1)
-
 soil <- unique(dat.types.sub3000.meta$metadata$soil_type) %>% sort(.) %>% as.factor(.)
+
+# Aggregate at genus levle
+textmap.metagenome_genus.ra <- dat.types.sub3000.meta.ra %>% 
+  amp_heatmap(group_by = "seq_id", 
+              #min_abundance = 0.001,
+              tax_show = 100000,
+              tax_aggregate = "Genus", 
+              normalise = FALSE,
+              showRemainingTaxa = FALSE, 
+              plot_values = TRUE,
+              textmap = TRUE) %>%
+  rownames_to_column(var = "Genus") %>%
+  mutate(across(Genus, ~ str_replace_all(., "^.*OTU.*$", "Unclassified"))) %>%
+  group_by(Genus) %>%
+  summarise(across(everything(), ~ sum(.))) %>%
+  ungroup() %>%
+  column_to_rownames(var = "Genus") %>%
+  filter(rowSums(across(where(is.numeric)))!=0)
+
+# Rename genera
+genus.text.meta <- textmap.metagenome_genus.ra %>%
+  #filter(!str_detect(rownames(.), 'Unclassified')) %>%
+  mutate(total = rowSums(.)) %>%
+  filter(!total == 0) %>%
+  select(total) %>%
+  arrange(desc(total)) %>%
+  row.names(.)
+
+# Load new genus ampvis object
+#tax.meta <- dat.types.sub3000.meta.ra$tax %>%
+#  filter(Genus %in% genus.text.meta) %>%
+#  select(Kingdom:Genus) %>%
+#  distinct() %>%
+#  mutate(Species = "",
+#         OTU = rownames(.))
+
+#otu.meta <- textmap.metagenome_genus.ra %>%
+#  filter(!str_detect(rownames(.), 'Unclassified')) %>%
+#  rownames_to_column(var = "Genus") %>%
+#  left_join(tax.meta %>% select(Genus, OTU)) %>%
+#  select(-Genus) %>%
+#  column_to_rownames(var = "OTU")
+
+dat.types.genus.meta.ra <- amp_load(otutable = textmap.metagenome_genus.ra,
+                     metadata = metadata.metagenome)
+
+dat.types.genus.meta.ra_rel <- amp_load(otutable = textmap.metagenome_genus.ra,
+                     metadata = metadata.metagenome) %>%
+  amp_subset_taxa(tax_vector = c("Unclassified"), normalise = TRUE, remove = TRUE)
+
+dat.types.genus.meta.ra.rel_0.1 <- dat.types.genus.meta.ra_rel %>%
+  filter_otus(0.1)
 ```
 
 ### Bray Curtis variation - metagenomes
 # Only OTUs above 0.1 % relative abundance is used
 ```{r calculate bray curtis variation}
-meta_rarecurve <- dat.types.sub3000.meta %>%
+meta_rarecurve <- dat.types.genus.meta.ra %>%
   amp_rarecurve(color_by = "lib_volume",
                 facet_by = "soil_type",
-                facet_scales = "free_x") +
+                facet_scales = "free_x",
+                stepsize = 10) +
   scale_color_manual(values = c(colors[5], colors[3]))
 
-tmp <- t(dat.types.sub3000.meta.ra.rel_0.1$abund)
+tmp <- t(dat.types.genus.meta.ra.rel_0.1$abund)
 
 bray_distance <- as.matrix(vegan::vegdist(vegan::decostand(tmp, method = "hellinger"))) %>%
     as.data.frame() %>%
     rownames_to_column("seq_id")
 
-metadata <- dat.types.sub3000.meta.ra.rel_0.1$metadata %>%
+metadata <- dat.types.genus.meta.ra.rel_0.1$metadata %>%
   select(seq_id, lib_volume, soil_type)
 
 metadata_renamed <- metadata %>%
@@ -115,14 +213,14 @@ bray_variation_between_protocols <- bray_with_metadata %>%
 
 ### Shannon Diversity variation - metagenomes
 ```{r calculate shannon variation}
-tab_reads <- data.frame(num_reads = apply(dat.types.sub3000.meta$abund, 2, sum)) %>%
+tab_reads <- data.frame(num_reads = apply(dat.types.genus.meta$abund, 2, sum)) %>%
   rownames_to_column(var = "seq_id")
 
 lab.metadata.metagenome <- metadata.metagenome %>%
   filter(!soil_type %in% c("Blank", "Activated sludge", "PCR-POS", "PCR-NEG")) %>%
   select(seq_id, soil_type, lib_volume, lib_conc)
 
-rarefied_alphadiversity <- dat.types.sub3000.meta.ra %>%
+rarefied_alphadiversity <- dat.types.genus.meta.ra %>%
   amp_alphadiv(measure = c("observed", "shannon", "simpson"),
                richness = T) %>%
     dplyr::rename(shannon = Shannon,
@@ -194,7 +292,7 @@ mean_sd_table <- combine_alpha_beta_with_metadata %>%
 
 names <- tibble(
   old_names = colnames(mean_sd_table),
-  new_names = c("Soil type", "Protocol", "Libraries", "Library conc. [ng/µL]", "Total Reads [Gbp]", "Quality Trimmed Reads [Gbp]", "16S Reads Count", "Observed OTUs", "Shannon Diversity", "Bray-Curtis Dissimilarity", "BC Dissimilarity\nBetween Protocols"))
+  new_names = c("Soil type", "Protocol", "Libraries", "Library conc. [ng/µL]", "Total Reads [Gbp]", "Quality Trimmed Reads [Gbp]", "16S Reads Count", "Observed Genera", "Shannon Diversity", "Bray-Curtis Dissimilarity", "BC Dissimilarity\nBetween Protocols"))
 
 final_table <- mean_sd_table %>%
   rename_at(vars(names$old_names), ~ names$new_names)
@@ -407,12 +505,12 @@ p.adj_bray
 ## Heatmap - metagenomes
 ```{r heatmap}
 # Find all genera in amplicon data
-textmap.metagenome_genus <- dat.types.sub3000.meta %>%
+textmap.metagenome_genus <- dat.types.genus.meta %>%
   #amp_subset_samples(soil_type == "Organic") %>%
   amp_heatmap(group_by = "seq_id", 
               min_abundance = 0.001,
               tax_show = 100000,
-              tax_aggregate = "Genus", 
+              tax_aggregate = "OTU", 
               normalise = FALSE,
               showRemainingTaxa = FALSE, 
               plot_values = TRUE,
@@ -435,7 +533,13 @@ textmap.metagenome_genus <- dat.types.sub3000.meta %>%
 
 # Load new genus ampvis object
 ampvis.sub_genus <- amp_load(otutable = textmap.metagenome_genus,
-                             metadata = lab.metadata.metagenome)
+                             metadata = lab.metadata.metagenome) %>%
+  amp_subset_taxa(tax_vector = c("Unclassified"), normalise = FALSE, remove = TRUE)
+
+ampvis.sub_genus_rel <- amp_load(otutable = textmap.metagenome_genus,
+                             metadata = lab.metadata.metagenome) %>%
+  amp_subset_taxa(tax_vector = c("Unclassified"), normalise = TRUE, remove = TRUE)
+  
 
 #plot.heatmap_genus <- ampvis.sub_genus %>%
 #  amp_subset_taxa(tax_vector = c("Unclassified"), normalise = TRUE, remove = TRUE) %>%
@@ -455,7 +559,7 @@ ampvis.sub_genus <- amp_load(otutable = textmap.metagenome_genus,
 #              color_vector = c("white", colors[3]),
 #              plot_legendbreaks = c(0.01, 0.1, 1, 10),
 #              plot_colorscale = "log10") +
-#  scale_x_discrete(limits = c("Small-scale", "Full-scale"), labels = c("2 x 5 µL", "2 x 25 µL")) +
+#  scale_x_discrete(limits = c("Small-scale", "Full-scale"), labels = c("1 x 5 µL", "1 x 50 µL")) +
 #  #scale_y_discrete(labels = rev(c(genus.text.renamed[c(2:26)]))) +
 #  labs(x = "", y = "", title = "Heatmap aggregated at the genus level", 
 #       tag = "A") +
@@ -464,7 +568,6 @@ ampvis.sub_genus <- amp_load(otutable = textmap.metagenome_genus,
 #  #theme(plot.margin = unit(c(0, 1, 0, 0), "cm"))
 
 textmap.sub_genus <- ampvis.sub_genus %>%
-  amp_subset_taxa(tax_vector = c("Unclassified"), normalise = TRUE, remove = TRUE) %>%
   amp_heatmap(group_by = "lib_volume", 
               min_abundance = 0.01,
               facet_by = "soil_type",
@@ -495,45 +598,45 @@ deseq_results_dataframe_genus <- rlist::list.rbind(deseq_results_genus$deseq) %>
   mutate(pval_signif = if_else(padj < 0.05, TRUE, FALSE),
          fc_signif = if_else(abs(log2FoldChange) > 1, TRUE, FALSE),)
 
-dat_types_filtered_genus <- ampvis.sub_genus %>%
-  amp_subset_samples(normalise = TRUE)
+dat_types_filtered_genus <- ampvis.sub_genus_rel
 
 otu_genus <- dat_types_filtered_genus[["abund"]]
 
 ProtocolDifferentialAbundance_genus <- combine_otu_w_metadata(metadata = ampvis.sub_genus$metadata, otu = otu_genus) %>%
   summarise_triplicates() %>%
-  calculate_relative_abundance() %>%
-  filter_double_zeros() %>%
+  #calculate_relative_abundance() %>%
+  filter_double_zeros_meta() %>%
   left_join(deseq_results_dataframe_genus) %>%
   #filter(sum(`Full-scale`, `Small-scale`) > 0.1) %>%
-  mutate(Bias = if_else(log2FoldChange < 0 & pval_signif, "More abundant with 2 x 25 µL", 
-                        if_else(pval_signif & log2FoldChange > 0, "More abundant with 2 x 5 µL", "Equally detected")),
+  mutate(Bias = if_else(log2FoldChange < 0 & pval_signif, "More abundant with 1 x 50 µL", 
+                        if_else(pval_signif & log2FoldChange > 0, "More abundant with 1 x 5 µL", "Equally detected")),
          max_abundance = pmax(`Small-scale`, `Full-scale`)) %>%
-  filter(!is.na(Bias) && !Bias == "Equally detected")
+  filter(!is.na(Bias) && !Bias == "Equally detected") %>%
+  dplyr::rename(Genus = OTU)
 
 heatmap.genus_data <- textmap.sub_genus %>%
-  rownames_to_column(var = "OTU") %>%
-  group_by(OTU) %>%
-  pivot_longer(!OTU, names_to = "protocol", values_to = "abund") %>%
+  rownames_to_column(var = "Genus") %>%
+  group_by(Genus) %>%
+  pivot_longer(!Genus, names_to = "protocol", values_to = "abund") %>%
   ungroup() %>%
   separate(protocol, into = c("lib_volume", "soil_type"), sep =  " ") %>%
   mutate(across(soil_type, ~str_replace(., "Beach", "Beach Sand"))) %>%
-  left_join(ProtocolDifferentialAbundance_genus %>% select(soil_type, OTU, Bias, pval_signif, fc_signif)) %>%
-  mutate(across(OTU, ~str_replace(., "Burkholderia-Caballeronia-Paraburkholderia", "BCP"))) %>%
+  left_join(ProtocolDifferentialAbundance_genus %>% select(soil_type, Genus, Bias, pval_signif, fc_signif)) %>%
+  mutate(across(Genus, ~str_replace(., "Burkholderia-Caballeronia-Paraburkholderia", "BCP"))) %>%
   #mutate(label = if_else(!is.na(Bias), "*", ""))
   mutate(label = case_when(#lib_volume == "Small-scale" & !is.na(Bias) ~ "*",
-                           lib_volume == "Full-scale" & Bias == "More abundant with 2 x 25 µL" ~ "*",
-                           lib_volume == "Small-scale" & Bias == "More abundant with 2 x 5 µL" ~ "*",
+                           lib_volume == "Full-scale" & Bias == "More abundant with 1 x 50 µL" ~ "*",
+                           lib_volume == "Small-scale" & Bias == "More abundant with 1 x 5 µL" ~ "*",
                            TRUE ~ ""))
 
 plot.heatmap_genus <- heatmap.genus_data %>%
-ggplot(aes(x = lib_volume, y = OTU)) + 
+ggplot(aes(x = lib_volume, y = Genus)) + 
   geom_tile(aes(fill = abund), colour = "white", size = 0.5) +
-  geom_text(aes(label = label), size = 8, vjust = 0.75) +
+  #geom_text(aes(label = label), size = 8, vjust = 0.75) +
   facet_wrap(facets = vars(soil_type), ncol = 5) +
   articletheme +
-  scale_fill_gradient(low = "white", high = colors[3], trans = "log10", breaks = c(10, 1, 0.1, 0.01, 0.001), na.value = "white") +
-  scale_x_discrete(limits = c("Small-scale", "Full-scale"), labels = c("2 x 5 µL", "2 x 25 µL")) +
+  scale_fill_gradient(low = "white", high = colors[3], trans = "log10", breaks = c(0.01, 0.1, 1, 10), na.value = "white") +
+  scale_x_discrete(limits = c("Small-scale", "Full-scale"), labels = c("1 x 5 µL", "1 x 50 µL")) +
   scale_y_discrete(limits=rev) +
   #scale_y_discrete(labels = rev(c(genus.text.renamed[c(2:26)]))) +
   labs(x = "", y = "", title = "Heatmap aggregated at the genus level", 
@@ -541,31 +644,6 @@ ggplot(aes(x = lib_volume, y = OTU)) +
   articletheme +
   guides(fill = guide_colorbar(title.position = "top", title = "% Read Abundance")) 
   #theme(plot.margin = unit(c(0, 1, 0, 0), "cm"))
-
-#plot.heatmap_OTU <- dat.types.sub3000.meta %>%
-#  amp_subset_samples(!soil_type == "Beach Sand") %>%
-#  amp_heatmap(group_by = "lib_volume", 
-#              min_abundance = 0.1,
-#              facet_by = "soil_type",
-#              tax_aggregate = "OTU",
-#              normalise = TRUE,
-#              tax_add = c("Phylum"), 
-#              tax_show = 25,
-#              #tax_show = genus.text.meta[2:26], 
-#              #order_y_by = rev(genus.text.meta[c(2:26)]),
-#              showRemainingTaxa = FALSE, 
-#              plot_na = TRUE,
-#              plot_values = FALSE,
-#              plot_values_size = 3,
-#              round = 2,
-#              color_vector = c("white", colors[3]),
-#              #plot_legendbreaks = c(0.01, 0.1, 1, 10),
-#              plot_colorscale = "sqrt") +
-#  scale_x_discrete(limits = c("Small-scale", "Full-scale"), labels = c("2 x 5 µL", "2 x 25 µL")) +
-#  #scale_y_discrete(labels = rev(c(genus.text.renamed[c(2:26)]))) +
-#  labs(x = "", y = "", title = "Heatmap aggregated at the OTU level", tag = "A") +
-#  articletheme +
-#  guides(fill = guide_colorbar(title.position = "top"))
 
 leg.plot_heat <- cowplot::get_legend(plot.heatmap_genus)
 
@@ -584,14 +662,14 @@ permanova.list <- list()
       
 for (i in 1:length(soil)) {
   
-  community_0.1 <- dat.types.sub3000.meta %>%
-    amp_subset_samples(normalise = TRUE) %>%
+  community_0.1 <- ampvis.sub_genus_rel %>%
+    #amp_subset_samples(normalise = TRUE) %>%
     filter_otus(0.1) %>%
     amp_subset_samples(soil_type == soil[i])
   
   community_0.1 <- t(community_0.1[["abund"]])
   
-  meta <- dat.types.sub3000.meta[["metadata"]] %>%
+  meta <- dat.types.genus.meta[["metadata"]] %>%
     filter(soil_type == soil[i])
   
   dis <- vegan::vegdist(community_0.1)
@@ -623,13 +701,13 @@ sd(perm.results)
 
 # Statified PERMANOVA
 # Betadispersion - analysis of multivariate homogeneity of group dispersions (variances)
-community_0.1 <- dat.types.sub3000.meta %>%
-  amp_subset_samples(normalise = TRUE) %>%
+community_0.1 <- ampvis.sub_genus_rel %>%
+  #amp_subset_samples(normalise = TRUE) %>%
   filter_otus(0.1)
 
 community_0.1 <- t(community_0.1[["abund"]])
 
-meta <- dat.types.sub3000.meta[["metadata"]]
+meta <- dat.types.genus.meta[["metadata"]]
 
 dis <- vegan::vegdist(community_0.1)
 
@@ -663,7 +741,7 @@ permanova.stratified %>%
 
 ## Ordination - metagenomes
 ```{r ordination}
-plot.ordinate <- dat.types.sub3000.meta %>%
+plot.ordinate <- dat.types.genus.meta %>%
   amp_ordinate(filter_species = 0.1,
                sample_shape_by = "lib_volume",
                #sample_color_by = "soil_type",
@@ -671,20 +749,20 @@ plot.ordinate <- dat.types.sub3000.meta %>%
                transform = "hellinger",
                distmeasure = "bray",
                species_nlabels = 10,
-               species_label_taxonomy = "Phylum",
+               species_label_taxonomy = "OTU",
                species_plot = T) +
   ggforce::geom_mark_ellipse(aes(fill = soil_type, group = soil_type), alpha = 0.5, color = "black") +
   scale_color_manual(values = colors[c(1,3,4,5,2)]) +
   scale_fill_manual(values = colors[c(1,3,4,5,2)]) +
-  scale_shape_manual(values = c(16,21), labels = c("2 x 25 µL", "2 x 5 µL")) +
+  scale_shape_manual(values = c(16,21), labels = c("1 x 50 µL", "1 x 5 µL")) +
   labs(title = "All samples: PCA of microbial diversity",
        fill = "Soil type",
        shape = "Library volume",
        tag = "A",
        subtitle = paste0("**PERMANOVA:**", 
-                         "<br>Library volume: Variance explained = ","0.3 %,", " p-value = 0.17",
-                         "<br>Soil type: Variance explained = ","95.8 %,", " p-value < 0.001",
-                         "<br>Interaction: Variance explained = ","0.7 %,", " p-value = 0.36")) +
+                         "<br>Library volume: Variance explained = ","0.3 %,", " p-value = 0.21",
+                         "<br>Soil type: Variance explained = ","94.7 %,", " p-value < 0.001",
+                         "<br>Interaction: Variance explained = ","0.9 %,", " p-value = 0.42")) +
   coord_cartesian(xlim = c(-0.75, 0.75), ylim = c(-0.75, 0.75)) +
   articlethemex0 +
   theme(plot.subtitle = ggtext::element_markdown())
@@ -692,7 +770,7 @@ plot.ordinate <- dat.types.sub3000.meta %>%
 plot.ordinate
 
 # Per soil type
-plot_ord1 <- dat.types.sub3000.meta %>%
+plot_ord1 <- dat.types.genus.meta %>%
   amp_subset_samples(soil_type == soil[1]) %>%
   amp_ordinate(
     filter_species = 0.1,
@@ -701,11 +779,11 @@ plot_ord1 <- dat.types.sub3000.meta %>%
     transform = "hellinger",
     distmeasure = "bray",
     species_nlabels = 10,
-    species_label_taxonomy = "Phylum",
+    species_label_taxonomy = "OTU",
     species_plot = T) +
   ggforce::geom_mark_ellipse(aes(fill = soil_type, group = lib_volume), alpha = 0.5, color = "black") +
   scale_fill_manual(values = colors[1]) +
-  scale_shape_manual(values = c(16,21), labels = c("2 x 25 µL", "2 x 5 µL")) +
+  scale_shape_manual(values = c(16,21), labels = c("1 x 50 µL", "1 x 5 µL")) +
   labs(title = paste0(soil[1], ": ", "PCA of microbial diversity"),
        fill = "Soil type",
        shape = "Library volume", 
@@ -716,7 +794,7 @@ plot_ord1 <- dat.types.sub3000.meta %>%
   theme(legend.position = "none",
         plot.subtitle = ggtext::element_markdown())
   
-plot_ord2 <- dat.types.sub3000.meta %>%
+plot_ord2 <- dat.types.genus.meta %>%
   amp_subset_samples(soil_type == soil[2]) %>%
   amp_ordinate(
     filter_species = 0.1,
@@ -725,11 +803,11 @@ plot_ord2 <- dat.types.sub3000.meta %>%
     transform = "hellinger",
     distmeasure = "bray",
     species_nlabels = 10,
-    species_label_taxonomy = "Phylum",
+    species_label_taxonomy = "OTU",
     species_plot = T) +
   ggforce::geom_mark_ellipse(aes(fill = soil_type, group = lib_volume), alpha = 0.5, color = "black") +
   scale_fill_manual(values = colors[3]) +
-  scale_shape_manual(values = c(16,21), labels = c("2 x 25 µL", "2 x 5 µL")) +
+  scale_shape_manual(values = c(16,21), labels = c("1 x 50 µL", "1 x 5 µL")) +
   labs(title = paste0(soil[2], ": ", "PCA of microbial diversity"),
        fill = "Soil type",
        shape = "Library volume", 
@@ -740,7 +818,7 @@ plot_ord2 <- dat.types.sub3000.meta %>%
   theme(legend.position = "none",
         plot.subtitle = ggtext::element_markdown())
 
-plot_ord3 <- dat.types.sub3000.meta %>%
+plot_ord3 <- dat.types.genus.meta %>%
   amp_subset_samples(soil_type == soil[3]) %>%
   amp_ordinate(
     filter_species = 0.1,
@@ -749,11 +827,11 @@ plot_ord3 <- dat.types.sub3000.meta %>%
     transform = "hellinger",
     distmeasure = "bray",
     species_nlabels = 10,
-    species_label_taxonomy = "Phylum",
+    species_label_taxonomy = "OTU",
     species_plot = T) +
   ggforce::geom_mark_ellipse(aes(fill = soil_type, group = lib_volume), alpha = 0.5, color = "black") +
   scale_fill_manual(values = colors[4]) +
-  scale_shape_manual(values = c(16,21), labels = c("2 x 25 µL", "2 x 5 µL")) +
+  scale_shape_manual(values = c(16,21), labels = c("1 x 50 µL", "1 x 5 µL")) +
   labs(title = paste0(soil[3], ": ", "PCA of microbial diversity"),
        fill = "Soil type",
        shape = "Library volume", 
@@ -764,7 +842,7 @@ plot_ord3 <- dat.types.sub3000.meta %>%
   theme(legend.position = "none",
         plot.subtitle = ggtext::element_markdown())
 
-plot_ord4 <- dat.types.sub3000.meta %>%
+plot_ord4 <- dat.types.genus.meta %>%
   amp_subset_samples(soil_type == soil[4]) %>%
   amp_ordinate(
     filter_species = 0.1,
@@ -773,11 +851,11 @@ plot_ord4 <- dat.types.sub3000.meta %>%
     transform = "hellinger",
     distmeasure = "bray",
     species_nlabels = 10,
-    species_label_taxonomy = "Phylum",
+    species_label_taxonomy = "OTU",
     species_plot = T) +
   ggforce::geom_mark_ellipse(aes(fill = soil_type, group = lib_volume), alpha = 0.5, color = "black") +
   scale_fill_manual(values = colors[5]) +
-  scale_shape_manual(values = c(16,21), labels = c("2 x 25 µL", "2 x 5 µL")) +
+  scale_shape_manual(values = c(16,21), labels = c("1 x 50 µL", "1 x 5 µL")) +
   labs(title = paste0(soil[4], ": ", "PCA of microbial diversity"),
        fill = "Soil type",
        shape = "Library volume", 
@@ -788,7 +866,7 @@ plot_ord4 <- dat.types.sub3000.meta %>%
   theme(legend.position = "none",
         plot.subtitle = ggtext::element_markdown())
 
-plot_ord5 <- dat.types.sub3000.meta %>%
+plot_ord5 <- dat.types.genus.meta %>%
   amp_subset_samples(soil_type == soil[5]) %>%
   amp_ordinate(
     filter_species = 0.1,
@@ -797,11 +875,11 @@ plot_ord5 <- dat.types.sub3000.meta %>%
     transform = "hellinger",
     distmeasure = "bray",
     species_nlabels = 10,
-    species_label_taxonomy = "Phylum",
+    species_label_taxonomy = "OTU",
     species_plot = T) +
   ggforce::geom_mark_ellipse(aes(fill = soil_type, group = lib_volume), alpha = 0.5, color = "black") +
   scale_fill_manual(values = colors[2]) +
-  scale_shape_manual(values = c(16,21), labels = c("2 x 25 µL", "2 x 5 µL")) +
+  scale_shape_manual(values = c(16,21), labels = c("1 x 50 µL", "1 x 5 µL")) +
   labs(title = paste0(soil[5], ": ", "PCA of microbial diversity"),
        fill = "Soil type",
        shape = "Library volume", 
@@ -844,22 +922,20 @@ ggsave(here("Scaledown", "figures", "pre_S4Fig.tif"), plot = plot.ord, device = 
 # Next chunk merges replicates and sample type. It needs to be one plot per soil type
 ```{r differential relative abundance}
 deseq_results <- tibble(soil = soil) %>%
-  mutate(deseq = map(.x = soil, .f = ~ deseq_function(.x, dat.types.sub3000.meta)))
+  mutate(deseq = map(.x = soil, .f = ~ deseq_function(.x, ampvis.sub_genus)))
 
-deseq_results_dataframe <- rlist::list.rbind(deseq_results$deseq) %>%
+deseq_results_dataframe <- rlist::list.rbind(deseq_results_genus$deseq) %>%
   mutate(pval_signif = if_else(padj < 0.05, TRUE, FALSE),
          fc_signif = if_else(abs(log2FoldChange) > 1, TRUE, FALSE),)
 
-dat_types_filtered <- dat.types.sub3000.meta %>%
-  amp_subset_samples(normalise = TRUE)
-  #filter_otus(0.1)
+dat_types_filtered <- ampvis.sub_genus_rel
 
-otu <- dat_types_filtered[["abund"]]
+otu <- dat_types_filtered_genus[["abund"]]
 
-ProtocolDifferentialAbundance <- combine_otu_w_metadata(metadata = dat.types.sub3000.meta$metadata, otu = otu) %>%
+ProtocolDifferentialAbundance <- combine_otu_w_metadata(metadata = dat.types.genus.meta.rel$metadata, otu = otu) %>%
   summarise_triplicates() %>%
-  calculate_relative_abundance() %>%
-  filter_double_zeros() %>%
+  #calculate_relative_abundance() %>%
+  filter_double_zeros_meta() %>%
   left_join(deseq_results_dataframe) %>%
   #filter(sum(`Full-scale`, `Small-scale`) > 0.1) %>%
   mutate(Bias = if_else(log2FoldChange < 0 & pval_signif, "More abundant with 1 x 50 µL", 
@@ -885,7 +961,7 @@ plot.diff <- ggplot() +
                                "More abundant with 1 x 5 µL")) +
   geom_abline(linewidth = 0.5) +
   articlethemex0 +
-  labs(title = "All samples: Differential abundance of taxonomic OTUs",
+  labs(title = "All samples: Differential abundance of Genera",
        x = "Average relative abundance within replicates [%], 1 x 50 µL",
        y = "Average relative abundance within replicates [%], 1 x 5 µL")
 

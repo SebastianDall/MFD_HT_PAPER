@@ -268,7 +268,7 @@ calculate_relative_abundance_time <- function(df) {
 filter_double_zeros_scale <- function(df) {
   df_filtered <- df %>%
     relocate(OTU, .before = sample_target) %>%
-    pivot_wider(names_from = "sample_target", values_from = "rel_abund") %>%
+    pivot_wider(names_from = "sample_target", values_from = "abund") %>%
     rowwise() %>%
     filter(sum(`125`, `50`) > 0)
   
@@ -279,7 +279,7 @@ filter_double_zeros_scale <- function(df) {
 filter_double_zeros_time <- function(df) {
   df_filtered <- df %>%
     relocate(OTU, .before = time_minutes) %>%
-    pivot_wider(names_from = "time_minutes", values_from = "rel_abund") %>%
+    pivot_wider(names_from = "time_minutes", values_from = "abund") %>%
     rowwise() %>%
     filter(sum(`4`, `6`) > 0)
   

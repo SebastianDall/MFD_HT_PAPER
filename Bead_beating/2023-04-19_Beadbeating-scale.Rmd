@@ -715,8 +715,8 @@ plot.ordinate <- dat.types.sub3000.amp %>%
   scale_fill_manual(values = colors[c(1,3,4,5,2)]) +
   scale_shape_manual(values = c(16,21), labels = c("50 mg", "125 mg")) +
   labs(title = "All samples: PCA of microbial diversity",
-       color = "Bead beating time [min.]",
-       shape = "Bead beating intensity [RPM]",
+       fill = "Soil type",
+       shape = "Sample input [mg]",
        tag = "A",
        subtitle = paste0("**PERMANOVA:**", 
                          "<br>Soil type: Variance explained = ","89.5 %,", " p-value < 0.001",
@@ -898,7 +898,7 @@ otu <- dat_types_filtered[["abund"]]
 
 ProtocolDifferentialAbundance <- combine_otu_w_metadata_scale(metadata = dat.types.sub3000.amp$metadata, otu = otu) %>%
   summarise_triplicates_scale() %>%
-  calculate_relative_abundance_scale() %>%
+  #calculate_relative_abundance_scale() %>%
   filter_double_zeros_scale() %>%
   left_join(deseq_results_dataframe) %>%
   mutate(Bias = if_else(log2FoldChange > 0 & pval_signif, "More abundant with 125 mg", 

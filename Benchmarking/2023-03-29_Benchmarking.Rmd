@@ -785,7 +785,7 @@ plot.ordinate <- dat.types.sub10000.amp %>%
                sample_shape_by = "kit",
                #sample_colorframe = "soil_type",
                species_nlabels = 10,
-               species_label_taxonomy = "Phylum",
+               species_label_taxonomy = "OTU",
                species_plot = T) +
   scale_color_manual(values = colors[c(1,3,4,5,2)]) +
   scale_fill_manual(values = colors[c(1,3,4,5,2)]) +
@@ -814,7 +814,7 @@ plot.insert <- #plot.ordinate +
                sample_shape_by = "kit",
                #sample_colorframe = "soil_type",
                species_nlabels = 10,
-               species_label_taxonomy = "Phylum",
+               species_label_taxonomy = "OTU",
                species_plot = T) +
   scale_color_manual(values = colors[c(1,3,4,5,2)]) +
   scale_fill_manual(values = colors[c(1,3,4,5,2)]) +
@@ -873,7 +873,7 @@ plot_ord1 <- dat.types.sub10000.amp %>%
     transform = "hellinger",
     distmeasure = "bray",
     species_nlabels = 10,
-    species_label_taxonomy = "Phylum",
+    species_label_taxonomy = "OTU",
     species_plot = T) +
   ggforce::geom_mark_ellipse(aes(fill = soil_type, group = kit), alpha = 0.5, color = "black") +
   scale_fill_manual(values = c(rep(colors[1], 5))) +
@@ -895,7 +895,7 @@ plot_ord2 <- dat.types.sub10000.amp %>%
     transform = "hellinger",
     distmeasure = "bray",
     species_nlabels = 10,
-    species_label_taxonomy = "Phylum",
+    species_label_taxonomy = "OTU",
     species_plot = T) +
   ggforce::geom_mark_ellipse(aes(fill = soil_type, group = kit), alpha = 0.5, color = "black") +
   scale_fill_manual(values = c(rep(colors[3], 5))) +
@@ -917,7 +917,7 @@ plot_ord3 <- dat.types.sub10000.amp %>%
     transform = "hellinger",
     distmeasure = "bray",
     species_nlabels = 10,
-    species_label_taxonomy = "Phylum",
+    species_label_taxonomy = "OTU",
     species_plot = T) +
   ggforce::geom_mark_ellipse(aes(fill = soil_type, group = kit), alpha = 0.5, color = "black") +
   scale_fill_manual(values = c(rep(colors[4], 5))) +
@@ -940,7 +940,7 @@ plot_ord4 <- dat.types.sub10000.amp %>%
     transform = "hellinger",
     distmeasure = "bray",
     species_nlabels = 10,
-    species_label_taxonomy = "Phylum",
+    species_label_taxonomy = "OTU",
     species_plot = T) +
   ggforce::geom_mark_ellipse(aes(fill = soil_type, group = kit), alpha = 0.5, color = "black") +
   scale_fill_manual(values = c(rep(colors[5], 5))) +
@@ -963,7 +963,7 @@ plot_ord5 <- dat.types.sub10000.amp %>%
     transform = "hellinger",
     distmeasure = "bray",
     species_nlabels = 10,
-    species_label_taxonomy = "Phylum",
+    species_label_taxonomy = "OTU",
     species_plot = T) +
   ggforce::geom_mark_ellipse(aes(fill = soil_type, group = kit), alpha = 0.5, color = "black") +
   scale_fill_manual(values = c(rep(colors[2], 5))) +

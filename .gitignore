@@ -6,6 +6,7 @@ Amplicon_data/2022_10_21_run/*.txt
 
 Metagenome_data/*.csv
 Metagenome_data/logs/
+mfd_ht_ENA
 
 
 *output_old/

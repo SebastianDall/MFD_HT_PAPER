@@ -26,14 +26,14 @@ metadata.amplicon <- read_csv("../Metadata/2023-03-13_combined-metadata.csv") %>
   select(seq_id, everything())
 
 # Load metagenome phylotable - has both counts and taxonomy
-OTU.metagenome <- read_csv("../Metagenome_data/2023-03-15_small_v_full_phylotabel.csv") %>%
-  mutate(across(OTU, ~str_replace(., "Phylotype", "OTU"))) %>%
-  dplyr::rename(Kingdom = Domain) %>%
+OTU.metagenome <- read_csv("../Metagenome_data/2023-08-27_small_v_full_phylotabel.csv") %>%
+  #mutate(across(OTU, ~str_replace(., "Phylotype", "OTU"))) %>%
+  #dplyr::rename(Kingdom = Domain) %>%
   filter(!is.na(Kingdom)) %>%
   mutate(across(where(is.character), ~str_remove(., ".:")))
 
 # Load ASV taxonomy
-tax.amplicon <- read_delim("../Amplicon_data/sintax_out_trimmed.txt", col_names = c("OTU", "Tax_string", "Strand", "Tax")) %>% 
+tax.amplicon <- read_delim("../Amplicon_data/zotus.R1.sintax", col_names = c("OTU", "Tax_string", "Strand", "Tax")) %>% 
   select(1, 4) %>%
   mutate(across(OTU, ~str_replace(., "Zotu", "ASV"))) %>%
   mutate(across(Tax, ~str_replace_all(., "__", ":"))) %>%
