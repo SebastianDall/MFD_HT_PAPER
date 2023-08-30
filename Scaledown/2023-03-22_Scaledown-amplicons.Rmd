@@ -406,147 +406,150 @@ p.adj_bray
 ## Heatmap - amplicons
 ```{r heatmap}
 # Find all genera in amplicon data
-textmap.amplicon_genus <- dat.types.sub3000.amp %>%
-  #amp_subset_samples(soil_type == "Organic") %>%
-  amp_heatmap(group_by = "seq_id", 
-              min_abundance = 0.001,
-              tax_show = 100000,
-              tax_aggregate = "Genus", 
-              normalise = FALSE,
-              showRemainingTaxa = FALSE, 
-              plot_values = TRUE,
-              textmap = TRUE) %>%
-  rownames_to_column(var = "Genus") %>%
-  mutate(across(Genus, ~ str_replace_all(., "^.*ASV.*$", "Unclassified"))) %>%
-  group_by(Genus) %>%
-  summarise(across(everything(), ~ sum(.))) %>%
-  ungroup() %>%
-  mutate(across(Genus, ~str_replace(., "Burkholderia-Caballeronia-Paraburkholderia", "BCP"))) %>%
-  column_to_rownames(var = "Genus")
-  
+# textmap.amplicon_genus <- dat.types.sub3000.amp %>%
+#   #amp_subset_samples(soil_type == "Organic") %>%
+#   amp_heatmap(group_by = "seq_id", 
+#               min_abundance = 0.001,
+#               tax_show = 100000,
+#               tax_aggregate = "Genus", 
+#               normalise = FALSE,
+#               showRemainingTaxa = FALSE, 
+#               plot_values = TRUE,
+#               textmap = TRUE) %>%
+#   rownames_to_column(var = "Genus") %>%
+#   mutate(across(Genus, ~ str_replace_all(., "^.*ASV.*$", "Unclassified"))) %>%
+#   group_by(Genus) %>%
+#   summarise(across(everything(), ~ sum(.))) %>%
+#   ungroup() %>%
+#   mutate(across(Genus, ~str_replace(., "Burkholderia-Caballeronia-Paraburkholderia", "BCP"))) %>%
+#   column_to_rownames(var = "Genus")
+#   
+# 
+# #genus.text.amp <- heatmap.amplicon_genus %>%
+# #  mutate(total = rowSums(.)) %>%
+# #  filter(!total == 0) %>%
+# #  select(total) %>%
+# #  arrange(desc(total)) %>%
+# #  row.names(.)
+# 
+# #genus.text.renamed <- gsub("Burkholderia-Caballeronia-Paraburkholderia", "BCP", genus.text.amp)
+# 
+# # Load new genus ampvis object
+# ampvis.sub_genus <- amp_load(otutable = textmap.amplicon_genus,
+#                              metadata = lab.metadata.amplicon) %>%
+#   amp_subset_taxa(tax_vector = c("Unclassified"), normalise = FALSE, remove = TRUE)
+# 
+# ampvis.sub_genus_rel <- amp_load(otutable = textmap.amplicon_genus,
+#                              metadata = lab.metadata.amplicon) %>%
+#   amp_subset_taxa(tax_vector = c("Unclassified"), normalise = TRUE, remove = TRUE)
 
-#genus.text.amp <- heatmap.amplicon_genus %>%
-#  mutate(total = rowSums(.)) %>%
-#  filter(!total == 0) %>%
-#  select(total) %>%
-#  arrange(desc(total)) %>%
-#  row.names(.)
-
-#genus.text.renamed <- gsub("Burkholderia-Caballeronia-Paraburkholderia", "BCP", genus.text.amp)
-
-# Load new genus ampvis object
-ampvis.sub_genus <- amp_load(otutable = textmap.amplicon_genus,
-                             metadata = lab.metadata.amplicon) %>%
-  amp_subset_taxa(tax_vector = c("Unclassified"), normalise = FALSE, remove = TRUE)
-
-ampvis.sub_genus_rel <- amp_load(otutable = textmap.amplicon_genus,
-                             metadata = lab.metadata.amplicon) %>%
-  amp_subset_taxa(tax_vector = c("Unclassified"), normalise = TRUE, remove = TRUE)
-
-#plot.heatmap_genus <- ampvis.sub_genus %>%
-#  amp_subset_taxa(tax_vector = c("Unclassified"), normalise = TRUE, remove = TRUE) %>%
-#  amp_heatmap(group_by = "lib_volume", 
-#              min_abundance = 0.01,
-#              facet_by = "soil_type",
-#              tax_aggregate = "OTU",
-#              normalise = FALSE,
-#              tax_show = 25,
-#              #tax_show = rownames(textmap.sub_genus), 
-#              #order_y_by = rev(genus.text.amp[c(2:26)]),
-#              showRemainingTaxa = FALSE, 
-#              plot_na = TRUE,
-#              plot_values = FALSE,
-#              plot_values_size = 3,
-#              round = 2,
-#              color_vector = c("white", colors[3]),
-#              plot_legendbreaks = c(0.001, 0.01, 0.1, 1, 10),
-#              plot_colorscale = "log10") +
-#  scale_x_discrete(limits = c("Small-scale", "Full-scale"), labels = c("2 x 5 µL", "2 x 25 µL")) +
-#  #scale_y_discrete(labels = rev(rownames(textmap.sub_genus))) +
-#  labs(x = "", y = "", title = "Heatmap aggregated at the genus level", 
-#       tag = "A") +
-#  articletheme +
-#  guides(fill = guide_colorbar(title.position = "top")) 
-#  #theme(plot.margin = unit(c(0, 1, 0, 0), "cm"))
-
-textmap.sub_genus <- ampvis.sub_genus %>%
-  amp_subset_taxa(tax_vector = c("Unclassified"), normalise = TRUE, remove = TRUE) %>%
+plot.heatmap_genus <- dat.types.sub3000.amp %>%
+  amp_subset_samples(normalise = TRUE) %>%
+  #filter_otus(0.1) %>%
   amp_heatmap(group_by = "lib_volume", 
               min_abundance = 0.001,
               facet_by = "soil_type",
-              tax_aggregate = "OTU",
+              tax_aggregate = "Genus",
+              #tax_add = c("Phylum"),
               normalise = FALSE,
               tax_show = 25,
-              showRemainingTaxa = FALSE, 
+              #order_y_by = "cluster",
+              # tax_show = phylum.text.amp[c(1:12, 14:26)],
+              # order_y_by = rev(phylum.text.amp[c(1:12, 14:26)]),
+              showRemainingTaxa = FALSE,
               plot_na = TRUE,
               plot_values = FALSE,
-              plot_values_size = 3,
-              round = 2,
-              color_vector = c("white", colors[3]),
-              plot_legendbreaks = c(0.01, 0.1, 1, 10),
-              plot_colorscale = "log10",
-              textmap = TRUE) %>%
-  rownames_to_column(var = "Genus") %>%
-  mutate(across(Genus, ~ str_replace_all(., "^.*ASV.*$", "Unclassified"))) %>%
-  group_by(Genus) %>%
-  summarise(across(everything(), ~ sum(.))) %>%
-  ungroup() %>%
-  mutate(across(Genus, ~str_replace(., "Burkholderia-Caballeronia-Paraburkholderia", "BCP"))) %>%
-  column_to_rownames(var = "Genus")
+              plot_values_size = 2,
+              round = 1,
+              #color_vector = c(colors[3], "white", colors[5]),
+              plot_legendbreaks = c(0.01, 0.5, 2, 4, 6, 8),
+              plot_colorscale = "sqrt") +
+ scale_x_discrete(limits = c("Small-scale", "Full-scale"), labels = c("2 x 5 µL", "2 x 25 µL")) +
+ #scale_y_discrete(labels = rev(rownames(textmap.sub_genus))) +
+ labs(x = "", y = "", title = "Heatmap aggregated at the genus level",
+      tag = "A") +
+ articletheme +
+  guides(fill = guide_colourbar(ticks.colour = "black"))
+ #theme(plot.margin = unit(c(0, 1, 0, 0), "cm"))
 
-deseq_results_genus <- tibble(soil = soil) %>%
-  mutate(deseq = map(.x = soil, .f = ~ deseq_function(.x, ampvis.sub_genus)))
-
-deseq_results_dataframe_genus <- rlist::list.rbind(deseq_results_genus$deseq) %>%
-  mutate(pval_signif = if_else(padj < 0.05, TRUE, FALSE),
-         fc_signif = if_else(abs(log2FoldChange) > 1, TRUE, FALSE),)
-
-dat_types_filtered_genus <- ampvis.sub_genus_rel
-
-otu_genus <- dat_types_filtered_genus[["abund"]]
-
-ProtocolDifferentialAbundance_genus <- combine_otu_w_metadata(metadata = ampvis.sub_genus$metadata, otu = otu_genus) %>%
-  summarise_triplicates() %>%
-  #calculate_relative_abundance() %>%
-  filter_double_zeros() %>%
-  left_join(deseq_results_dataframe_genus) %>%
-  #filter(sum(`Full-scale`, `Small-scale`) > 0.1) %>%
-  mutate(Bias = if_else(log2FoldChange < 0 & pval_signif, "More abundant with 2 x 25 µL", 
-                        if_else(pval_signif & log2FoldChange > 0, "More abundant with 2 x 5 µL", "Equally detected")),
-         max_abundance = pmax(`Small-scale`, `Full-scale`)) %>%
-  filter(!is.na(Bias) && !Bias == "Equally detected") %>%
-  dplyr::rename(Genus = OTU)
-
-heatmap.genus_data <- textmap.sub_genus %>%
-  rownames_to_column(var = "Genus") %>%
-  group_by(Genus) %>%
-  pivot_longer(!Genus, names_to = "protocol", values_to = "abund") %>%
-  ungroup() %>%
-  separate(protocol, into = c("lib_volume", "soil_type"), sep =  " ") %>%
-  mutate(across(soil_type, ~str_replace(., "Beach", "Beach Sand"))) %>%
-  left_join(ProtocolDifferentialAbundance_genus %>% select(soil_type, Genus, Bias, pval_signif, fc_signif)) %>%
-  mutate(across(Genus, ~str_replace(., "Burkholderia-Caballeronia-Paraburkholderia", "BCP"))) %>%
-  #mutate(label = if_else(!is.na(Bias), "*", ""))
-  mutate(label = case_when(#lib_volume == "Small-scale" & !is.na(Bias) ~ "*",
-                           lib_volume == "Full-scale" & Bias == "More abundant with 2 x 25 µL" ~ "*",
-                           lib_volume == "Small-scale" & Bias == "More abundant with 2 x 5 µL" ~ "*",
-                           TRUE ~ ""))
-
-plot.heatmap_genus <- heatmap.genus_data %>%
-ggplot(aes(x = lib_volume, y = Genus)) + 
-  geom_tile(aes(fill = abund), colour = "white", size = 0.5) +
-  #geom_text(aes(label = label), size = 8, vjust = 0.75) +
-  facet_wrap(facets = vars(soil_type), ncol = 5) +
-  articletheme +
-  scale_fill_gradient(low = "white", high = colors[3], trans = "log10", breaks = c(0.01, 0.1, 1, 10), na.value = "white") +
-  scale_x_discrete(limits = c("Small-scale", "Full-scale"), labels = c("2 x 5 µL", "2 x 25 µL")) +
-  scale_y_discrete(limits=rev) +
-  #scale_y_discrete(labels = rev(c(genus.text.renamed[c(2:26)]))) +
-  labs(x = "", y = "", title = "Heatmap aggregated at the genus level", 
-       tag = "A") +
-  articletheme +
-  guides(fill = guide_colorbar(title.position = "top", title = "% Read Abundance")) 
-  #theme(plot.margin = unit(c(0, 1, 0, 0), "cm"))
+# textmap.sub_genus <- ampvis.sub_genus %>%
+#   amp_subset_taxa(tax_vector = c("Unclassified"), normalise = TRUE, remove = TRUE) %>%
+#   amp_heatmap(group_by = "lib_volume", 
+#               min_abundance = 0.001,
+#               facet_by = "soil_type",
+#               tax_aggregate = "OTU",
+#               normalise = FALSE,
+#               tax_show = 25,
+#               showRemainingTaxa = FALSE, 
+#               plot_na = TRUE,
+#               plot_values = FALSE,
+#               plot_values_size = 3,
+#               round = 2,
+#               color_vector = c("white", colors[3]),
+#               plot_legendbreaks = c(0.01, 0.1, 1, 10),
+#               plot_colorscale = "log10",
+#               textmap = TRUE) %>%
+#   rownames_to_column(var = "Genus") %>%
+#   mutate(across(Genus, ~ str_replace_all(., "^.*ASV.*$", "Unclassified"))) %>%
+#   group_by(Genus) %>%
+#   summarise(across(everything(), ~ sum(.))) %>%
+#   ungroup() %>%
+#   mutate(across(Genus, ~str_replace(., "Burkholderia-Caballeronia-Paraburkholderia", "BCP"))) %>%
+#   column_to_rownames(var = "Genus")
+# 
+# deseq_results_genus <- tibble(soil = soil) %>%
+#   mutate(deseq = map(.x = soil, .f = ~ deseq_function(.x, ampvis.sub_genus)))
+# 
+# deseq_results_dataframe_genus <- rlist::list.rbind(deseq_results_genus$deseq) %>%
+#   mutate(pval_signif = if_else(padj < 0.05, TRUE, FALSE),
+#          fc_signif = if_else(abs(log2FoldChange) > 1, TRUE, FALSE),)
+# 
+# dat_types_filtered_genus <- ampvis.sub_genus_rel
+# 
+# otu_genus <- dat_types_filtered_genus[["abund"]]
+# 
+# ProtocolDifferentialAbundance_genus <- combine_otu_w_metadata(metadata = ampvis.sub_genus$metadata, otu = otu_genus) %>%
+#   summarise_triplicates() %>%
+#   #calculate_relative_abundance() %>%
+#   filter_double_zeros() %>%
+#   left_join(deseq_results_dataframe_genus) %>%
+#   #filter(sum(`Full-scale`, `Small-scale`) > 0.1) %>%
+#   mutate(Bias = if_else(log2FoldChange < 0 & pval_signif, "More abundant with 2 x 25 µL", 
+#                         if_else(pval_signif & log2FoldChange > 0, "More abundant with 2 x 5 µL", "Equally detected")),
+#          max_abundance = pmax(`Small-scale`, `Full-scale`)) %>%
+#   filter(!is.na(Bias) && !Bias == "Equally detected") %>%
+#   dplyr::rename(Genus = OTU)
+# 
+# heatmap.genus_data <- textmap.sub_genus %>%
+#   rownames_to_column(var = "Genus") %>%
+#   group_by(Genus) %>%
+#   pivot_longer(!Genus, names_to = "protocol", values_to = "abund") %>%
+#   ungroup() %>%
+#   separate(protocol, into = c("lib_volume", "soil_type"), sep =  " ") %>%
+#   mutate(across(soil_type, ~str_replace(., "Beach", "Beach Sand"))) %>%
+#   left_join(ProtocolDifferentialAbundance_genus %>% select(soil_type, Genus, Bias, pval_signif, fc_signif)) %>%
+#   mutate(across(Genus, ~str_replace(., "Burkholderia-Caballeronia-Paraburkholderia", "BCP"))) %>%
+#   #mutate(label = if_else(!is.na(Bias), "*", ""))
+#   mutate(label = case_when(#lib_volume == "Small-scale" & !is.na(Bias) ~ "*",
+#                            lib_volume == "Full-scale" & Bias == "More abundant with 2 x 25 µL" ~ "*",
+#                            lib_volume == "Small-scale" & Bias == "More abundant with 2 x 5 µL" ~ "*",
+#                            TRUE ~ ""))
+# 
+# plot.heatmap_genus <- heatmap.genus_data %>%
+# ggplot(aes(x = lib_volume, y = Genus)) + 
+#   geom_tile(aes(fill = abund), colour = "white", size = 0.5) +
+#   #geom_text(aes(label = label), size = 8, vjust = 0.75) +
+#   facet_wrap(facets = vars(soil_type), ncol = 5) +
+#   articletheme +
+#   scale_fill_gradient(low = "white", high = colors[3], trans = "log10", breaks = c(0.01, 0.1, 1, 10), na.value = "white") +
+#   scale_x_discrete(limits = c("Small-scale", "Full-scale"), labels = c("2 x 5 µL", "2 x 25 µL")) +
+#   scale_y_discrete(limits=rev) +
+#   #scale_y_discrete(labels = rev(c(genus.text.renamed[c(2:26)]))) +
+#   labs(x = "", y = "", title = "Heatmap aggregated at the genus level", 
+#        tag = "A") +
+#   articletheme +
+#   guides(fill = guide_colorbar(title.position = "top", title = "% Read Abundance")) 
+#   #theme(plot.margin = unit(c(0, 1, 0, 0), "cm"))
 
 leg.plot_heat <- cowplot::get_legend(plot.heatmap_genus)
 
@@ -650,8 +653,8 @@ plot.ordinate <- dat.types.sub3000.amp %>%
                type = "PCA",
                transform = "hellinger",
                distmeasure = "bray",
-               species_nlabels = 10,
-               species_label_taxonomy = "OTU",
+               species_nlabels = 8,
+               species_label_taxonomy = "Phylum",
                species_plot = T) +
   ggforce::geom_mark_ellipse(aes(fill = soil_type, group = soil_type), alpha = 0.5, color = "black") +
   scale_color_manual(values = colors[c(1,3,4,5,2)]) +
@@ -680,8 +683,8 @@ plot_ord1 <- dat.types.sub3000.amp %>%
     type = "PCA",
     transform = "hellinger",
     distmeasure = "bray",
-    species_nlabels = 10,
-    species_label_taxonomy = "OTU",
+    species_nlabels = 5,
+    species_label_taxonomy = "Phylum",
     species_plot = T) +
   ggforce::geom_mark_ellipse(aes(fill = soil_type, group = lib_volume), alpha = 0.5, color = "black") +
   scale_fill_manual(values = colors[1]) +
@@ -704,8 +707,8 @@ plot_ord2 <- dat.types.sub3000.amp %>%
     type = "PCA",
     transform = "hellinger",
     distmeasure = "bray",
-    species_nlabels = 10,
-    species_label_taxonomy = "OTU",
+    species_nlabels = 5,
+    species_label_taxonomy = "Phylum",
     species_plot = T) +
   ggforce::geom_mark_ellipse(aes(fill = soil_type, group = lib_volume), alpha = 0.5, color = "black") +
   scale_fill_manual(values = colors[3]) +
@@ -728,8 +731,8 @@ plot_ord3 <- dat.types.sub3000.amp %>%
     type = "PCA",
     transform = "hellinger",
     distmeasure = "bray",
-    species_nlabels = 10,
-    species_label_taxonomy = "OTU",
+    species_nlabels = 5,
+    species_label_taxonomy = "Phylum",
     species_plot = T) +
   ggforce::geom_mark_ellipse(aes(fill = soil_type, group = lib_volume), alpha = 0.5, color = "black") +
   scale_fill_manual(values = colors[4]) +
@@ -752,8 +755,8 @@ plot_ord4 <- dat.types.sub3000.amp %>%
     type = "PCA",
     transform = "hellinger",
     distmeasure = "bray",
-    species_nlabels = 10,
-    species_label_taxonomy = "OTU",
+    species_nlabels = 5,
+    species_label_taxonomy = "Phylum",
     species_plot = T) +
   ggforce::geom_mark_ellipse(aes(fill = soil_type, group = lib_volume), alpha = 0.5, color = "black") +
   scale_fill_manual(values = colors[5]) +
@@ -776,8 +779,8 @@ plot_ord5 <- dat.types.sub3000.amp %>%
     type = "PCA",
     transform = "hellinger",
     distmeasure = "bray",
-    species_nlabels = 10,
-    species_label_taxonomy = "OTU",
+    species_nlabels = 5,
+    species_label_taxonomy = "Phylum",
     species_plot = T) +
   ggforce::geom_mark_ellipse(aes(fill = soil_type, group = lib_volume), alpha = 0.5, color = "black") +
   scale_fill_manual(values = colors[2]) +

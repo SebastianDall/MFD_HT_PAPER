@@ -636,11 +636,13 @@ ggplot(aes(x = data.bray.rank,
 
 plot.heatmap_phylum <- dat.types.sub3000.amp %>%
   amp_subset_samples(normalise = TRUE) %>%
+  #filter_otus(0.1) %>%
+  #amp_subset_taxa(tax_vector = c("Firmicutes", "Actinobacteriota"), normalise = TRUE) %>%
   amp_heatmap(group_by = "time_minutes", 
-              min_abundance = 0.01,
-              facet_by = "soil_type",
-              tax_aggregate = "Phylum",
-              tax_add = c("Phylum"),
+              min_abundance = 0.001,
+              facet_by = c("soil_type", "rpm"),
+              tax_aggregate = "Genus",
+              #tax_add = c("Phylum"),
               normalise = FALSE,
               tax_show = 25,
               #order_y_by = "cluster",
@@ -649,16 +651,18 @@ plot.heatmap_phylum <- dat.types.sub3000.amp %>%
               showRemainingTaxa = FALSE,
               plot_na = TRUE,
               plot_values = FALSE,
-              plot_values_size = 3,
-              round = 2,
-              color_vector = c("white", colors[3]),
-              plot_legendbreaks = c(0.01, 0.1, 1, 10, 30),
-              plot_colorscale = "log10") +
+              plot_values_size = 2,
+              round = 1,
+              #color_vector = c("white", colors[3]),
+              plot_legendbreaks = c(0.01, 0.5, 2, 4, 6, 8),
+              plot_colorscale = "sqrt") +
+  guides(fill = guide_colourbar(ticks.colour = "black")) +
   labs(x = "",
        y = "",
        tag = "A",
-       title = "Heatmap aggregated at the phylum level across bead beating intensity and time") +
-  articlethemex0
+       title = "Heatmap aggregated at the genus level across bead beating intensity and time") +
+  articlethemex0 +
+  theme(strip.text.x = element_text(size = 10, face = "bold"))
   #theme(plot.margin = unit(c(0, 1, 0, 0), "cm"))
 
 plot.heatmap_phylum
@@ -793,8 +797,8 @@ plot.ordinate <- dat.types.sub3000.amp %>%
     type = "PCA",
     transform = "hellinger",
     distmeasure = "bray",
-    species_nlabels = 10,
-    species_label_taxonomy = "OTU",
+    species_nlabels = 8,
+    species_label_taxonomy = "Phylum",
     species_plot = T) +
   ggforce::geom_mark_ellipse(aes(group = soil_type), alpha = 0.5, color = "black") +
   scale_color_manual(values = colors_time) +
@@ -834,8 +838,8 @@ plot_ord1 <- dat.types.sub3000.amp %>%
     type = "RDA",
     transform = "hellinger",
     distmeasure = "bray",
-    species_nlabels = 10,
-    species_label_taxonomy = "OTU",
+    species_nlabels = 5,
+    species_label_taxonomy = "Phylum",
     species_plot = T) +
   ggforce::geom_mark_ellipse(aes(group = rpm), alpha = 0.5, color = "black") +
   scale_color_manual(values = colors_time) +
@@ -862,8 +866,8 @@ plot_ord2 <- dat.types.sub3000.amp %>%
     type = "RDA",
     transform = "hellinger",
     distmeasure = "bray",
-    species_nlabels = 10,
-    species_label_taxonomy = "OTU",
+    species_nlabels = 5,
+    species_label_taxonomy = "Phylum",
     species_plot = T) +
   ggforce::geom_mark_ellipse(aes(group = rpm), alpha = 0.5, color = "black") +
   scale_color_manual(values = colors_time) +
@@ -890,8 +894,8 @@ plot_ord3 <- dat.types.sub3000.amp %>%
     type = "RDA",
     transform = "hellinger",
     distmeasure = "bray",
-    species_nlabels = 10,
-    species_label_taxonomy = "OTU",
+    species_nlabels = 5,
+    species_label_taxonomy = "Phylum",
     species_plot = T) +
   ggforce::geom_mark_ellipse(aes(group = rpm), alpha = 0.5, color = "black") +
   scale_color_manual(values = colors_time) +

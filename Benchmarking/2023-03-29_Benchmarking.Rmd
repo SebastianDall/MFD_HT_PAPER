@@ -687,10 +687,10 @@ plot.heatmap_phylum <- dat.types.sub10000.amp %>%
   amp_subset_samples(normalise = TRUE) %>%
   #filter_otus(0.1) %>%
   amp_heatmap(group_by = "kit", 
-              min_abundance = 0.01,
+              min_abundance = 0.001,
               facet_by = "soil_type",
-              tax_aggregate = "Phylum",
-              tax_add = c("Phylum"),
+              tax_aggregate = "Genus",
+              #tax_add = c("Phylum"),
               normalise = FALSE,
               tax_show = 25,
               #order_y_by = "cluster",
@@ -699,22 +699,22 @@ plot.heatmap_phylum <- dat.types.sub10000.amp %>%
               showRemainingTaxa = FALSE,
               plot_na = TRUE,
               plot_values = FALSE,
-              plot_values_size = 3,
-              round = 2,
-              color_vector = c("white", colors[3]),
-              plot_legendbreaks = c(0.01, 0.1, 1, 10, 30),
-              plot_colorscale = "log10") +
+              plot_values_size = 2,
+              round = 1,
+              #color_vector = c(colors[3], "white", colors[5]),
+              plot_legendbreaks = c(0.01, 0.5, 2, 4, 6, 8),
+              plot_colorscale = "sqrt") +
   scale_x_discrete(labels = kit_levels) +
+  guides(fill = guide_colourbar(ticks.colour = "black")) +
   #scale_y_discrete(labels = rev(c(phylum.text.renamed[c(1:12, 14:26)]))) +
   labs(x = "", 
        y = "", 
        tag = "A",
-       title = "Heatmap aggregated at the phylum level across DNA extraction kits") +
+       title = "Heatmap aggregated at the genus 1level across DNA extraction kits") +
   articletheme  
   #theme(plot.margin = unit(c(0, 1, 0, 0), "cm"))
 
 plot.heatmap_phylum
-
 
 #leg.plot_heat <- cowplot::get_legend(plot.heatmap_phylum)
 
@@ -819,8 +819,8 @@ plot.ordinate <- dat.types.sub10000.amp %>%
                distmeasure = "bray",
                sample_shape_by = "kit",
                #sample_colorframe = "soil_type",
-               species_nlabels = 10,
-               species_label_taxonomy = "OTU",
+               species_nlabels = 8,
+               species_label_taxonomy = "Phylum",
                species_plot = T) +
   scale_color_manual(values = colors[c(1,3,4,5,2)]) +
   scale_fill_manual(values = colors[c(1,3,4,5,2)]) +
@@ -848,8 +848,8 @@ plot.insert <- #plot.ordinate +
                distmeasure = "bray",
                sample_shape_by = "kit",
                #sample_colorframe = "soil_type",
-               species_nlabels = 10,
-               species_label_taxonomy = "OTU",
+               species_nlabels = 8,
+               species_label_taxonomy = "Phylum",
                species_plot = T) +
   scale_color_manual(values = colors[c(1,3,4,5,2)]) +
   scale_fill_manual(values = colors[c(1,3,4,5,2)]) +
@@ -908,7 +908,7 @@ plot_ord1 <- dat.types.sub10000.amp %>%
     transform = "hellinger",
     distmeasure = "bray",
     species_nlabels = 5,
-    species_label_taxonomy = "OTU",
+    species_label_taxonomy = "Phylum",
     species_plot = T) +
   ggforce::geom_mark_ellipse(aes(fill = soil_type, group = kit), alpha = 0.5, color = "black") +
   scale_fill_manual(values = c(rep(colors[1], 5))) +
@@ -930,7 +930,7 @@ plot_ord2 <- dat.types.sub10000.amp %>%
     transform = "hellinger",
     distmeasure = "bray",
     species_nlabels = 5,
-    species_label_taxonomy = "OTU",
+    species_label_taxonomy = "Phylum",
     species_plot = T) +
   ggforce::geom_mark_ellipse(aes(fill = soil_type, group = kit), alpha = 0.5, color = "black") +
   scale_fill_manual(values = c(rep(colors[3], 5))) +
@@ -952,7 +952,7 @@ plot_ord3 <- dat.types.sub10000.amp %>%
     transform = "hellinger",
     distmeasure = "bray",
     species_nlabels = 5,
-    species_label_taxonomy = "OTU",
+    species_label_taxonomy = "Phylum",
     species_plot = T) +
   ggforce::geom_mark_ellipse(aes(fill = soil_type, group = kit), alpha = 0.5, color = "black") +
   scale_fill_manual(values = c(rep(colors[4], 5))) +
@@ -975,7 +975,7 @@ plot_ord4 <- dat.types.sub10000.amp %>%
     transform = "hellinger",
     distmeasure = "bray",
     species_nlabels = 5,
-    species_label_taxonomy = "OTU",
+    species_label_taxonomy = "Phylum",
     species_plot = T) +
   ggforce::geom_mark_ellipse(aes(fill = soil_type, group = kit), alpha = 0.5, color = "black") +
   scale_fill_manual(values = c(rep(colors[5], 5))) +
@@ -998,7 +998,7 @@ plot_ord5 <- dat.types.sub10000.amp %>%
     transform = "hellinger",
     distmeasure = "bray",
     species_nlabels = 5,
-    species_label_taxonomy = "OTU",
+    species_label_taxonomy = "Phylum",
     species_plot = T) +
   ggforce::geom_mark_ellipse(aes(fill = soil_type, group = kit), alpha = 0.5, color = "black") +
   scale_fill_manual(values = c(rep(colors[2], 5))) +
