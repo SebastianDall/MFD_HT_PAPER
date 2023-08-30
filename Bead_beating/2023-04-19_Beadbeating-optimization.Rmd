@@ -218,9 +218,9 @@ alpha_table <- final_table %>%
 
 alpha_table
 
-ggsave(here("Bead_beating", "figures", "table_bead_beating.png"), plot = alpha_table, device = "png", height = 12, width = 19)
+#ggsave(here("Bead_beating", "figures", "table_bead_beating.png"), plot = alpha_table, device = "png", height = 12, width = 19)
 
-writexl::write_xlsx(final_table, here("Bead_beating", "figures", "beadbeating_overview_table.xlsx"))
+writexl::write_xlsx(final_table, here("Bead_beating", "figures", "subfile2_Table2.xlsx"))
 ```
 
 
@@ -581,44 +581,72 @@ ggplot(aes(x = data.bray.rank,
 ## Heatmap
 ```{r}
 # Find all phyla in amplicon data
-heatmap.amplicon_phylum <- dat.types.sub3000.amp %>%
-  amp_heatmap(group_by = "seq_id", 
-              min_abundance = 0.001,
-              tax_show = 1000,
-              tax_aggregate = "Phylum", 
-              normalise = FALSE,
-              showRemainingTaxa = FALSE, 
-              plot_values = TRUE,
-              textmap = TRUE) %>%
-  rownames_to_column(var = "Phylum") %>%
-  mutate(across(Phylum, ~ str_replace_all(., "^.*ASV.*$", "Unclassified"))) %>%
-  group_by(Phylum) %>%
-  summarise(across(everything(), ~ sum(.))) %>%
-  ungroup() %>%
-  column_to_rownames(var = "Phylum")
+# heatmap.amplicon_phylum <- dat.types.sub3000.amp %>%
+#   amp_heatmap(group_by = "seq_id", 
+#               min_abundance = 0.001,
+#               tax_show = 1000,
+#               tax_aggregate = "Phylum", 
+#               normalise = FALSE,
+#               showRemainingTaxa = FALSE, 
+#               plot_values = TRUE,
+#               textmap = TRUE) %>%
+#   rownames_to_column(var = "Phylum") %>%
+#   mutate(across(Phylum, ~ str_replace_all(., "^.*ASV.*$", "Unclassified"))) %>%
+#   group_by(Phylum) %>%
+#   summarise(across(everything(), ~ sum(.))) %>%
+#   ungroup() %>%
+#   column_to_rownames(var = "Phylum")
 
-phylum.text.amp <- heatmap.amplicon_phylum %>%
-  mutate(total = rowSums(.)) %>%
-  filter(!total == 0) %>%
-  select(total) %>%
-  arrange(desc(total)) %>%
-  row.names(.)
+# phylum.text.amp <- heatmap.amplicon_phylum %>%
+#   mutate(total = rowSums(.)) %>%
+#   filter(!total == 0) %>%
+#   select(total) %>%
+#   arrange(desc(total)) %>%
+#   row.names(.)
 
-phylum.text.renamed <- gsub("SAR324_cladeMarine_group_B", "\\*SAR324", phylum.text.amp)
+# phylum.text.renamed <- gsub("SAR324_cladeMarine_group_B", "\\*SAR324", phylum.text.amp)
 
 # Load new genus ampvis object
-ampvis.sub_phylum <- amp_load(otutable = heatmap.amplicon_phylum,
-                              metadata = metadata.amplicon)
+# ampvis.sub_phylum <- amp_load(otutable = heatmap.amplicon_phylum,
+#                               metadata = metadata.amplicon)
 
-plot.heatmap_phylum <- ampvis.sub_phylum %>%
+# plot.heatmap_phylum <- ampvis.sub_phylum %>%
+#   amp_heatmap(group_by = "time_minutes", 
+#               min_abundance = 0.1,
+#               facet_by = c("soil_type", "rpm"),
+#               tax_aggregate = "OTU",
+#               normalise = TRUE,
+#               tax_show = phylum.text.amp[c(1:13, 15:26)], 
+#               order_y_by = rev(phylum.text.amp[c(1:13, 15:26)]),
+#               showRemainingTaxa = FALSE, 
+#               plot_na = TRUE,
+#               plot_values = FALSE,
+#               plot_values_size = 3,
+#               round = 2,
+#               color_vector = c("white", colors[3]),
+#               plot_legendbreaks = c(0.01, 0.1, 1, 10, 30),
+#               plot_colorscale = "log10") +
+#   scale_y_discrete(labels = rev(c(phylum.text.renamed[c(1:13, 15:26)]))) +
+#   labs(x = "", 
+#        y = "", 
+#        tag = "A",
+#        title = "Heatmap aggregated at the phylum level across bead beating intensity and time") +
+#   articlethemex0
+#   #theme(plot.margin = unit(c(0, 1, 0, 0), "cm"))
+
+plot.heatmap_phylum <- dat.types.sub3000.amp %>%
+  amp_subset_samples(normalise = TRUE) %>%
   amp_heatmap(group_by = "time_minutes", 
-              min_abundance = 0.1,
-              facet_by = c("soil_type", "rpm"),
-              tax_aggregate = "OTU",
-              normalise = TRUE,
-              tax_show = phylum.text.amp[c(1:13, 15:26)], 
-              order_y_by = rev(phylum.text.amp[c(1:13, 15:26)]),
-              showRemainingTaxa = FALSE, 
+              min_abundance = 0.01,
+              facet_by = "soil_type",
+              tax_aggregate = "Phylum",
+              tax_add = c("Phylum"),
+              normalise = FALSE,
+              tax_show = 25,
+              #order_y_by = "cluster",
+              # tax_show = phylum.text.amp[c(1:12, 14:26)],
+              # order_y_by = rev(phylum.text.amp[c(1:12, 14:26)]),
+              showRemainingTaxa = FALSE,
               plot_na = TRUE,
               plot_values = FALSE,
               plot_values_size = 3,
@@ -626,21 +654,21 @@ plot.heatmap_phylum <- ampvis.sub_phylum %>%
               color_vector = c("white", colors[3]),
               plot_legendbreaks = c(0.01, 0.1, 1, 10, 30),
               plot_colorscale = "log10") +
-  scale_y_discrete(labels = rev(c(phylum.text.renamed[c(1:13, 15:26)]))) +
-  labs(x = "", 
-       y = "", 
+  labs(x = "",
+       y = "",
        tag = "A",
        title = "Heatmap aggregated at the phylum level across bead beating intensity and time") +
   articlethemex0
   #theme(plot.margin = unit(c(0, 1, 0, 0), "cm"))
+
+plot.heatmap_phylum
   
 #leg.plot_heat <- cowplot::get_legend(plot.heatmap_phylum)
 
 plot.heatmap_phylum.final <- plot.heatmap_phylum + theme(legend.position = "none")
 
-plot.heatmap_phylum
 
-ggsave(here("Bead_beating", "figures", "heatmap_beadbeating.png"), plot = plot.heatmap_phylum, device = "png", height = 12, width = 19)
+#ggsave(here("Bead_beating", "figures", "heatmap_beadbeating.png"), plot = plot.heatmap_phylum, device = "png", height = 12, width = 19)
 ```
 
 
@@ -766,7 +794,7 @@ plot.ordinate <- dat.types.sub3000.amp %>%
     transform = "hellinger",
     distmeasure = "bray",
     species_nlabels = 10,
-    species_label_taxonomy = "Phylum",
+    species_label_taxonomy = "OTU",
     species_plot = T) +
   ggforce::geom_mark_ellipse(aes(group = soil_type), alpha = 0.5, color = "black") +
   scale_color_manual(values = colors_time) +
@@ -793,7 +821,7 @@ leg.plot.ord_color <- cowplot::get_legend(plot.ordinate + guides(shape = "none")
 
 plot.ordinate_final <- plot.ordinate + theme(legend.position = "none")
 
-ggsave(here("Bead_beating", "figures", "PCA_ordination.png"), plot = plot.ordinate, device = "png", height = 12, width = 19)
+#ggsave(here("Bead_beating", "figures", "PCA_ordination.png"), plot = plot.ordinate, device = "png", height = 12, width = 19)
 
 plot_ord1 <- dat.types.sub3000.amp %>%
   amp_subset_samples(soil_type == soil[1]) %>%
@@ -807,7 +835,7 @@ plot_ord1 <- dat.types.sub3000.amp %>%
     transform = "hellinger",
     distmeasure = "bray",
     species_nlabels = 10,
-    species_label_taxonomy = "Phylum",
+    species_label_taxonomy = "OTU",
     species_plot = T) +
   ggforce::geom_mark_ellipse(aes(group = rpm), alpha = 0.5, color = "black") +
   scale_color_manual(values = colors_time) +
@@ -835,7 +863,7 @@ plot_ord2 <- dat.types.sub3000.amp %>%
     transform = "hellinger",
     distmeasure = "bray",
     species_nlabels = 10,
-    species_label_taxonomy = "Phylum",
+    species_label_taxonomy = "OTU",
     species_plot = T) +
   ggforce::geom_mark_ellipse(aes(group = rpm), alpha = 0.5, color = "black") +
   scale_color_manual(values = colors_time) +
@@ -863,7 +891,7 @@ plot_ord3 <- dat.types.sub3000.amp %>%
     transform = "hellinger",
     distmeasure = "bray",
     species_nlabels = 10,
-    species_label_taxonomy = "Phylum",
+    species_label_taxonomy = "OTU",
     species_plot = T) +
   ggforce::geom_mark_ellipse(aes(group = rpm), alpha = 0.5, color = "black") +
   scale_color_manual(values = colors_time) +
@@ -889,7 +917,7 @@ plot.ord
 #  labs(tag = "") +
 #  theme(legend.position = "none")
 
-ggsave(here("Bead_beating", "figures", "PCA_faceted_beadbeating.png"), plot = plot.ord, device = "png", height = 12, width = 19)
+#ggsave(here("Bead_beating", "figures", "PCA_faceted_beadbeating.png"), plot = plot.ord, device = "png", height = 12, width = 19)
 ```
 
 ## Rel abundance correlation plot - 1600 rpm vs 1800 rpm
@@ -964,7 +992,7 @@ p.diff <- ggarrange(plotlist = plot_list_comb, nrow = 2, ncol = 3, labels = toup
 
 p.diff
 
-ggsave(here("Bead_beating", "figures", "differential_abundance_faceted_4vs6.png"), plot = p.diff, device = "png", height = 12, width = 19)
+ggsave(here("Bead_beating", "figures", "pre_subfile2_Fig5.png"), plot = p.diff, device = "png", height = 12, width = 19)
 ggsave(here("Bead_beating", "figures", "pre_subfile2_Fig5.tif"), plot = p.diff, device = "tiff", height = 12, width = 19, dpi = 600)
 ```
 
@@ -1001,7 +1029,7 @@ gg_arranged <- ggarrange(plot3, leg.comb, ncol = 2, nrow = 1, widths = c(1, 0.1)
 
 gg_arranged
 
-ggsave(here("Bead_beating", "figures", "combined_plot_bead_beating.png"), plot = gg_arranged, device = "png", height = 12, width = 19)
+ggsave(here("Bead_beating", "figures", "pre_subfile2_Fig4.png"), plot = gg_arranged, device = "png", height = 12, width = 19)
 ggsave(here("Bead_beating", "figures", "pre_subfile2_Fig4.tif"), plot = gg_arranged, device = "tiff", height = 12, width = 19, dpi = 600)
 ```
 

@@ -210,9 +210,9 @@ alpha_table <- final_table %>%
 
 alpha_table
 
-ggsave(here("Benchmarking", "figures", "table_benchmarking.png"), plot = alpha_table, device = "png", height = 12, width = 19)
+#ggsave(here("Benchmarking", "figures", "table_benchmarking.png"), plot = alpha_table, device = "png", height = 12, width = 19)
 
-writexl::write_xlsx(final_table, here("Benchmarking", "figures", "benchmark_overview_table.xlsx"))
+writexl::write_xlsx(final_table, here("Benchmarking", "figures", "S1_Table.xlsx"))
 ```
 
 
@@ -626,44 +626,77 @@ ggplot(aes(x = data.bray.rank,
 ## Heatmap
 ```{r}
 # Find all phyla in amplicon data
-heatmap.amplicon_phylum <- dat.types.sub10000.amp %>%
-  amp_heatmap(group_by = "seq_id", 
-              min_abundance = 0.001,
-              tax_show = 1000,
-              tax_aggregate = "Phylum", 
-              normalise = FALSE,
-              showRemainingTaxa = FALSE, 
-              plot_values = TRUE,
-              textmap = TRUE) %>%
-  rownames_to_column(var = "Phylum") %>%
-  mutate(across(Phylum, ~ str_replace_all(., "^.*ASV.*$", "Unclassified"))) %>%
-  group_by(Phylum) %>%
-  summarise(across(everything(), ~ sum(.))) %>%
-  ungroup() %>%
-  column_to_rownames(var = "Phylum")
-
-phylum.text.amp <- heatmap.amplicon_phylum %>%
-  mutate(total = rowSums(.)) %>%
-  filter(!total == 0) %>%
-  select(total) %>%
-  arrange(desc(total)) %>%
-  row.names(.)
-
-phylum.text.renamed <- gsub("SAR324_cladeMarine_group_B", "\\*SAR324", phylum.text.amp)
+# heatmap.amplicon_phylum <- dat.types.sub10000.amp %>%
+#   amp_heatmap(group_by = "seq_id", 
+#               min_abundance = 0.001,
+#               tax_show = 1000,
+#               tax_aggregate = "Phylum", 
+#               normalise = FALSE,
+#               showRemainingTaxa = FALSE, 
+#               plot_values = TRUE,
+#               textmap = TRUE) %>%
+#   rownames_to_column(var = "Phylum") %>%
+#   mutate(across(Phylum, ~ str_replace_all(., "^.*ASV.*$", "Unclassified"))) %>%
+#   group_by(Phylum) %>%
+#   summarise(across(everything(), ~ sum(.))) %>%
+#   ungroup() %>%
+#   column_to_rownames(var = "Phylum")
+# 
+# phylum.text.amp <- heatmap.amplicon_phylum %>%
+#   mutate(total = rowSums(.)) %>%
+#   filter(!total == 0) %>%
+#   select(total) %>%
+#   arrange(desc(total)) %>%
+#   row.names(.)
+# 
+# phylum.text.renamed <- gsub("SAR324_cladeMarine_group_B", "\\*SAR324", phylum.text.amp)
 
 # Load new genus ampvis object
-ampvis.sub_phylum <- amp_load(otutable = heatmap.amplicon_phylum,
-                              metadata = metadata.amplicon)
+# ampvis.sub_phylum <- amp_load(otutable = heatmap.amplicon_phylum,
+#                               metadata = metadata.amplicon)
 
-plot.heatmap_phylum <- ampvis.sub_phylum %>%
+# plot.heatmap_phylum <- ampvis.sub_phylum %>%
+#   #amp_subset_samples(., normalise = TRUE) %>%
+#   amp_heatmap(group_by = "kit", 
+#               min_abundance = 0.01,
+#               facet_by = "soil_type",
+#               tax_aggregate = "OTU",
+#               normalise = TRUE,
+#               #tax_show = 25,
+#               tax_show = phylum.text.amp[c(1:12, 14:26)], 
+#               order_y_by = rev(phylum.text.amp[c(1:12, 14:26)]),
+#               showRemainingTaxa = FALSE, 
+#               plot_na = TRUE,
+#               plot_values = TRUE,
+#               plot_values_size = 3,
+#               round = 2,
+#               color_vector = c("white", colors[3]),
+#               plot_legendbreaks = c(0.01, 0.1, 1, 10, 30),
+#               plot_colorscale = "log10") +
+#   scale_y_discrete(labels = rev(c(phylum.text.renamed[c(1:12, 14:26)]))) +
+#   scale_x_discrete(labels = kit_levels) +
+#   labs(x = "", 
+#        y = "", 
+#        tag = "A",
+#        title = "Heatmap aggregated at the phylum level across DNA extraction kits") +
+#   articletheme  
+#   #theme(plot.margin = unit(c(0, 1, 0, 0), "cm"))
+  
+plot.heatmap_phylum <- dat.types.sub10000.amp %>%
+  #amp_subset_taxa(tax_vector = c("Actinobacteriota", "Firmicutes"), normalise = TRUE) %>%
+  amp_subset_samples(normalise = TRUE) %>%
+  #filter_otus(0.1) %>%
   amp_heatmap(group_by = "kit", 
-              min_abundance = 0.1,
+              min_abundance = 0.01,
               facet_by = "soil_type",
-              tax_aggregate = "OTU",
-              normalise = TRUE,
-              tax_show = phylum.text.amp[c(1:12, 14:26)], 
-              order_y_by = rev(phylum.text.amp[c(1:12, 14:26)]),
-              showRemainingTaxa = FALSE, 
+              tax_aggregate = "Phylum",
+              tax_add = c("Phylum"),
+              normalise = FALSE,
+              tax_show = 25,
+              #order_y_by = "cluster",
+              # tax_show = phylum.text.amp[c(1:12, 14:26)],
+              # order_y_by = rev(phylum.text.amp[c(1:12, 14:26)]),
+              showRemainingTaxa = FALSE,
               plot_na = TRUE,
               plot_values = FALSE,
               plot_values_size = 3,
@@ -671,15 +704,17 @@ plot.heatmap_phylum <- ampvis.sub_phylum %>%
               color_vector = c("white", colors[3]),
               plot_legendbreaks = c(0.01, 0.1, 1, 10, 30),
               plot_colorscale = "log10") +
-  scale_y_discrete(labels = rev(c(phylum.text.renamed[c(1:12, 14:26)]))) +
   scale_x_discrete(labels = kit_levels) +
+  #scale_y_discrete(labels = rev(c(phylum.text.renamed[c(1:12, 14:26)]))) +
   labs(x = "", 
        y = "", 
        tag = "A",
        title = "Heatmap aggregated at the phylum level across DNA extraction kits") +
   articletheme  
   #theme(plot.margin = unit(c(0, 1, 0, 0), "cm"))
-  
+
+plot.heatmap_phylum
+
 
 #leg.plot_heat <- cowplot::get_legend(plot.heatmap_phylum)
 
@@ -687,7 +722,7 @@ plot.heatmap_phylum.final <- plot.heatmap_phylum + theme(legend.position = "none
 
 plot.heatmap_phylum
 
-ggsave(here("Benchmarking", "figures", "heatmap_benchmarking.png"), plot = plot.heatmap_phylum, device = "png", height = 12, width = 19)
+#ggsave(here("Benchmarking", "figures", "heatmap_benchmarking.png"), plot = plot.heatmap_phylum, device = "png", height = 12, width = 19)
 ```
 
 # PERMANOVA test for overall difference in observed communities based on kit
@@ -799,7 +834,7 @@ plot.ordinate <- dat.types.sub10000.amp %>%
                          "<br>Soil type: Variance explained = ", "90.6 %,", " p-value < 0.001",
                          "<br>Interaction: Variance explained = ", "4.5 %,", " p-value < 0.001")) +
   ggforce::geom_mark_ellipse(aes(fill = soil_type, group = soil_type), alpha = 0.5, color = "black") +
-  coord_cartesian(xlim = c(-0.5, 0.5), ylim = c(-0.4, 0.6)) +
+  coord_cartesian(xlim = c(-0.5, 0.5), ylim = c(-0.6, 0.4)) +
   articlethemex0 + 
   theme(plot.subtitle = ggtext::element_markdown())
 
@@ -821,7 +856,7 @@ plot.insert <- #plot.ordinate +
   scale_shape_manual(values = c(22,21,15:17), labels = kit_levels) +
     ggforce::geom_mark_ellipse(aes(fill = NULL, group = soil_type), alpha = 0.5, color = NA) +
   articlethemex0 + 
-  coord_cartesian(ylim = c(0.545, 0.56), xlim = c(0.185, 0.21)) +
+  coord_cartesian(ylim = c(-0.545, -0.56), xlim = c(0.185, 0.21)) +
   theme(plot.title = element_blank(),
         plot.subtitle = element_blank(),
         axis.text.x = element_blank(),
@@ -842,11 +877,11 @@ plot.insert
 
 plot.ordinate.insert <- plot.ordinate + 
   #geom_segment(aes(x = 0.19, y = 0.57, xend = -0.3, yend = 0.6), color = "black", linetype = "dashed") +
-  geom_segment(aes(x = 0.185, y = 0.56, xend = -0.1, yend = 0.625), color = "black", linetype = "dashed") +
+  geom_segment(aes(x = 0.185, y = -0.56, xend = -0.1, yend = -0.62), color = "black", linetype = "dashed") +
   #geom_segment(aes(x = 0.19, y = 0.54, xend = -0.3, yend = 0.25), color = "black", linetype = "dashed") +
-  geom_segment(aes(x = 0.185, y = 0.545, xend = -0.1, yend = 0.225), color = "black", linetype = "dashed") +
-  annotation_custom(ggplotGrob(plot.insert), xmin = -0.5, xmax = -0.1, ymin = 0.225, ymax = 0.625) +
-  geom_rect(aes(xmin = 0.185, xmax = 0.21, ymin = 0.545, ymax = 0.56), color='black', alpha = 0) #+
+  geom_segment(aes(x = 0.185, y = -0.545, xend = -0.1, yend = -0.225), color = "black", linetype = "dashed") +
+  annotation_custom(ggplotGrob(plot.insert), xmin = -0.5, xmax = -0.1, ymin = -0.225, ymax = -0.625) +
+  geom_rect(aes(xmin = 0.185, xmax = 0.21, ymin = -0.545, ymax = -0.56), color='black', alpha = 0) #+
   #geom_rect(aes(xmin = -0.275, xmax = 0.075, ymin = 0.25, ymax = 0.6), color = "black", linetype = "dashed", alpha = 0)
 
 plot.ordinate.insert
@@ -857,7 +892,7 @@ leg.plot.ord_fill <- cowplot::get_legend(plot.ordinate.insert + guides(shape = "
 
 plot.ordinate.insert_final <- plot.ordinate.insert + labs(tag = "B") + theme(legend.position = "none")
 
-ggsave(here("Benchmarking", "figures", "PCA_ordination_insert.png"), plot = plot.ordinate.insert, device = "png", height = 12, width = 19)
+#ggsave(here("Benchmarking", "figures", "PCA_ordination_insert.png"), plot = plot.ordinate.insert, device = "png", height = 12, width = 19)
 ```
 
 
@@ -872,7 +907,7 @@ plot_ord1 <- dat.types.sub10000.amp %>%
     type = "PCA",
     transform = "hellinger",
     distmeasure = "bray",
-    species_nlabels = 10,
+    species_nlabels = 5,
     species_label_taxonomy = "OTU",
     species_plot = T) +
   ggforce::geom_mark_ellipse(aes(fill = soil_type, group = kit), alpha = 0.5, color = "black") +
@@ -894,7 +929,7 @@ plot_ord2 <- dat.types.sub10000.amp %>%
     type = "PCA",
     transform = "hellinger",
     distmeasure = "bray",
-    species_nlabels = 10,
+    species_nlabels = 5,
     species_label_taxonomy = "OTU",
     species_plot = T) +
   ggforce::geom_mark_ellipse(aes(fill = soil_type, group = kit), alpha = 0.5, color = "black") +
@@ -916,7 +951,7 @@ plot_ord3 <- dat.types.sub10000.amp %>%
     type = "PCA",
     transform = "hellinger",
     distmeasure = "bray",
-    species_nlabels = 10,
+    species_nlabels = 5,
     species_label_taxonomy = "OTU",
     species_plot = T) +
   ggforce::geom_mark_ellipse(aes(fill = soil_type, group = kit), alpha = 0.5, color = "black") +
@@ -926,8 +961,8 @@ plot_ord3 <- dat.types.sub10000.amp %>%
        tag = "D",
        subtitle = paste0("**PERMANOVA:**", "<br>Extraction kit: Variance explained = ", permanova.list[[3]][1,2], " %,", " p-value ", permanova.list[[3]][1,3], "<br>", "<br>")) +
   articlethemex0 +
-  coord_cartesian(xlim = c(-0.25, 0.75), ylim = c(-0.5, 0.5)) +
-  articlethemex0 +
+  coord_cartesian(xlim = c(-0.75, 0.25), ylim = c(-0.5, 0.5)) +
+  articlethemex0 + 
   theme(legend.position = "none",
         plot.subtitle = ggtext::element_markdown())
 
@@ -939,7 +974,7 @@ plot_ord4 <- dat.types.sub10000.amp %>%
     type = "PCA",
     transform = "hellinger",
     distmeasure = "bray",
-    species_nlabels = 10,
+    species_nlabels = 5,
     species_label_taxonomy = "OTU",
     species_plot = T) +
   ggforce::geom_mark_ellipse(aes(fill = soil_type, group = kit), alpha = 0.5, color = "black") +
@@ -962,7 +997,7 @@ plot_ord5 <- dat.types.sub10000.amp %>%
     type = "PCA",
     transform = "hellinger",
     distmeasure = "bray",
-    species_nlabels = 10,
+    species_nlabels = 5,
     species_label_taxonomy = "OTU",
     species_plot = T) +
   ggforce::geom_mark_ellipse(aes(fill = soil_type, group = kit), alpha = 0.5, color = "black") +
@@ -989,7 +1024,7 @@ plot_ord_final <- plot_ord2 +
   labs(tag = "C") +
   theme(legend.position = "none")
 
-ggsave(here("Benchmarking", "figures", "PCA_faceted_benchmarking.png"), plot = plot.ord, device = "png", height = 12, width = 19)
+ggsave(here("Benchmarking", "figures", "pre_S2Fig.png"), plot = plot.ord, device = "png", height = 12, width = 19)
 ggsave(here("Benchmarking", "figures", "pre_S2Fig.tif"), plot = plot.ord, device = "tiff", height = 12, width = 19, dpi = 600)
 ```
 
@@ -1011,7 +1046,7 @@ gg_arranged <- ggarrange(plot.heatmap_phylum.final, plot, leg.comb, ncol = 3, nr
 
 gg_arranged
 
-ggsave(here("Benchmarking", "figures", "combined_plot_benchmarking.png"), plot = gg_arranged, device = "png", height = 12, width = 19)
+ggsave(here("Benchmarking", "figures", "pre_Fig2.png"), plot = gg_arranged, device = "png", height = 12, width = 19)
 ggsave(here("Benchmarking", "figures", "pre_Fig2.tif"), plot = gg_arranged, device = "tiff", height = 12, width = 19, dpi = 600)
 ```
 

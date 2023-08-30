@@ -308,9 +308,9 @@ alpha_table <- final_table %>%
 
 alpha_table
 
-ggsave(here("Scaledown", "figures", "table_metagenomes.png"), plot = alpha_table, device = "png", height = 12, width = 19)
+#ggsave(here("Scaledown", "figures", "table_metagenomes.png"), plot = alpha_table, device = "png", height = 12, width = 19)
 
-writexl::write_xlsx(final_table, here("Scaledown", "figures", "scaledown_metagenomes_table.xlsx"))
+writexl::write_xlsx(final_table, here("Scaledown", "figures", "S4_table.xlsx"))
 ```
 
 
@@ -569,10 +569,10 @@ ampvis.sub_genus_rel <- amp_load(otutable = textmap.metagenome_genus,
 
 textmap.sub_genus <- ampvis.sub_genus %>%
   amp_heatmap(group_by = "lib_volume", 
-              min_abundance = 0.01,
+              min_abundance = 0.001,
               facet_by = "soil_type",
               tax_aggregate = "OTU",
-              normalise = FALSE,
+              normalise = TRUE,
               tax_show = 25,
               showRemainingTaxa = FALSE, 
               plot_na = TRUE,
@@ -651,7 +651,7 @@ plot.heatmap_genus.final <- plot.heatmap_genus + theme(legend.position = "none")
 
 plot.heatmap_genus.final
 
-ggsave(here("Scaledown", "figures", "heatmap_metagenomes.png"), plot = plot.heatmap_genus, device = "png", height = 12, width = 19)
+#ggsave(here("Scaledown", "figures", "heatmap_metagenomes.png"), plot = plot.heatmap_genus, device = "png", height = 12, width = 19)
 ```
 
 
@@ -778,7 +778,7 @@ plot_ord1 <- dat.types.genus.meta %>%
     type = "PCA",
     transform = "hellinger",
     distmeasure = "bray",
-    species_nlabels = 10,
+    species_nlabels = 5,
     species_label_taxonomy = "OTU",
     species_plot = T) +
   ggforce::geom_mark_ellipse(aes(fill = soil_type, group = lib_volume), alpha = 0.5, color = "black") +
@@ -802,7 +802,7 @@ plot_ord2 <- dat.types.genus.meta %>%
     type = "PCA",
     transform = "hellinger",
     distmeasure = "bray",
-    species_nlabels = 10,
+    species_nlabels = 5,
     species_label_taxonomy = "OTU",
     species_plot = T) +
   ggforce::geom_mark_ellipse(aes(fill = soil_type, group = lib_volume), alpha = 0.5, color = "black") +
@@ -826,7 +826,7 @@ plot_ord3 <- dat.types.genus.meta %>%
     type = "PCA",
     transform = "hellinger",
     distmeasure = "bray",
-    species_nlabels = 10,
+    species_nlabels = 5,
     species_label_taxonomy = "OTU",
     species_plot = T) +
   ggforce::geom_mark_ellipse(aes(fill = soil_type, group = lib_volume), alpha = 0.5, color = "black") +
@@ -850,7 +850,7 @@ plot_ord4 <- dat.types.genus.meta %>%
     type = "PCA",
     transform = "hellinger",
     distmeasure = "bray",
-    species_nlabels = 10,
+    species_nlabels = 5,
     species_label_taxonomy = "OTU",
     species_plot = T) +
   ggforce::geom_mark_ellipse(aes(fill = soil_type, group = lib_volume), alpha = 0.5, color = "black") +
@@ -874,7 +874,7 @@ plot_ord5 <- dat.types.genus.meta %>%
     type = "PCA",
     transform = "hellinger",
     distmeasure = "bray",
-    species_nlabels = 10,
+    species_nlabels = 5,
     species_label_taxonomy = "OTU",
     species_plot = T) +
   ggforce::geom_mark_ellipse(aes(fill = soil_type, group = lib_volume), alpha = 0.5, color = "black") +
@@ -913,7 +913,7 @@ plot.ordinate.final <- plot.ordinate +
        shape = "Library volume") +
   theme(legend.position = "none")
 
-ggsave(here("Scaledown", "figures", "PCA_faceted_metagenomes.png"), plot = plot.ord, device = "png", height = 12, width = 19)
+ggsave(here("Scaledown", "figures", "pre_S4Fig.png"), plot = plot.ord, device = "png", height = 12, width = 19)
 ggsave(here("Scaledown", "figures", "pre_S4Fig.tif"), plot = plot.ord, device = "tiff", height = 12, width = 19, dpi = 600)
 ```
 
@@ -985,7 +985,7 @@ p.diff <- ggarrange(plotlist = plot_list2, common.legend = TRUE, ncol = 3, nrow 
 
 p.diff
 
-ggsave(here("Scaledown", "figures", "differential_abundance_faceted_metagenomes.png"), plot = p.diff, device = "png", height = 12, width = 19)
+ggsave(here("Scaledown", "figures", "pre_S6Fig.png"), plot = p.diff, device = "png", height = 12, width = 19)
 ggsave(here("Scaledown", "figures", "pre_S6Fig.tif"), plot = p.diff, device = "tiff", height = 12, width = 19, dpi = 600)
 ```
 
@@ -1017,7 +1017,7 @@ gg_arranged <- ggarrange(plot.heatmap_genus.final, plot, leg.comb, ncol = 3, nro
 
 gg_arranged
 
-ggsave(here("Scaledown", "figures", "combined_plot_metagenomes.png"), plot = gg_arranged, device = "png", height = 12, width = 20)
+ggsave(here("Scaledown", "figures", "pre_Fig4.png"), plot = gg_arranged, device = "png", height = 12, width = 20)
 ggsave(here("Scaledown", "figures", "pre_Fig4.tif"), plot = gg_arranged, device = "tiff", height = 12, width = 20, dpi = 600)
 ```
 

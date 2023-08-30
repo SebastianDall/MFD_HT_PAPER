@@ -9,9 +9,18 @@ metadata.amplicon <- read_csv("../Metadata/2023-03-13_combined-metadata.csv") %>
   mutate(across(seq_id, ~if_else(is.na(kit), seq_id, str_c(kit, seq_id, sep = "-"))),
          across(seq_id, ~str_remove(., "-MFD004")),
          across(seq_id, ~str_replace_all(., " ", "-"))) %>%
-  select(seq_id, everything())
+  select(seq_id, everything()) %>%
+  arrange(seq_id)
 
 # Load ASV taxonomy
+#tax.amplicon <- read_delim("../Amplicon_data/sintax_out_trimmed.txt",
+#                           col_names = c("OTU", "Tax_string", "Strand", "Tax")) %>% 
+#  select(1, 4) %>%
+#  mutate(across(OTU, ~str_replace(., "Zotu", "ASV"))) %>%
+#  mutate(across(Tax, ~str_replace_all(., "__", ":"))) %>%
+#  separate(Tax, into = c("Kingdom","Phylum","Class","Order","Family","Genus","Species"), sep = ",") %>%
+#  mutate(across(where(is.character), ~str_remove(., ".:")))
+
 tax.amplicon <- read_delim("../Amplicon_data/zotus.R1.sintax",
                            col_names = c("OTU", "Tax_string", "Strand", "Tax")) %>% 
   select(1, 4) %>%

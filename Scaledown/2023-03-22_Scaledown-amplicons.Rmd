@@ -207,10 +207,10 @@ alpha_table <- final_table %>%
 
 alpha_table
 
-ggsave(here("Scaledown", "figures", "table_amplicons.png"), plot = alpha_table, device = "png", height = 12, width = 19)
+#ggsave(here("Scaledown", "figures", "table_amplicons.png"), plot = alpha_table, device = "png", height = 12, width = 19)
 
 
-writexl::write_xlsx(final_table, here("Scaledown", "figures", "scaledown_amplicons_table.xlsx"))
+writexl::write_xlsx(final_table, here("Scaledown", "figures", "S3_Table.xlsx"))
 ```
 
 ## Statistical tests - ANVOA and Mann-Whitney
@@ -472,7 +472,7 @@ ampvis.sub_genus_rel <- amp_load(otutable = textmap.amplicon_genus,
 textmap.sub_genus <- ampvis.sub_genus %>%
   amp_subset_taxa(tax_vector = c("Unclassified"), normalise = TRUE, remove = TRUE) %>%
   amp_heatmap(group_by = "lib_volume", 
-              min_abundance = 0.01,
+              min_abundance = 0.001,
               facet_by = "soil_type",
               tax_aggregate = "OTU",
               normalise = FALSE,
@@ -554,7 +554,7 @@ plot.heatmap_genus.final <- plot.heatmap_genus + theme(legend.position = "none")
 
 plot.heatmap_genus.final
 
-ggsave(here("Scaledown", "figures", "heatmap_amplicons.png"), plot = plot.heatmap_genus, device = "png", height = 12, width = 19)
+#ggsave(here("Scaledown", "figures", "heatmap_amplicons.png"), plot = plot.heatmap_genus, device = "png", height = 12, width = 19)
 ```
 
 # PERMANOVA test for overall difference in observed communities based on protocol
@@ -815,7 +815,7 @@ plot.ordinate.final <- plot.ordinate +
        shape = "Library volume") +
   theme(legend.position = "none")
 
-ggsave(here("Scaledown", "figures", "PCA_faceted_amplicons.png"), plot = plot.ord, device = "png", height = 12, width = 19)
+ggsave(here("Scaledown", "figures", "pre_S3Fig.png"), plot = plot.ord, device = "png", height = 12, width = 19)
 ggsave(here("Scaledown", "figures", "pre_S3Fig.tif"), plot = plot.ord, device = "tiff", height = 12, width = 19, dpi = 600)
 ```
 
@@ -889,7 +889,7 @@ p.diff <- ggarrange(plotlist = plot_list2, common.legend = TRUE, ncol = 3, nrow 
 
 p.diff
 
-ggsave(here("Scaledown", "figures", "differential_abundance_faceted_amplicons.png"), plot = p.diff, device = "png", height = 12, width = 19)
+ggsave(here("Scaledown", "figures", "pre_S5Fig.tif.png"), plot = p.diff, device = "png", height = 12, width = 19)
 ggsave(here("Scaledown", "figures", "pre_S5Fig.tif"), plot = p.diff, device = "tiff", height = 12, width = 19, dpi = 600)
 ```
 
@@ -921,7 +921,7 @@ gg_arranged <- ggarrange(plot.heatmap_genus.final, plot, leg.comb, ncol = 3, nro
 
 gg_arranged
 
-ggsave(here("Scaledown", "figures", "combined_plot_amplicons.png"), plot = gg_arranged, device = "png", height = 12, width = 20)
+ggsave(here("Scaledown", "figures", "pre_Fig3.png"), plot = gg_arranged, device = "png", height = 12, width = 20)
 ggsave(here("Scaledown", "figures", "pre_Fig3.tif"), plot = gg_arranged, device = "tiff", height = 12, width = 20, dpi = 600)
 ```
 
