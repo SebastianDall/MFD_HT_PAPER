@@ -1,0 +1,6 @@
+[submodule "HT-Downscaled-Illumina-Metagenomes-Protocol"]
+	path = HT-Downscaled-Illumina-Metagenomes-Protocol
+	url = https://github.com/SebastianDall/HT-Downscaled-Illumina-Metagenomes-Protocol.git
+[submodule "HT-downscaled-amplicon-library-protocol"]
+	path = HT-downscaled-amplicon-library-protocol
+	url = https://github.com/SebastianDall/HT-downscaled-amplicon-library-protocol.git
