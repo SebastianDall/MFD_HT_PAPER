@@ -710,7 +710,7 @@ plot.heatmap_phylum <- dat.types.sub10000.amp %>%
   labs(x = "", 
        y = "", 
        tag = "A",
-       title = "Heatmap aggregated at the genus 1level across DNA extraction kits") +
+       title = "Heatmap aggregated at the genus level across DNA extraction kits") +
   articletheme  
   #theme(plot.margin = unit(c(0, 1, 0, 0), "cm"))
 
