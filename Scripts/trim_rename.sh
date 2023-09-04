@@ -6,8 +6,8 @@ module load ea-utils parallel
 module load fastp/0.23.2-GCC-10.2.0
 
 # make directories
-mkdir index_problems_trim
-cd index_problems_trim
+mkdir mfd_ht_paper
+cd mfd_ht_paper
 mkdir sequences_trim
 mkdir log
 mkdir log/json
