@@ -1,8 +1,8 @@
-# DNA Extraction and Miniaturization of Library Preparations on Soil Samples in a High Throughput Setting
+# High-throughput DNA extraction and cost-effective miniaturized metagenome and amplicon library preparation of soil samples for DNA sequencing
 
 ## Introduction
 
-This repo contains the source code for the analysis in "DNA Extraction and Miniaturization of Library Preparations on Soil Samples in a High Throughput Setting" published in...
+This repo contains the source code for the analysis in "High-throughput DNA extraction and cost-effective miniaturized metagenome and amplicon library preparation of soil samples for DNA sequencing" available at [BioRxiv](https://doi.org/10.1101/2023.09.04.556179)
 
 Each results section has its own code folder. To reproduce the results open the `master.Rmd` file and run the code chunks in order.
 
