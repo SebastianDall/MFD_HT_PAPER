@@ -1,5 +1,8 @@
 #!/bin/bash
-module load R/3.5.0-foss-2018a-X11-20180131
+module load Mamba/4.14.0-0
+
+# Activate R environment
+source activate /path/to/conda/envs/R
 
 dir_in=('/path/to/mfd_ht_paper/16S_table')
 dir_out=('/path/to/mfd_ht_paper/16S_table/otu_out')
