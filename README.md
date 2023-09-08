@@ -45,7 +45,7 @@ To process the amplicon reads, use the `AmpProc5.1` available at [github](https:
 
 This will create the following files: `zotutable.R1.txt`, `otutable.R1.txt`, `zotutable_notax.txt`, and `zotus.R1.fa`.
 
-The `zotus.R1.fa` was subsequently classified using [`SINTAX`](https://www.drive5.com/usearch/manual/sintax_algo.html) and the database `AutoTax_SILVA_138.1_Nr99_sintax_trunc.udb` at `-sintax-cutoff 0.8`. The full command is:
+The `zotus.R1.fa` was subsequently classified using [`SINTAX`](https://www.drive5.com/usearch/manual/sintax_algo.html) and the database `AutoTax_SILVA_138.1_Nr99_sintax.udb` at `-sintax-cutoff 0.8`. The full command is:
 
 ```bash
 usearch -sintax zotus.R1.fa -db AutoTax_SILVA_138.1_Nr99_sintax_trunc.udb -tabbedout zotus.R1.sintax \
@@ -68,10 +68,24 @@ bash Scripts/trim_rename.sh
 bash Scripts/classify_shallow_metagenomes.sh
 ```
 
-`filter_reads.R` takes the output from `classify_shallow_metagenomes.sh` and evalutes the `hmmout.txt` files for IDs mapping to bacteria and archaea. The output will be six files: `ARC_reads.txt`, `ARC_reads_samples.txt`, `BAC_reads.txt`, `BAC_reads_samples.txt`, `EUK_reads.txt`, and `EUK_reads_samples.txt`. To run the script, use the following command:
+The following section expects the creation of the directory `16S_table` with subdirectories `hmm_forward_out`, `hmm_reverse_out`, `sintax_forward_out`, `sintax_reverse_out`, `output` and `otu_out`, and the below mentioned scripts. 
+
+`find_hmm.sh` and `find_sintax.sh` looks through the folders created by `classify_shallow_metagenomes.sh` and creates symlinks to all `hmmout.txt` and `.sintax` files in the `hmm_forward_out`, `hmm_reverse_out`, `sintax_forward_out` and `sintax_revese_out` respectively. and 
+
+
+`filter_reads.R` takes the output from `classify_shallow_metagenomes.sh` and evalutes the indivudal `hmmout.txt` files for reads identified as belonging to bacteria, archaea and eukaryots. As multiple models might pick up the same fragment, each fragment is evaluated by its bit-score. Reads with an unresolved origin are discarded. The output will be three kingdom specific files: `ARC_reads.txt`, `BAC_reads.txt` and `EUK_reads.txt`. To run the script, use the following command:
 
 ```bash
 bash Scripts/filter_reads.sh
+```
+
+`arcbac_sintax_to_combined_tax.R` takes the `ARC_reads.txt` and the `BAC_reads.txt` and merge these files with the forward and reverse reads sintax classifications (`.sintax`).
+Each read pair is evaluated as to which both where identified as originating from the 16S gene or if either the forward or revers were exclusively identified. If a pair was identified the script evaluates if the classification resulted in the same taxonomy, if not the read with the deepest taxonomic resolution is chosen. If taxonomic classifcation was to the same depth, but with different results, the forward read is chosen. Hence each read-pair only has one entry in the output file `DATE_arcbac_sintax_combined.csv`. Reads with empty taxonomic classifications is filtered out. 
+
+`arcbac_sintax_to_combined_tax.R` creates a mapping file of samples and their associated read pairs. This mapping file is combined with the `DATE_arcbac_sintax_combined.csv` to create an observation table `DATE_small_v_full_phylotabel.csv`. The table is aggregated at the genus level for the analysis. 
+
+```bash
+bash Scripts/format_ampvis.sh
 ```
 
 Only the bacterial and archaeal reads were used for the analysis.
