@@ -65,7 +65,7 @@ while read -r line; do
   seqkit grep -f $new_dir/tmp/reverse_euk_IDs.txt $input'R2.fastq.gz' -o $new_dir/reverse/'euk_'$new_name'_reverse.fq'
   echoWithHeader "  - Classifying reads"
   module purge
-  usearch11 -sintax $new_dir/forward/'arc_bac_'$new_name'_forward.fq' -db $udb -tabbedout $new_dir/forward/'arc_bac_'$new_name'_forward.sintax' -strand both -sintax_cutoff 0.8 -threads 60 -quiet
-  usearch11 -sintax $new_dir/reverse/'arc_bac_'$new_name'_reverse.fq' -db $udb -tabbedout $new_dir/reverse/'arc_bac_'$new_name'_reverse.sintax' -strand both -sintax_cutoff 0.8 -threads 60 -quiet
+  usearch -sintax $new_dir/forward/'arc_bac_'$new_name'_forward.fq' -db $udb -tabbedout $new_dir/forward/'arc_bac_'$new_name'_forward.sintax' -strand both -sintax_cutoff 0.8 -threads 60 -quiet
+  usearch -sintax $new_dir/reverse/'arc_bac_'$new_name'_reverse.fq' -db $udb -tabbedout $new_dir/reverse/'arc_bac_'$new_name'_reverse.sintax' -strand both -sintax_cutoff 0.8 -threads 60 -quiet
   echoDuration 
 done < samples_classification.txt &> >(tee -a classify.log)
